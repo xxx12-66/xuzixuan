@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>CSS 变量 - 徐梓轩</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --bg-color: #f0f3f4;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --accent-orange: #e67e22;
+            --accent-purple: #9b59b6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --spacing: 20px;
+            --font-main: "Microsoft YaHei", "PingFang SC", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 40px;
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            font-size: 2em;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: var(--spacing);
+            margin-bottom: var(--spacing);
+        }
+
+        .name-card {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-purple));
+            color: #fff;
+        }
+
+        .name-card h2 {
+            font-size: 2.5em;
+            margin: 0;
+            letter-spacing: 4px;
+        }
+
+        .name-card p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .theme-green {
+            --primary-color: var(--secondary-color);
+            --accent-purple: var(--accent-orange);
+        }
+
+        .variable-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .variable-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .variable-list code {
+            color: var(--accent-purple);
+            font-weight: bold;
+        }
+
+        .interactive button {
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius);
+            font-size: 1em;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .interactive button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSS 自定义属性（CSS 变量）演示</h1>
+
+        <div class="card name-card">
+            <h2>徐梓轩</h2>
+            <p>CSS Variables Demo by 徐梓轩</p>
+        </div>
+
+        <div class="card">
+            <h3 style="color: var(--primary-color);">变量列表</h3>
+            <ul class="variable-list">
+                <li><code>--primary-color</code> — 主色调（蓝）</li>
+                <li><code>--secondary-color</code> — 辅助色（绿）</li>
+                <li><code>--accent-purple</code> — 强调色（紫）</li>
+                <li><code>--bg-color</code> — 页面背景色</li>
+                <li><code>--card-bg</code> — 卡片背景色</li>
+                <li><code>--shadow</code> — 阴影值</li>
+                <li><code>--radius</code> — 圆角大小</li>
+                <li><code>--spacing</code> — 间距值</li>
+            </ul>
+        </div>
+
+        <div class="card interactive">
+            <h3 style="color: var(--primary-color);">交互演示</h3>
+            <p>点击下方按钮切换主题色（通过修改变量实现）：</p>
+            <button onclick="document.documentElement.className=''">默认主题（蓝）</button>
+            <button onclick="document.documentElement.className='theme-green'">绿色主题</button>
+        </div>
+    </div>
+</body>
+</html>
