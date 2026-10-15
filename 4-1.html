@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1020 徐梓轩</title>
+    <style>
+        h2,h3,p{
+            padding: 0;
+            margin: 0;
+        }
+        /* 修改#box，去掉默认宽占满屏幕，宽度自适应内容 */
+        #box{
+            padding: 8px;
+            margin: 20px;
+            border: 1px solid #000;
+            font-size: 12px;
+            width: fit-content; /* 宽度随文字内容，不会拉满整个屏幕 */
+        }
+        #box h3{
+            font-size: 16px;
+            line-height: 33px;
+            text-align: center;
+            color: #00f;
+            letter-spacing: 3px;
+        }
+        #box p{
+            color: #666;
+            text-indent: 2em;
+            line-height: 150%;
+        }
+        #box a{
+            color: #00f;
+            text-decoration: none;
+        }
+        /* 2、h2黑底白字，居中，行高150% */
+        h2{
+            background-color: #000;
+            color: #fff;
+            text-align: center;
+            line-height: 150%;
+        }
+        /* 1、学号、姓名、班级的值蓝色加粗，群组选择器（1个css选择器） */
+        .sno,.name,.cls{
+            color: blue;
+            font-weight: bold;
+        }
+        /* 3、知识点蓝底白字 */
+        .knowledge{
+            background-color: blue;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h2>css群组选择器和后代选择器</h2>
+    <div id="box">
+        <h3>css进阶</h3>
+        <p>学号：<span class="sno">1020</span>，姓名：<span class="name">徐梓轩</span>，班级：<span class="cls">计算机24010</span>，《高级网页设计》设计的学习难度：中等，本实例的知识点：<span class="knowledge">css 群组选择器和后代选择器</span></p>
+        <p>css后代选择器</p>
+        <a href="#">【更多】</a>
+    </div>
+</body>
+</html>

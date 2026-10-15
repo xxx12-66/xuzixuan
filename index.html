@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1020 徐梓轩的《高级网页设计》课堂实践</title>
+    <style>
+        /* ========== 全局重置 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "SimHei", "PingFang SC", sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            color: #e0e0e0;
+            line-height: 1.8;
+        }
+
+        /* ========== 头部区域 ========== */
+        header {
+            text-align: center;
+            padding: 50px 20px 30px;
+            background: linear-gradient(180deg, rgba(48, 43, 99, 0.9), transparent);
+        }
+
+        header h1 {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(100, 200, 255, 0.5), 0 0 40px rgba(100, 200, 255, 0.2);
+            margin-bottom: 10px;
+        }
+
+        header .subtitle {
+            font-size: 16px;
+            color: #a0a0d0;
+            letter-spacing: 2px;
+        }
+
+        header .divider {
+            width: 120px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #6c63ff, transparent);
+            margin: 20px auto 0;
+            border-radius: 2px;
+        }
+
+        /* ========== 主体内容 ========== */
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px 20px 50px;
+        }
+
+        /* ========== 链接卡片区域 ========== */
+        .section-title {
+            font-size: 22px;
+            color: #b8b8ff;
+            margin-bottom: 20px;
+            padding-left: 14px;
+            border-left: 4px solid #6c63ff;
+            letter-spacing: 1px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px 20px;
+            text-decoration: none;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #6c63ff, #48c6ef);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(108, 99, 255, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(108, 99, 255, 0.15);
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card .card-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .card .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+
+        .card .card-desc {
+            font-size: 13px;
+            color: #999;
+            line-height: 1.6;
+        }
+
+        .card .card-tag {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 2px 10px;
+            font-size: 11px;
+            border-radius: 20px;
+            background: rgba(108, 99, 255, 0.2);
+            color: #9d97ff;
+            letter-spacing: 0.5px;
+        }
+
+        /* ========== 提示词区域 ========== */
+        .prompt-section {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 28px 24px;
+            margin-top: 10px;
+        }
+
+        .prompt-section .section-title {
+            margin-bottom: 14px;
+        }
+
+        .prompt-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(108, 99, 255, 0.25);
+            border-radius: 8px;
+            padding: 20px;
+            font-size: 14px;
+            color: #c0c0e0;
+            line-height: 1.9;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .prompt-box .label {
+            color: #6c63ff;
+            font-weight: 600;
+        }
+
+        /* ========== 页脚 ========== */
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #666;
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        footer span {
+            color: #6c63ff;
+        }
+
+        /* ========== 装饰动画 ========== */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .float-dot {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(108, 99, 255, 0.3);
+            animation: float 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .float-dot:nth-child(1) { top: 15%; left: 8%; animation-delay: 0s; }
+        .float-dot:nth-child(2) { top: 40%; left: 92%; animation-delay: 1s; width: 8px; height: 8px; }
+        .float-dot:nth-child(3) { top: 70%; left: 5%; animation-delay: 2s; }
+        .float-dot:nth-child(4) { top: 85%; left: 88%; animation-delay: 0.5s; width: 5px; height: 5px; }
+        .float-dot:nth-child(5) { top: 25%; left: 95%; animation-delay: 1.5s; width: 4px; height: 4px; }
+        .float-dot:nth-child(6) { top: 60%; left: 3%; animation-delay: 2.5s; width: 7px; height: 7px; }
+    </style>
+</head>
+<body>
+
+    <!-- 装饰浮动点 -->
+    <div class="float-dot"></div>
+    <div class="float-dot"></div>
+    <div class="float-dot"></div>
+    <div class="float-dot"></div>
+    <div class="float-dot"></div>
+    <div class="float-dot"></div>
+
+    <!-- 头部 -->
+    <header>
+        <h1>&#x1F4BB; 徐梓轩的《高级网页设计》课堂实践</h1>
+        <p class="subtitle">Advanced Web Design &mdash; Class Practice Portfolio</p>
+        <div class="divider"></div>
+    </header>
+
+    <!-- 主体 -->
+    <main>
+
+        <!-- 页面导航链接 -->
+        <h2 class="section-title">&#x1F517; 课堂实践页面导航</h2>
+        <div class="card-grid">
+
+            <a class="card" href="./2-1.html">
+                <span class="card-icon">&#x1F4D0;</span>
+                <div class="card-title">2-1 HTML基础元素</div>
+                <div class="card-desc">HTML元素结构：开始标签+内容+结束标签，内容与样式相分离，列表与DIV布局</div>
+                <span class="card-tag">HTML 基础</span>
+            </a>
+
+            <a class="card" href="./2-2.html">
+                <span class="card-icon">&#x1F310;</span>
+                <div class="card-title">2-2 超链接与表格</div>
+                <div class="card-desc">超链接、图片标签、相对路径与绝对路径，大国重器表格展示</div>
+                <span class="card-tag">HTML 进阶</span>
+            </a>
+
+            <a class="card" href="./3-1 form.html">
+                <span class="card-icon">&#x1F4DD;</span>
+                <div class="card-title">3-1 表单Form</div>
+                <div class="card-desc">文本输入、密码、单选、复选、下拉选择、文本域、日期、文件上传与按钮</div>
+                <span class="card-tag">表单</span>
+            </a>
+
+            <a class="card" href="./3-2css.html">
+                <span class="card-icon">&#x1F3A8;</span>
+                <div class="card-title">3-2 CSS层叠样式表</div>
+                <div class="card-desc">CSS选择器：标签选择器、ID选择器、类选择器，CSS属性与样式应用</div>
+                <span class="card-tag">CSS 基础</span>
+            </a>
+
+            <a class="card" href="./4-1.html">
+                <span class="card-icon">&#x2728;</span>
+                <div class="card-title">4-1 CSS群组与后代选择器</div>
+                <div class="card-desc">CSS群组选择器、后代选择器的综合运用，盒模型与排版美化</div>
+                <span class="card-tag">CSS 进阶</span>
+            </a>
+
+            <a class="card" href="./5-1.html">
+                <span class="card-icon">&#x1F4A1;</span>
+                <div class="card-title">5-1 层叠与继承</div>
+                <div class="card-desc">CSS层叠性、继承性，选择器优先级：!important > id > class > tag</div>
+                <span class="card-tag">CSS 优先级</span>
+            </a>
+
+            <a class="card" href="./5-2.html">
+                <span class="card-icon">&#x1F4E6;</span>
+                <div class="card-title">5-2 盒模型</div>
+                <div class="card-desc">CSS盒模型（Box Model）：content、padding、border、margin的运用</div>
+                <span class="card-tag">盒模型</span>
+            </a>
+
+            <a class="card" href="./6-1 flex.html">
+                <span class="card-icon">&#x1F504;</span>
+                <div class="card-title">6-1 Flex弹性布局</div>
+                <div class="card-desc">Flex布局：display:flex、justify-content、align-items、flex-wrap等属性</div>
+                <span class="card-tag">Flex 布局</span>
+            </a>
+
+            <a class="card" href="./6-2.html">
+                <span class="card-icon">&#x1F4CA;</span>
+                <div class="card-title">6-2 Flex布局实战</div>
+                <div class="card-desc">Flex布局实战应用：标题栏布局，flex-grow与定位的综合运用</div>
+                <span class="card-tag">Flex 实战</span>
+            </a>
+
+            <a class="card" href="./7-1上图下文.html">
+                <span class="card-icon">&#x1F5BC;</span>
+                <div class="card-title">7-1 上图下文布局</div>
+                <div class="card-desc">Flex实现上图下文布局：图片上方、文字下方，绝对定位文字覆盖</div>
+                <span class="card-tag">图文布局</span>
+            </a>
+
+            <a class="card" href="./7-2左图右文.html">
+                <span class="card-icon">&#x1F4DD;</span>
+                <div class="card-title">7-2 左图右文布局</div>
+                <div class="card-desc">Flex实现左图右文布局：图片左侧、文字右侧，flex-wrap与flex-grow</div>
+                <span class="card-tag">图文布局</span>
+            </a>
+
+            <a class="card" href="./8-1css3.html">
+                <span class="card-icon">&#x2728;</span>
+                <div class="card-title">8-1 CSS3新特性</div>
+                <div class="card-desc">CSS3新特性：圆角、阴影、渐变、过渡、变换、动画等视觉增强效果</div>
+                <span class="card-tag">CSS3</span>
+            </a>
+
+            <a class="card" href="./9-1.html">
+                <span class="card-icon">&#x1F3AC;</span>
+                <div class="card-title">9-1 CSS3动画</div>
+                <div class="card-desc">CSS3动画与过渡：@keyframes关键帧动画、animation属性、transform变换</div>
+                <span class="card-tag">CSS3 动画</span>
+            </a>
+
+        </div>
+
+        <!-- 提示词内容 -->
+        <div class="prompt-section">
+            <h2 class="section-title">&#x1F4CB; 本页面生成提示词</h2>
+            <div class="prompt-box"><span class="label">提示词：</span>"更新首页，包括所有html文件"</div>
+        </div>
+
+    </main>
+
+    <!-- 页脚 -->
+    <footer>
+        &copy; 2026 <span>徐梓轩</span> &mdash; 《高级网页设计》课堂实践 &mdash; All Rights Reserved
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>徐梓轩 背景颜色动画</title>
+	<style>
+		body {
+			min-height: 100vh;
+			margin: 0;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.box {
+			width: 200px;
+			height: 200px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			color: white;
+			font-size: 24px;
+			animation: color-change 8s linear infinite;
+		}
+
+		@keyframes color-change {
+			0%, 100% { background-color: red; }
+			25% { background-color: yellow; }
+			50% { background-color: green; }
+			75% { background-color: blue; }
+		}
+	</style>
+</head>
+<body>
+	<div class="box">颜色变化</div>
+</body>
+</html>

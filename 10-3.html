@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>徐梓轩 - 媒体查询</title>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		html {
+			font-size: 16px;
+		}
+
+		body {
+			min-height: 100vh;
+			margin: 0;
+			font-family: sans-serif;
+		}
+
+		.box {
+			min-height: 100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			padding: 2rem;
+			background-color: #d9f0e5;
+			color: #183b32;
+			text-align: center;
+			transition: background-color 0.3s ease;
+		}
+
+		h1 {
+			margin: 0;
+			font-size: 4rem;
+		}
+
+		@media (max-width: 1200px) {
+			.box {
+				background-color: #fff1c7;
+				color: #5a4517;
+			}
+		}
+
+		@media (max-width: 992px) {
+			.box {
+				background-color: #f6dce5;
+				color: #5b2b3d;
+			}
+		}
+
+		@media (max-width: 768px) {
+			html {
+				font-size: 14px;
+			}
+
+			.box {
+				background-color: #dce8fb;
+				color: #20375c;
+			}
+		}
+
+		@media (max-width: 480px) {
+			html {
+				font-size: 12px;
+			}
+
+			.box {
+				background-color: #f8e2d8;
+				color: #663a2c;
+			}
+		}
+	</style>
+</head>
+<body>
+	<main class="box">
+		<h1>徐梓轩</h1>
+	</main>
+</body>
+</html>

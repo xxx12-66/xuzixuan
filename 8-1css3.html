@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>css3 1020徐梓轩</title>
+    <style>
+        .main{
+        display: flex;
+        flex-wrap: wrap;
+        margin: 10px;
+        }
+        .box{
+            width: 150px;
+            height: 150px;
+            border: 1px solid #ccc;
+            margin: 10px;
+            display: flex;
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
+            font-size: 40px;
+            transition: all 0.6s; /* 添加过渡效果 */
+            box-sizing: border-box; /* 包括边框和内边距在内的总宽度和高度 */   
+        }
+        .box:first-child:hover{
+            background-color: red;
+            color: #ccc;
+            font-size: 140px;
+        }
+        .box:nth-child(2):hover{
+            border-radius: 50%; /* 圆形 */
+            border-width: 10px; /* 边框宽度 */
+        }
+        .box:nth-child(3):hover{
+            box-shadow: 10px 10px 10px #ccc;
+        }
+        .box:nth-of-type(4):hover{
+            text-shadow: 100px 10px 10px #ccc;
+        }
+        .box:nth-of-type(5):hover{
+            background: linear-gradient(to right,red,green,yellow);
+        }
+        .box:nth-of-type(5)+:hover{
+            background: radial-gradient(circle,red,green,yellow);
+        }
+        .box:nth-of-type(7):hover{
+            transform: scale(1.5);
+        }
+        .box:nth-child(8):hover{
+            transform: translateX(-150px);
+        }
+        .box:nth-child(9):hover{
+            transform: rotateZ(-180deg);
+        }
+        .box:nth-child(10):hover{
+            transform: skewX(20deg);
+        }
+        .box:nth-last-child(2):hover{
+            content: "*";
+            color: red;
+        }
+        /*鼠标在第12个盒子上时，鼠标在上面显示自己名字隐藏盒子编号，要求名字深色背景白色文字，水平垂直居中*/
+        .box:nth-child(12):hover{
+            background-color: #333; /*深色背景*/
+            color: transparent; /*文字透明，实现隐藏编号*/
+        }
+        .box:nth-child(12):hover::after{
+            content: "徐梓轩";
+            color: white; /*白色文字*/
+            font-size: 32px;
+            position: absolute;
+        }
+        .box:nth-child(3n):hover{
+            border-color:3px solid red;
+        }
+        /*鼠标在偶数个盒子上时，上下晃动效果*/
+        .box:nth-child(2n):hover{
+            animation: shake 0.5s infinite;
+        }
+        @keyframes shake{
+            0%{
+                transform: translateY(0);
+            }
+            50%{
+                transform: translateY(-10px);
+            }
+            100%{
+                transform: translateY(0);
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="box">1</div>
+        <div class="box">2</div>
+        <div class="box">3</div>
+        <div class="box">4</div>
+        <div class="box">5</div>
+        <div class="box">6</div>
+        <div class="box">7</div>
+        <div class="box">8</div>
+        <div class="box">9</div>
+        <div class="box">10</div>
+        <div class="box">11</div>
+        <div class="box">12</div>
+    </div>
+</body>
+</html>

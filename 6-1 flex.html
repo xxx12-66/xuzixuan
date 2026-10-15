@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1020徐梓轩</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            padding: 20px;
+            background: linear-gradient(135deg, #edf2f7, #dbeafe);
+        }
+        h2 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #1e293b;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            list-style: none;
+            justify-content: center;
+        }
+        .flex li {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            transition: all 0.3s ease;
+        }
+        /* 四个大卡片各自不同渐变背景 */
+        .flex li:nth-child(1) {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+        }
+        .flex li:nth-child(2) {
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+        }
+        .flex li:nth-child(3) {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+        }
+        .flex li:nth-child(4) {
+            background: linear-gradient(135deg, #dbeafe, #c7d2fe);
+        }
+        /* 卡片悬浮特效：上浮+加深阴影 */
+        .flex li:hover{
+            transform: translateY(-6px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+        }
+        .small {
+            position: absolute;
+            display: block;
+            transition: all 0.3s ease;
+        }
+        /* 小方块hover：放大+轻微旋转 */
+        .small:hover{
+            transform: scale(1.08) rotate(2deg);
+            filter: brightness(1.15);
+        }
+        .box1 .small:nth-child(1) {
+            width: 0;
+            height: 0;
+            left: 0;
+            top: 0;
+            background: transparent;
+        }
+        .box1 .small:nth-child(2) {
+            width: 100px;
+            height: 100px;
+            left: 60px;
+            top: 60px;
+            background: #ef4444;
+        }
+        .box1 .small:nth-child(3) {
+            width: 0;
+            height: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent;
+        }
+        .box2 .small:nth-child(1) {
+            width: 70px;
+            height: 70px;
+            left: 75px;
+            top: 30px;
+            background: #f97316;
+        }
+        .box2 .small:nth-child(2) {
+            width: 70px;
+            height: 70px;
+            left: 75px;
+            bottom: 30px;
+            background: #eab308;
+        }
+        .box2 .small:nth-child(3) {
+            width: 0;
+            height: 0;
+            left: 0;
+            top: 0;
+            background: transparent;
+        }
+        .box3 {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 18px;
+            flex-wrap: wrap;
+            padding: 18px;
+        }
+        .box3 .small:nth-child(1),
+        .box3 .small:nth-child(2),
+        .box3 .small:nth-child(3),
+        .box3 .small:nth-child(4) {
+            position: static;
+            width: 55px;
+            height: 55px;
+            display: block;
+            margin: 0;
+            border-radius: 8px;
+        }
+        .box3 .small:nth-child(1) {
+            background: #22c55e;
+        }
+        .box3 .small:nth-child(2) {
+            background: #14b8a6;
+        }
+        .box3 .small:nth-child(3) {
+            background: #3b82f6;
+        }
+        .box3 .small:nth-child(4) {
+            background: #8b5cf6;
+        }
+        .box4 {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 18px;
+        }
+        .box4 .small:nth-child(1) {
+            width: 120px;
+            height: 30px;
+            position: static;
+            background: #ec4899;
+            border-radius: 8px;
+        }
+        .box4 .bottom-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+        .box4 .bottom-row .small {
+            width: 54px;
+            height: 54px;
+            position: static;
+            display: inline-block;
+            border-radius: 8px;
+        }
+        .box4 .bottom-row .small:nth-child(1) {
+            background: #06b6d4;
+        }
+        .box4 .bottom-row .small:last-child {
+            background: #6366f1;
+        }
+    </style>
+</head>
+<body>
+    <h2>1020徐梓轩flex</h2>
+    <ul class="flex">
+        <li class="box1">
+            <span class="small"></span>
+            <span class="small"></span>
+            <span class="small"></span>
+        </li>
+        <li class="box2">
+            <span class="small"></span>
+            <span class="small"></span>
+            <span class="small"></span>
+        </li>
+        <li class="box3">
+            <span class="small"></span>
+            <span class="small"></span>
+            <span class="small"></span>
+            <span class="small"></span>
+        </li>
+        <li class="box4">
+            <span class="small"></span>
+            <div class="bottom-row">
+                <span class="small"></span>
+                <span class="small"></span>
+            </div>
+        </li>
+    </ul>
+</body>
+</html>
