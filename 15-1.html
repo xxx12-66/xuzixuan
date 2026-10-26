@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>数 7 游戏 - 徐梓轩</title>
+<style>
+  body {
+    font-family: "微软雅黑", sans-serif;
+    background: #f0f4f8;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+  }
+  h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+  }
+  .rule {
+    color: #7f8c8d;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(10, 60px);
+    grid-auto-rows: 60px;
+    gap: 6px;
+    justify-content: center;
+    margin: 0 auto;
+  }
+  .box {
+    width: 60px;
+    height: 60px;
+    border: 2px solid #3498db;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: bold;
+    background: #ffffff;
+    color: #2c3e50;
+    transition: transform 0.15s;
+  }
+  .box:hover {
+    transform: scale(1.05);
+  }
+  .box.empty {
+    background: #2c3e50;
+    border-color: #2c3e50;
+  }
+</style>
+</head>
+<body>
+  <h1>徐梓轩</h1>
+  <div class="rule">数 7 规则：7 的倍数 或 个位是 7 → 空盒子</div>
+  <div class="grid" id="grid"></div>
+
+<script>
+  var grid = document.getElementById('grid');
+  for (var i = 1; i <= 100; i++) {
+    var box = document.createElement('div');
+    box.className = 'box';
+    if (i % 7 === 0 || i % 10 === 7) {
+      box.classList.add('empty');
+    } else {
+      box.textContent = i;
+    }
+    grid.appendChild(box);
+  }
+</script>
+</body>
+</html>
