@@ -227,107 +227,16 @@
     <!-- 主体 -->
     <main>
 
-        <!-- 页面导航链接 -->
-        <h2 class="section-title">&#x1F517; 课堂实践页面导航</h2>
-        <div class="card-grid">
-
-            <a class="card" href="./2-1.html">
-                <span class="card-icon">&#x1F4D0;</span>
-                <div class="card-title">2-1 HTML基础元素</div>
-                <div class="card-desc">HTML元素结构：开始标签+内容+结束标签，内容与样式相分离，列表与DIV布局</div>
-                <span class="card-tag">HTML 基础</span>
-            </a>
-
-            <a class="card" href="./2-2.html">
-                <span class="card-icon">&#x1F310;</span>
-                <div class="card-title">2-2 超链接与表格</div>
-                <div class="card-desc">超链接、图片标签、相对路径与绝对路径，大国重器表格展示</div>
-                <span class="card-tag">HTML 进阶</span>
-            </a>
-
-            <a class="card" href="./3-1 form.html">
-                <span class="card-icon">&#x1F4DD;</span>
-                <div class="card-title">3-1 表单Form</div>
-                <div class="card-desc">文本输入、密码、单选、复选、下拉选择、文本域、日期、文件上传与按钮</div>
-                <span class="card-tag">表单</span>
-            </a>
-
-            <a class="card" href="./3-2css.html">
-                <span class="card-icon">&#x1F3A8;</span>
-                <div class="card-title">3-2 CSS层叠样式表</div>
-                <div class="card-desc">CSS选择器：标签选择器、ID选择器、类选择器，CSS属性与样式应用</div>
-                <span class="card-tag">CSS 基础</span>
-            </a>
-
-            <a class="card" href="./4-1.html">
-                <span class="card-icon">&#x2728;</span>
-                <div class="card-title">4-1 CSS群组与后代选择器</div>
-                <div class="card-desc">CSS群组选择器、后代选择器的综合运用，盒模型与排版美化</div>
-                <span class="card-tag">CSS 进阶</span>
-            </a>
-
-            <a class="card" href="./5-1.html">
-                <span class="card-icon">&#x1F4A1;</span>
-                <div class="card-title">5-1 层叠与继承</div>
-                <div class="card-desc">CSS层叠性、继承性，选择器优先级：!important > id > class > tag</div>
-                <span class="card-tag">CSS 优先级</span>
-            </a>
-
-            <a class="card" href="./5-2.html">
-                <span class="card-icon">&#x1F4E6;</span>
-                <div class="card-title">5-2 盒模型</div>
-                <div class="card-desc">CSS盒模型（Box Model）：content、padding、border、margin的运用</div>
-                <span class="card-tag">盒模型</span>
-            </a>
-
-            <a class="card" href="./6-1 flex.html">
-                <span class="card-icon">&#x1F504;</span>
-                <div class="card-title">6-1 Flex弹性布局</div>
-                <div class="card-desc">Flex布局：display:flex、justify-content、align-items、flex-wrap等属性</div>
-                <span class="card-tag">Flex 布局</span>
-            </a>
-
-            <a class="card" href="./6-2.html">
-                <span class="card-icon">&#x1F4CA;</span>
-                <div class="card-title">6-2 Flex布局实战</div>
-                <div class="card-desc">Flex布局实战应用：标题栏布局，flex-grow与定位的综合运用</div>
-                <span class="card-tag">Flex 实战</span>
-            </a>
-
-            <a class="card" href="./7-1上图下文.html">
-                <span class="card-icon">&#x1F5BC;</span>
-                <div class="card-title">7-1 上图下文布局</div>
-                <div class="card-desc">Flex实现上图下文布局：图片上方、文字下方，绝对定位文字覆盖</div>
-                <span class="card-tag">图文布局</span>
-            </a>
-
-            <a class="card" href="./7-2左图右文.html">
-                <span class="card-icon">&#x1F4DD;</span>
-                <div class="card-title">7-2 左图右文布局</div>
-                <div class="card-desc">Flex实现左图右文布局：图片左侧、文字右侧，flex-wrap与flex-grow</div>
-                <span class="card-tag">图文布局</span>
-            </a>
-
-            <a class="card" href="./8-1css3.html">
-                <span class="card-icon">&#x2728;</span>
-                <div class="card-title">8-1 CSS3新特性</div>
-                <div class="card-desc">CSS3新特性：圆角、阴影、渐变、过渡、变换、动画等视觉增强效果</div>
-                <span class="card-tag">CSS3</span>
-            </a>
-
-            <a class="card" href="./9-1.html">
-                <span class="card-icon">&#x1F3AC;</span>
-                <div class="card-title">9-1 CSS3动画</div>
-                <div class="card-desc">CSS3动画与过渡：@keyframes关键帧动画、animation属性、transform变换</div>
-                <span class="card-tag">CSS3 动画</span>
-            </a>
-
-        </div>
+        <!-- 页面导航链接（动态生成） -->
+        <h2 class="section-title">&#x1F517; 课堂实践页面导航 <span id="fileCount" style="font-size:13px;color:#7f7fc0;margin-left:8px;"></span></h2>
+        <div class="card-grid" id="cardGrid"></div>
 
         <!-- 提示词内容 -->
         <div class="prompt-section">
             <h2 class="section-title">&#x1F4CB; 本页面生成提示词</h2>
-            <div class="prompt-box"><span class="label">提示词：</span>"更新首页，包括所有html文件"</div>
+            <div class="prompt-box"><span class="label">提示词：</span>"更新首页，包括所有html文件"
+
+<span class="label">自动更新：</span>已启用 — 每次目录中新增 / 修改 / 删除 html 文件，首页会自动刷新并重新生成卡片（需通过 serve.py 本地服务器访问）</div>
         </div>
 
     </main>
@@ -336,6 +245,157 @@
     <footer>
         &copy; 2026 <span>徐梓轩</span> &mdash; 《高级网页设计》课堂实践 &mdash; All Rights Reserved
     </footer>
+
+    <!-- 自动扫描目录、动态渲染卡片 + 热更新 -->
+    <script>
+    (function () {
+        var GRID = document.getElementById('cardGrid');
+        var COUNT = document.getElementById('fileCount');
+
+        // 离线兜底：当没有 serve.py 的 /files 接口时，用内置清单
+        var FALLBACK = [
+            '2-1.html','2-2.html','3-1 form.html','3-2 css.html','4-1.html',
+            '5-1.html','5-2.html','6-1 flex.html','6-2.html',
+            '7-1上图下文.html','7-2左图右文.html','8-1css3.html','9-1.html',
+            '10-1.html','10-2.html','10-3.html','10-4.html',
+            '12-1.html','12-2.html','15-1.html','15-2.html'
+        ];
+
+        var ICONS = ['📐','🎨','💡','✨','📝','🔧','🚀','📊','🎯','⚡','🧩','🏗️','🌐','📚','🔥','💻','🛠️','🎪','🎭','🎬','📦','🔄'];
+
+        // 文件名 → 标题/描述/标签
+        function parseFile(filename) {
+            var name = filename.replace(/\.html$/i, '');
+            var numMatch = name.match(/^(\d+-\d+)\s*(.*)$/);
+            var prefix = numMatch ? numMatch[1] : '';
+            var suffix = numMatch ? (numMatch[2] || '') : name;
+
+            var kwMap = [
+                { re: /form|表单/i,           t: '表单Form',           d: '文本输入、密码、单选、复选、下拉、文本域、日期、文件与按钮', tag: '表单' },
+                { re: /css3/i,                t: 'CSS3新特性',         d: '圆角、阴影、渐变、过渡、变换、动画等视觉增强',              tag: 'CSS3' },
+                { re: /动画|keyframes/i,       t: 'CSS3动画',           d: '@keyframes 关键帧动画、animation、transform',                tag: 'CSS3 动画' },
+                { re: /javascript|js|程序|结构|条件|循环/i, t: 'JavaScript 程序结构', d: '条件结构（if/switch/三元）+ 循环结构（for/while/for...of）', tag: 'JavaScript' },
+                { re: /flex/i,                t: 'Flex弹性布局',       d: 'display:flex、justify-content、align-items、flex-wrap',     tag: 'Flex 布局' },
+                { re: /盒模型|box/i,           t: '盒模型',             d: 'content、padding、border、margin 的运用',                    tag: '盒模型' },
+                { re: /层叠|继承|优先级/i,      t: '层叠与继承',         d: 'CSS 层叠性、继承性、选择器优先级',                            tag: 'CSS 优先级' },
+                { re: /群组|后代|选择器/i,      t: 'CSS选择器',          d: '群组选择器、后代选择器的综合运用',                             tag: 'CSS 进阶' },
+                { re: /css/i,                 t: 'CSS层叠样式表',      d: 'CSS选择器与样式属性',                                        tag: 'CSS 基础' },
+                { re: /上图下文/i,             t: '上图下文布局',       d: '图片上方、文字下方的图文布局',                                 tag: '图文布局' },
+                { re: /左图右文/i,             t: '左图右文布局',       d: '图片左侧、文字右侧的图文布局',                                 tag: '图文布局' },
+                { re: /超链接|表格/i,           t: '超链接与表格',       d: '超链接、图片、相对路径与绝对路径',                             tag: 'HTML 进阶' },
+                { re: /grid|网格/i,            t: 'Grid网格布局',       d: 'CSS Grid 二维网格布局系统',                                   tag: 'Grid 布局' },
+                { re: /变量|variable/i,        t: 'CSS变量',           d: 'CSS 自定义属性与 var() 函数',                                tag: 'CSS 进阶' },
+                { re: /数7|游戏|规则/i,         t: '数7游戏',           d: '7 的倍数或个位是 7 的空盒子游戏',                             tag: '趣味练习' },
+                { re: /基础|元素/i,             t: 'HTML基础元素',       d: 'HTML 元素结构、列表与 DIV 布局',                              tag: 'HTML 基础' },
+            ];
+
+            var match = null;
+            for (var i = 0; i < kwMap.length; i++) {
+                if (suffix && kwMap[i].re.test(suffix)) { match = kwMap[i]; break; }
+                if (!match && kwMap[i].re.test(name)) { match = kwMap[i]; }
+            }
+
+            var title, desc, tag;
+            if (match) {
+                title = prefix ? (prefix + ' ' + match.t) : match.t;
+                desc  = match.d;
+                tag   = match.tag;
+            } else if (prefix && suffix) {
+                title = prefix + ' ' + suffix; desc = '课堂实践练习'; tag = '课堂实践';
+            } else if (prefix) {
+                title = prefix + ' 课堂实践'; desc = '课堂实践练习'; tag = '课堂实践';
+            } else {
+                title = name || '未命名'; desc = '课堂实践练习'; tag = '课堂实践';
+            }
+
+            // 稳定图标
+            var iconIdx = 0;
+            if (prefix) {
+                var parts = prefix.split('-');
+                iconIdx = (parseInt(parts[0],10)*7 + parseInt(parts[1]||'0',10)*3) % ICONS.length;
+            } else {
+                for (var k=0; k<name.length; k++) iconIdx = (iconIdx + name.charCodeAt(k)) % ICONS.length;
+            }
+
+            return {
+                filename: filename,
+                href: './' + filename,
+                icon: ICONS[iconIdx],
+                title: title,
+                desc: desc,
+                tag: tag
+            };
+        }
+
+        function render(list) {
+            GRID.innerHTML = '';
+            var html = '';
+            list.forEach(function (item) {
+                html +=
+                    '<a class="card" href="' + item.href + '">' +
+                    '<span class="card-icon">' + item.icon + '</span>' +
+                    '<div class="card-title">' + item.title + '</div>' +
+                    '<div class="card-desc">' + item.desc + '</div>' +
+                    '<span class="card-tag">' + item.tag + '</span>' +
+                    '</a>';
+            });
+            GRID.innerHTML = html;
+            COUNT.textContent = '（共 ' + list.length + ' 页）';
+        }
+
+        var currentLatest = 0;
+
+        function loadFromServer() {
+            return fetch('/files', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) { return Object.keys(data).sort(); });
+        }
+
+        function loadFromFallback() {
+            return new Promise(function (resolve) { resolve(FALLBACK.slice().sort()); });
+        }
+
+        function load() {
+            loadFromServer().then(function (names) {
+                render(names.map(parseFile));
+                startHotReload();
+            }).catch(function () {
+                loadFromFallback().then(function (names) {
+                    render(names.map(parseFile));
+                    showFallbackTip();
+                });
+            });
+        }
+
+        function showFallbackTip() {
+            var tip = document.createElement('div');
+            tip.style.cssText = 'grid-column:1/-1;text-align:center;padding:20px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.2);border-radius:10px;color:#a0a0c0;font-size:13px;';
+            tip.innerHTML = '💡 当前为离线清单（' + FALLBACK.length + ' 个文件）。<br>想启用"自动发现 + 热更新"？请在 <code style="color:#b8b8ff;">d:\\VSCode</code> 下运行：<code style="color:#b8b8ff;">python serve.py</code>，然后访问 <code style="color:#b8b8ff;">http://localhost:8000/</code>';
+            GRID.parentNode.insertBefore(tip, GRID.nextSibling);
+        }
+
+        function startHotReload() {
+            fetch('/check-update', { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(function (d) { currentLatest = d.latest || 0; })
+                .catch(function () {});
+
+            setInterval(function () {
+                fetch('/check-update', { cache: 'no-store' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d.latest && d.latest !== currentLatest) {
+                            currentLatest = d.latest;
+                            location.reload();
+                        }
+                    })
+                    .catch(function () {});
+            }, 3000);
+        }
+
+        load();
+    })();
+    </script>
 
 </body>
 </html>
