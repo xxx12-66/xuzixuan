@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>15-2 JavaScript 程序结构 - 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background: #f0f4f8;
+    color: #2c3e50;
+    line-height: 1.8;
+    padding: 30px 20px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 30px; }
+  header h1 {
+    font-size: 32px;
+    color: #2c3e50;
+    margin-bottom: 6px;
+    letter-spacing: 3px;
+  }
+  header h1 span { color: #3498db; }
+  header .sub { color: #7f8c8d; font-size: 14px; letter-spacing: 1px; }
+
+  .section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .section-title {
+    font-size: 20px;
+    color: #3498db;
+    border-left: 4px solid #3498db;
+    padding-left: 12px;
+    margin-bottom: 18px;
+  }
+
+  .demo {
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .demo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafb;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e1e8ed;
+  }
+  .demo-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #2c3e50;
+  }
+  .demo-tag {
+    font-size: 11px;
+    color: #3498db;
+    background: #eaf4fb;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .code {
+    background: #2c3e50;
+    color: #ecf0f1;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 13px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.65;
+  }
+  .code .kw   { color: #e74c3c; font-weight: bold; }
+  .code .str  { color: #2ecc71; }
+  .code .num  { color: #f1c40f; }
+  .code .cm   { color: #7f8c8d; }
+
+  .run-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f8fafb;
+    border-top: 1px solid #e1e8ed;
+    flex-wrap: wrap;
+  }
+  .run-row label { font-size: 13px; color: #555; }
+  .run-row input[type="number"],
+  .run-row input[type="text"],
+  .run-row select {
+    border: 1px solid #ccd5db;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px;
+    width: 120px;
+  }
+  .btn {
+    background: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 7px 18px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn:hover { background: #2980b9; }
+  .btn.gray { background: #7f8c8d; }
+  .btn.gray:hover { background: #5d6d7e; }
+
+  .output {
+    padding: 14px 18px;
+    background: #fff;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 13px;
+    color: #2c3e50;
+    min-height: 40px;
+    max-height: 220px;
+    overflow-y: auto;
+    border-top: 1px dashed #e1e8ed;
+  }
+  .output .ok { color: #27ae60; }
+  .output .info { color: #3498db; }
+  .output .warn { color: #e67e22; }
+  .output .err { color: #c0392b; }
+  .output .sep { color: #bdc3c7; margin: 4px 0; }
+
+  footer {
+    text-align: center;
+    color: #95a5a6;
+    font-size: 13px;
+    margin-top: 20px;
+  }
+  footer span { color: #3498db; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>徐梓轩</span> · JavaScript 程序结构</h1>
+    <p class="sub">条件结构 + 循环结构 —— 点击 "运行" 按钮查看执行结果</p>
+  </header>
+
+  <!-- ============ 第一部分：条件结构 ============ -->
+  <section class="section">
+    <h2 class="section-title">一、条件结构</h2>
+
+    <!-- Demo 1: if / else if / else -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① if / else if / else</span>
+        <span class="demo-tag">条件判断</span>
+      </div>
+<pre class="code"><span class="cm">// 根据分数输出等级</span>
+<span class="kw">var</span> score = <span class="num">85</span>;
+<span class="kw">if</span> (score >= <span class="num">90</span>) {
+    console.<span class="kw">log</span>(<span class="str">"优秀"</span>);
+} <span class="kw">else if</span> (score >= <span class="num">75</span>) {
+    console.<span class="kw">log</span>(<span class="str">"良好"</span>);
+} <span class="kw">else if</span> (score >= <span class="num">60</span>) {
+    console.<span class="kw">log</span>(<span class="str">"及格"</span>);
+} <span class="kw">else</span> {
+    console.<span class="kw">log</span>(<span class="str">"不及格"</span>);
+}</pre>
+      <div class="run-row">
+        <label>分数：</label>
+        <input type="number" id="ifScore" value="85" min="0" max="100">
+        <button class="btn" onclick="runIfElse()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outIf')">清空</button>
+      </div>
+      <div class="output" id="outIf"></div>
+    </div>
+
+    <!-- Demo 2: switch -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">② switch / case</span>
+        <span class="demo-tag">多分支</span>
+      </div>
+<pre class="code"><span class="kw">var</span> day = <span class="num">3</span>;
+<span class="kw">switch</span> (day) {
+    <span class="kw">case</span> <span class="num">1</span>: console.<span class="kw">log</span>(<span class="str">"周一"</span>); <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="num">2</span>: console.<span class="kw">log</span>(<span class="str">"周二"</span>); <span class="kw">break</span>;
+    <span class="kw">case</span> <span class="num">3</span>: console.<span class="kw">log</span>(<span class="str">"周三"</span>); <span class="kw">break</span>;
+    <span class="kw">default</span>: console.<span class="kw">log</span>(<span class="str">"其他"</span>);
+}</pre>
+      <div class="run-row">
+        <label>数字 1-7：</label>
+        <input type="number" id="switchDay" value="3" min="1" max="7">
+        <button class="btn" onclick="runSwitch()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outSwitch')">清空</button>
+      </div>
+      <div class="output" id="outSwitch"></div>
+    </div>
+
+    <!-- Demo 3: 三元运算符 -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">③ 三元运算符 condition ? a : b</span>
+        <span class="demo-tag">简写 if/else</span>
+      </div>
+<pre class="code"><span class="kw">var</span> age = <span class="num">20</span>;
+<span class="kw">var</span> tip = (age >= <span class="num">18</span>) ? <span class="str">"成年人"</span> : <span class="str">"未成年人"</span>;
+console.<span class="kw">log</span>(tip);
+
+<span class="kw">var</span> num = <span class="num">-5</span>;
+<span class="kw">var</span> absVal = (num >= <span class="num">0</span>) ? num : -num;
+console.<span class="kw">log</span>(<span class="str">"绝对值："</span> + absVal);</pre>
+      <div class="run-row">
+        <label>年龄：</label>
+        <input type="number" id="ternaryAge" value="20">
+        <label>数字：</label>
+        <input type="number" id="ternaryNum" value="-5" style="width:90px;">
+        <button class="btn" onclick="runTernary()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outTernary')">清空</button>
+      </div>
+      <div class="output" id="outTernary"></div>
+    </div>
+  </section>
+
+  <!-- ============ 第二部分：循环结构 ============ -->
+  <section class="section">
+    <h2 class="section-title">二、循环结构</h2>
+
+    <!-- Demo 4: for 循环 -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① for 循环（最常用）</span>
+        <span class="demo-tag">计数循环</span>
+      </div>
+<pre class="code"><span class="cm">// 输出 1 到 n</span>
+<span class="kw">for</span> (<span class="kw">var</span> i = <span class="num">1</span>; i <= <span class="num">5</span>; i++) {
+    console.<span class="kw">log</span>(i);
+}
+
+<span class="cm">// 求 1 到 n 的和</span>
+<span class="kw">var</span> sum = <span class="num">0</span>;
+<span class="kw">for</span> (<span class="kw">var</span> j = <span class="num">1</span>; j <= <span class="num">5</span>; j++) {
+    sum += j;
+}
+console.<span class="kw">log</span>(<span class="str">"sum = "</span> + sum);</pre>
+      <div class="run-row">
+        <label>n = </label>
+        <input type="number" id="forN" value="5" min="1" max="100">
+        <button class="btn" onclick="runFor()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outFor')">清空</button>
+      </div>
+      <div class="output" id="outFor"></div>
+    </div>
+
+    <!-- Demo 5: while 循环 -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">② while 循环</span>
+        <span class="demo-tag">条件为真才执行</span>
+      </div>
+<pre class="code"><span class="cm">// 模拟：每次减 3，直到 ≤ 0</span>
+<span class="kw">var</span> n = <span class="num">10</span>;
+<span class="kw">while</span> (n > <span class="num">0</span>) {
+    console.<span class="kw">log</span>(<span class="str">"n = "</span> + n);
+    n -= <span class="num">3</span>;
+}
+console.<span class="kw">log</span>(<span class="str">"结束，n = "</span> + n);</pre>
+      <div class="run-row">
+        <label>初始 n = </label>
+        <input type="number" id="whileN" value="10" min="1">
+        <button class="btn" onclick="runWhile()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outWhile')">清空</button>
+      </div>
+      <div class="output" id="outWhile"></div>
+    </div>
+
+    <!-- Demo 6: do...while -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">③ do...while 循环</span>
+        <span class="demo-tag">至少执行一次</span>
+      </div>
+<pre class="code"><span class="cm">// 先执行一次，再判断条件</span>
+<span class="kw">var</span> x = <span class="num">1</span>;
+<span class="kw">do</span> {
+    console.<span class="kw">log</span>(<span class="str">"x = "</span> + x);
+    x *= <span class="num">2</span>;
+} <span class="kw">while</span> (x < <span class="num">20</span>);</pre>
+      <div class="run-row">
+        <label>初始 x = </label>
+        <input type="number" id="doWhileX" value="1" min="1">
+        <label>停止阈值：</label>
+        <input type="number" id="doWhileLimit" value="20" style="width:90px;">
+        <button class="btn" onclick="runDoWhile()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outDoWhile')">清空</button>
+      </div>
+      <div class="output" id="outDoWhile"></div>
+    </div>
+
+    <!-- Demo 7: for...of 遍历数组 -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">④ for...of 遍历数组</span>
+        <span class="demo-tag">ES6 新语法</span>
+      </div>
+<pre class="code"><span class="kw">var</span> fruits = [<span class="str">"苹果"</span>, <span class="str">"香蕉"</span>, <span class="str">"橙子"</span>, <span class="str">"葡萄"</span>];
+<span class="kw">for</span> (<span class="kw">var</span> fruit <span class="kw">of</span> fruits) {
+    console.<span class="kw">log</span>(fruit);
+}</pre>
+      <div class="run-row">
+        <label>输入一串水果（逗号分隔）：</label>
+        <input type="text" id="forOfList" value="苹果,香蕉,橙子,葡萄" style="width:260px;">
+        <button class="btn" onclick="runForOf()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outForOf')">清空</button>
+      </div>
+      <div class="output" id="outForOf"></div>
+    </div>
+
+    <!-- Demo 8: for...in 遍历对象 -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">⑤ for...in 遍历对象属性</span>
+        <span class="demo-tag">枚举键名</span>
+      </div>
+<pre class="code"><span class="kw">var</span> person = { name: <span class="str">"徐梓轩"</span>, age: <span class="num">20</span>, school: <span class="str">"XX大学"</span> };
+<span class="kw">for</span> (<span class="kw">var</span> key <span class="kw">in</span> person) {
+    console.<span class="kw">log</span>(key + <span class="str">" = "</span> + person[key]);
+}</pre>
+      <div class="run-row">
+        <button class="btn" onclick="runForIn()">▶ 运行（演示对象）</button>
+        <button class="btn gray" onclick="clearOut('outForIn')">清空</button>
+      </div>
+      <div class="output" id="outForIn"></div>
+    </div>
+
+    <!-- Demo 9: break / continue -->
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">⑥ break 和 continue</span>
+        <span class="demo-tag">循环控制</span>
+      </div>
+<pre class="code"><span class="cm">// break：遇到 7 就停止整个循环</span>
+<span class="kw">for</span> (<span class="kw">var</span> i = <span class="num">1</span>; i <= <span class="num">10</span>; i++) {
+    <span class="kw">if</span> (i === <span class="num">7</span>) { console.<span class="kw">log</span>(<span class="str">"break!"</span>); <span class="kw">break</span>; }
+    console.<span class="kw">log</span>(i);
+}
+
+<span class="cm">// continue：跳过偶数，只输出奇数</span>
+<span class="kw">for</span> (<span class="kw">var</span> j = <span class="num">1</span>; j <= <span class="num">10</span>; j++) {
+    <span class="kw">if</span> (j % <span class="num">2</span> === <span class="num">0</span>) <span class="kw">continue</span>;
+    console.<span class="kw">log</span>(j);
+}</pre>
+      <div class="run-row">
+        <button class="btn" onclick="runBreakContinue()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outBC')">清空</button>
+      </div>
+      <div class="output" id="outBC"></div>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 <span>徐梓轩</span> · JavaScript 程序结构演示 · 课堂练习
+  </footer>
+</div>
+
+<script>
+  // ------ 工具函数 ------
+  function clearOut(id) { document.getElementById(id).innerHTML = ''; }
+  function log(id, msg, cls) {
+    var el = document.getElementById(id);
+    var span = document.createElement('span');
+    span.className = cls || 'info';
+    span.textContent = msg;
+    el.appendChild(span);
+    el.appendChild(document.createTextNode('\n'));
+  }
+
+  // ------ 条件结构 ------
+  function runIfElse() {
+    var out = document.getElementById('outIf');
+    out.innerHTML = '';
+    var score = parseInt(document.getElementById('ifScore').value) || 0;
+    var grade;
+    if (score >= 90) grade = '优秀';
+    else if (score >= 75) grade = '良好';
+    else if (score >= 60) grade = '及格';
+    else grade = '不及格';
+    log('outIf', 'score = ' + score + '  →  ' + grade, 'ok');
+  }
+
+  function runSwitch() {
+    var out = document.getElementById('outSwitch');
+    out.innerHTML = '';
+    var day = parseInt(document.getElementById('switchDay').value) || 0;
+    var name;
+    switch (day) {
+      case 1: name = '周一'; break;
+      case 2: name = '周二'; break;
+      case 3: name = '周三'; break;
+      case 4: name = '周四'; break;
+      case 5: name = '周五'; break;
+      case 6: name = '周六'; break;
+      case 7: name = '周日'; break;
+      default: name = '不是 1-7 的数字';
+    }
+    log('outSwitch', 'day ' + day + '  →  ' + name, 'ok');
+  }
+
+  function runTernary() {
+    var out = document.getElementById('outTernary');
+    out.innerHTML = '';
+    var age = parseInt(document.getElementById('ternaryAge').value) || 0;
+    var num = parseInt(document.getElementById('ternaryNum').value) || 0;
+    var tip = (age >= 18) ? '成年人' : '未成年人';
+    var absVal = (num >= 0) ? num : -num;
+    log('outTernary', 'age = ' + age + '  →  ' + tip, 'ok');
+    log('outTernary', '|' + num + '| = ' + absVal, 'info');
+  }
+
+  // ------ 循环结构 ------
+  function runFor() {
+    var out = document.getElementById('outFor');
+    out.innerHTML = '';
+    var n = parseInt(document.getElementById('forN').value) || 1;
+    var sum = 0;
+    var items = [];
+    for (var i = 1; i <= n; i++) {
+      items.push(i);
+      sum += i;
+    }
+    log('outFor', '输出 1~' + n + '：', 'info');
+    log('outFor', items.join(', '), 'ok');
+    log('outFor', '累加和 1 + 2 + ... + ' + n + ' = ' + sum, 'ok');
+  }
+
+  function runWhile() {
+    var out = document.getElementById('outWhile');
+    out.innerHTML = '';
+    var n = parseInt(document.getElementById('whileN').value) || 1;
+    var steps = [];
+    while (n > 0) {
+      steps.push(n);
+      n -= 3;
+      if (steps.length > 20) break;  // 防止死循环
+    }
+    log('outWhile', '每次 -3，过程：' + steps.join(' → ') + ' → ' + n, 'ok');
+  }
+
+  function runDoWhile() {
+    var out = document.getElementById('outDoWhile');
+    out.innerHTML = '';
+    var x = parseInt(document.getElementById('doWhileX').value) || 1;
+    var limit = parseInt(document.getElementById('doWhileLimit').value) || 20;
+    var steps = [];
+    do {
+      steps.push(x);
+      x *= 2;
+      if (steps.length > 20) break;
+    } while (x < limit);
+    steps.push(x + ' (≥ ' + limit + '，停止)');
+    log('outDoWhile', '每次 ×2：' + steps.join(' → '), 'ok');
+  }
+
+  function runForOf() {
+    var out = document.getElementById('outForOf');
+    out.innerHTML = '';
+    var raw = document.getElementById('forOfList').value || '';
+    var fruits = raw.split(/[,，]/).map(function(s){ return s.trim(); }).filter(Boolean);
+    log('outForOf', 'for...of 遍历数组：', 'info');
+    fruits.forEach(function(f, idx){
+      log('outForOf', '  [' + idx + '] ' + f, 'ok');
+    });
+    log('outForOf', '共 ' + fruits.length + ' 项', 'info');
+  }
+
+  function runForIn() {
+    var out = document.getElementById('outForIn');
+    out.innerHTML = '';
+    var person = { name: '徐梓轩', age: 20, school: 'XX大学', major: '高级网页设计' };
+    log('outForIn', 'for...in 遍历 person 对象：', 'info');
+    for (var key in person) {
+      if (Object.prototype.hasOwnProperty.call(person, key)) {
+        log('outForIn', '  ' + key + '  →  ' + person[key], 'ok');
+      }
+    }
+  }
+
+  function runBreakContinue() {
+    var out = document.getElementById('outBC');
+    out.innerHTML = '';
+
+    log('outBC', '--- break：遇到 7 就停止 ---', 'info');
+    for (var i = 1; i <= 10; i++) {
+      if (i === 7) { log('outBC', '  遇到 ' + i + ' → break!', 'warn'); break; }
+      log('outBC', '  ' + i, 'ok');
+    }
+
+    log('outBC', '--- continue：跳过偶数，只输出奇数 ---', 'info');
+    for (var j = 1; j <= 10; j++) {
+      if (j % 2 === 0) continue;
+      log('outBC', '  ' + j, 'ok');
+    }
+  }
+</script>
+</body>
+</html>
