@@ -252,13 +252,18 @@
         var GRID = document.getElementById('cardGrid');
         var COUNT = document.getElementById('fileCount');
 
-        // 离线兜底：当没有 serve.py 的 /files 接口时，用内置清单
+        // 离线兜底：真实创建时间顺序（最旧 → 最新）
         var FALLBACK = [
-            '2-1.html','2-2.html','3-1 form.html','3-2 css.html','4-1.html',
-            '5-1.html','5-2.html','6-1 flex.html','6-2.html',
-            '7-1上图下文.html','7-2左图右文.html','8-1css3.html','9-1.html',
+            '2-1.html','2-2.html',
+            '3-1 form.html','3-2 css.html',
+            '4-1.html',
+            '5-1.html','5-2.html',
+            '6-1 flex.html','6-2.html',
+            '7-1上图下文.html','7-2左图右文.html',
+            '8-1css3.html','9-1.html',
             '10-1.html','10-2.html','10-3.html','10-4.html',
-            '12-1.html','12-2.html','15-1.html','15-2.html'
+            '12-1.html','12-2.html',
+            '15-1.html','15-2.html'
         ];
 
         var ICONS = ['📐','🎨','💡','✨','📝','🔧','🚀','📊','🎯','⚡','🧩','🏗️','🌐','📚','🔥','💻','🛠️','🎪','🎭','🎬','📦','🔄'];
@@ -348,11 +353,17 @@
         function loadFromServer() {
             return fetch('/files', { cache: 'no-store' })
                 .then(function (r) { return r.json(); })
-                .then(function (data) { return Object.keys(data).sort(); });
+                .then(function (data) {
+                    // data = { filename: mtime }，按 mtime 升序（越旧越靠前）
+                    return Object.keys(data).sort(function (a, b) {
+                        return (data[a] || 0) - (data[b] || 0);
+                    });
+                });
         }
 
         function loadFromFallback() {
-            return new Promise(function (resolve) { resolve(FALLBACK.slice().sort()); });
+            // FALLBACK 已按真实创建时间排列，直接返回拷贝
+            return new Promise(function (resolve) { resolve(FALLBACK.slice()); });
         }
 
         function load() {
