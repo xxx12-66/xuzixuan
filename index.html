@@ -263,7 +263,9 @@
             '8-1css3.html','9-1.html',
             '10-1.html','10-2.html','10-3.html','10-4.html',
             '12-1.html','12-2.html',
-            '15-1.html','15-2.html'
+            '15-1.html','15-2.html',
+            '16-1.html','16-2.html','16-3.html','16-4.html',
+            '三级项目.html'
         ];
 
         var ICONS = ['📐','🎨','💡','✨','📝','🔧','🚀','📊','🎯','⚡','🧩','🏗️','🌐','📚','🔥','💻','🛠️','🎪','🎭','🎬','📦','🔄'];
@@ -276,6 +278,11 @@
             var suffix = numMatch ? (numMatch[2] || '') : name;
 
             var kwMap = [
+                { re: /三级项目|闲鱼/i,        t: '三级项目 · 闲鱼首页', d: '闲鱼风格校园闲置互助平台首页：完整布局 + 分类/标签/搜索筛选', tag: '三级项目' },
+                { re: /16-1/,                 t: 'JS 数组方法可视化',   d: 'map、filter、reduce、sort 等数组方法交互演示',              tag: 'JavaScript' },
+                { re: /16-2/,                 t: 'JS 对象与字符串可视化', d: '对象操作与字符串方法交互演示',                              tag: 'JavaScript' },
+                { re: /16-4/,                 t: 'Tab选项卡 · 排行榜',  d: '新浪排行榜 Tab 选项卡切换交互',                                tag: 'JavaScript' },
+                { re: /16-3/,                 t: '商品分类导航',        d: '分类菜单与商品筛选联动',                                       tag: '综合练习' },
                 { re: /form|表单/i,           t: '表单Form',           d: '文本输入、密码、单选、复选、下拉、文本域、日期、文件与按钮', tag: '表单' },
                 { re: /css3/i,                t: 'CSS3新特性',         d: '圆角、阴影、渐变、过渡、变换、动画等视觉增强',              tag: 'CSS3' },
                 { re: /动画|keyframes/i,       t: 'CSS3动画',           d: '@keyframes 关键帧动画、animation、transform',                tag: 'CSS3 动画' },

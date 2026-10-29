@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript 对象 &amp; 字符串可视化 · 16-2</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --bg: #f5f6f8;
+        --card: #fff;
+        --line: #e6e8ec;
+        --text: #1c1f23;
+        --muted: #6b7280;
+        --obj: #7c3aed;
+        --obj-soft: #f3edff;
+        --str: #0ea5e9;
+        --str-soft: #e6f6fe;
+        --ok: #0f9d58;
+        --ok-soft: #e7f7ee;
+        --chg: #b7791f;
+        --chg-soft: #fff7e0;
+        --del: #d64545;
+        --del-soft: #fdecec;
+        --radius: 14px;
+    }
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+        line-height: 1.6;
+        padding-bottom: 50px;
+    }
+    code, pre, .mono { font-family: Consolas, "JetBrains Mono", ui-monospace, monospace; }
+
+    /* ---------- 头部 ---------- */
+    .hero {
+        background: linear-gradient(120deg, #ffffff 0%, #f4efff 50%, #e9f7ff 100%);
+        border-bottom: 1px solid var(--line);
+        padding: 44px 24px 32px;
+    }
+    .hero-inner { max-width: 1180px; margin: 0 auto; }
+    .kicker {
+        display: inline-block; font-size: 12.5px; letter-spacing: 2px;
+        color: var(--obj); background: #fff; border: 1px solid #e2d6ff;
+        border-radius: 20px; padding: 3px 12px; margin-bottom: 14px;
+    }
+    .hero h1 { font-size: 33px; }
+    .hero h1 .o { color: var(--obj); }
+    .hero h1 .s { color: var(--str); }
+    .hero p { margin-top: 10px; color: var(--muted); font-size: 15px; max-width: 800px; }
+
+    /* ---------- 吸顶导航 ---------- */
+    .nav {
+        position: sticky; top: 0; z-index: 30;
+        background: rgba(245,246,248,.93);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+        padding: 11px 24px;
+    }
+    .nav-inner { max-width: 1180px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .nav a {
+        text-decoration: none; font-size: 14px; color: #374151;
+        border: 1px solid var(--line); background: #fff;
+        padding: 6px 16px; border-radius: 999px; transition: .18s;
+    }
+    .nav a.o:hover { border-color: var(--obj); color: var(--obj); }
+    .nav a.s:hover { border-color: var(--str); color: var(--str); }
+    .nav .spacer { flex: 1; }
+    .nav .hint { font-size: 12.5px; color: #98a0aa; }
+
+    /* ---------- 区块 ---------- */
+    section { max-width: 1180px; margin: 0 auto; padding: 30px 24px 0; }
+    .sec-title { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .sec-title .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .sec-title h2 { font-size: 22px; }
+    .sec-title .en { font-size: 12.5px; color: #9aa1ab; letter-spacing: 1px; }
+    .sec-desc { color: var(--muted); font-size: 13.5px; margin: 6px 0 16px; }
+
+    .cols { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; }
+    @media (max-width: 940px) { .cols { grid-template-columns: 1fr; } }
+
+    .card {
+        background: var(--card); border: 1px solid var(--line);
+        border-radius: var(--radius); padding: 18px;
+        box-shadow: 0 1px 2px rgba(16,24,40,.04);
+    }
+    .card h3 { font-size: 15px; margin-bottom: 4px; }
+    .card .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+
+    /* ---------- 対象：对象行 ---------- */
+    .obj-box { border: 1px solid #eee9fb; background: #fcfbff; border-radius: 12px; padding: 12px; }
+    .row {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 7px 9px; border-radius: 8px; font-size: 13.5px;
+        border: 1px solid transparent; transition: .25s;
+    }
+    .row + .row { margin-top: 2px; }
+    .row .k { color: #5b21b6; font-family: Consolas, monospace; flex-shrink: 0; min-width: 66px; }
+    .row .k::after { content: ":"; color: #b8b2c9; margin-left: 2px; }
+    .row .v { color: #1f2937; word-break: break-all; font-family: Consolas, monospace; font-size: 13px; }
+    .row .v.t-str { color: #0f766e; }
+    .row .v.t-num { color: #b45309; }
+    .row .v.t-bool { color: #7c3aed; }
+    .row .v.t-null { color: #9ca3af; }
+    .row .v.t-arr, .row .v.t-obj { color: #6b7280; }
+    .row.add { background: var(--ok-soft); border-color: #a9e0c1; }
+    .row.chg { background: var(--chg-soft); border-color: #f1d391; }
+    .row.del { background: var(--del-soft); border-color: #f2b8b8; }
+    .row.del .k, .row.del .v { text-decoration: line-through; opacity: .75; }
+    .tag {
+        font-size: 10.5px; padding: 0 6px; border-radius: 4px; margin-left: auto;
+        font-weight: 700; flex-shrink: 0; align-self: center;
+    }
+    .tag.a { background: #cdeedb; color: #0b6b3d; }
+    .tag.c { background: #f7e2ac; color: #7a4f06; }
+    .tag.d { background: #f7c9c9; color: #9b2c2c; }
+
+    .nest { display: flex; flex-wrap: wrap; gap: 6px; }
+    .nest .chip {
+        background: #fff; border: 1px solid #e7e2f5; border-radius: 6px;
+        padding: 0 7px; font-size: 12px; color: #4b5563;
+    }
+    .nest .chip b { color: #5b21b6; font-weight: 600; }
+
+    /* ---------- 按钮组 ---------- */
+    .group { margin-bottom: 12px; }
+    .group .gt { font-size: 12px; color: #9aa1ab; letter-spacing: .5px; margin-bottom: 6px; }
+    .btns { display: flex; flex-wrap: wrap; gap: 7px; }
+    .btns button {
+        border: 1px solid var(--line); background: #fff; color: #374151;
+        border-radius: 8px; padding: 6px 11px; font-size: 12.5px;
+        font-family: Consolas, monospace; cursor: pointer; transition: .16s;
+    }
+    .btns.o button:hover { border-color: var(--obj); color: var(--obj); background: #faf7ff; }
+    .btns.s button:hover { border-color: var(--str); color: #0369a1; background: #f2fbff; }
+
+    /* ---------- 结果区 ---------- */
+    .result {
+        margin-top: 6px; border-top: 1px dashed var(--line); padding-top: 12px;
+    }
+    .expr {
+        font-family: Consolas, monospace; font-size: 13px; color: #111;
+        background: #f8f9fb; border: 1px solid #eceef2; border-radius: 8px;
+        padding: 7px 10px; overflow-x: auto; white-space: nowrap;
+    }
+    .expr .op { color: #9aa1ab; }
+    .ret-line { margin-top: 8px; font-size: 13px; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+    .ret-line .rk { color: var(--muted); font-size: 12px; }
+    .ret-line b {
+        font-family: Consolas, monospace; font-weight: 600;
+        background: var(--obj-soft); color: #5b21b6;
+        border-radius: 6px; padding: 1px 8px; word-break: break-all;
+    }
+    .ret-line b.s { background: var(--str-soft); color: #0369a1; }
+    .tip { font-size: 12px; color: #98a0aa; }
+
+    pre.code {
+        margin-top: 9px; background: #1e2430; color: #d7dce6; border-radius: 10px;
+        padding: 11px 13px; font-size: 12.5px; line-height: 1.7;
+        overflow-x: auto; white-space: pre;
+    }
+
+    /* ---------- 字符串字符格 ---------- */
+    .str-input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .str-input-row input {
+        flex: 1; border: 1px solid var(--line); border-radius: 9px;
+        padding: 9px 13px; font-size: 14px; font-family: Consolas, monospace;
+        outline: none; transition: .18s; background: #fff;
+    }
+    .str-input-row input:focus { border-color: var(--str); box-shadow: 0 0 0 3px #e0f3fd; }
+    .str-input-row button {
+        border: 1px solid var(--str); background: var(--str); color: #fff;
+        border-radius: 9px; padding: 0 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+
+    .charcells { display: flex; flex-wrap: wrap; gap: 5px; }
+    .charcell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .charcell .ch {
+        min-width: 30px; height: 34px; padding: 0 6px;
+        display: flex; align-items: center; justify-content: center;
+        border: 1.5px solid #e2e5ea; background: #fff; border-radius: 7px;
+        font-family: Consolas, monospace; font-size: 14px; color: #1f2937;
+        transition: .25s;
+    }
+    .charcell .ch.space { color: #c3c8d0; font-size: 12px; }
+    .charcell .ix { font-size: 10.5px; color: #b0b6bf; font-family: Consolas, monospace; }
+    .charcell .ch.keep { }
+    .charcell .ch.add { background: var(--ok-soft); border-color: #a9e0c1; color: #0b6b3d; }
+    .charcell .ch.chg { background: var(--chg-soft); border-color: #f1d391; color: #7a4f06; }
+    .charcell .ch.pop { animation: pop .32s ease; }
+    @keyframes pop {
+        0% { transform: scale(.7); opacity: .2; }
+        70% { transform: scale(1.09); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    .stat-row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; font-size: 12.5px; color: var(--muted); }
+    .stat-row b { color: var(--str); font-family: Consolas, monospace; }
+
+    .note {
+        margin-top: 14px; background: #fffdf3; border: 1px solid #f3e6bd;
+        border-radius: 10px; padding: 11px 14px; font-size: 12.8px; color: #7a5c14;
+    }
+    .note b { color: #8a5a08; }
+
+    footer { max-width: 1180px; margin: 36px auto 0; padding: 0 24px; text-align: center; color: #9aa1ab; font-size: 12.5px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+    <div class="hero-inner">
+        <span class="kicker">FEATURE · 16-2</span>
+        <h1>JavaScript <span class="o">对象</span> 与 <span class="s">字符串</span> 可视化</h1>
+        <p>左边是“数据长什么样”，右边是“对它做了什么”——点按钮就能看到对象的属性怎么被读取/新增/改写/删除，字符串的每个字符怎么被切开、替换、补齐。</p>
+    </div>
+</header>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <a href="#obj" class="o">① 对象 Object</a>
+        <a href="#str" class="s">② 字符串 String</a>
+        <span class="spacer"></span>
+        <span class="hint">绿色＝新增　橙色＝改写　红色删除线＝删除</span>
+    </div>
+</nav>
+
+<!-- ==================== 对象 ==================== -->
+<section id="obj">
+    <div class="sec-title">
+        <span class="dot" style="background:var(--obj)"></span>
+        <h2>对象 Object</h2>
+        <span class="en">键值对集合</span>
+    </div>
+    <p class="sec-desc">对象用 <code>{ 键: 值 }</code> 描述一个“东西”。下面是本次演示用的对象，点右侧任意按钮，观察它的变化。</p>
+
+    <div class="cols">
+        <div class="card">
+            <h3>当前对象 <span class="mono" style="color:#9aa1ab">obj</span></h3>
+            <p class="sub">每个键（紫色）对应一个值，值按类型着色：字符串<span style="color:#0f766e">青</span>、数字<span style="color:#b45309">橙</span>、布尔<span style="color:var(--obj)">紫</span>。</p>
+            <div class="obj-box" id="objView"></div>
+            <div class="stat-row">
+                <span>属性个数 <b id="objCount">6</b></span>
+                <span>JSON 长度 <b id="objJsonLen">0</b></span>
+                <span><button id="objReset" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:1px 9px;font-size:12px;cursor:pointer;">重置对象</button></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>对对象做点什么</h3>
+            <p class="sub">按钮上写的就是真实代码，点一下看返回值和对象的变化。</p>
+
+            <div class="group">
+                <div class="gt">读取属性</div>
+                <div class="btns o" data-group="read">
+                    <button data-op="dot">obj.name</button>
+                    <button data-op="bracket">obj['price']</button>
+                    <button data-op="nested">obj.seller.nick</button>
+                    <button data-op="optional">obj.seller?.avatar ?? '暂无'</button>
+                    <button data-op="in">'price' in obj</button>
+                </div>
+            </div>
+
+            <div class="group">
+                <div class="gt">新增 / 修改 / 删除</div>
+                <div class="btns o" data-group="edit">
+                    <button data-op="add">obj.stock = 3</button>
+                    <button data-op="edit">obj.price = 4599</button>
+                    <button data-op="del">delete obj.onSale</button>
+                </div>
+            </div>
+
+            <div class="group">
+                <div class="gt">遍历 / 转换 / 拷贝</div>
+                <div class="btns o" data-group="tool">
+                    <button data-op="keys">Object.keys(obj)</button>
+                    <button data-op="values">Object.values(obj)</button>
+                    <button data-op="entries">Object.entries(obj)</button>
+                    <button data-op="assign">Object.assign({}, obj)</button>
+                    <button data-op="spread">{ ...obj } 浅拷贝</button>
+                    <button data-op="deep">JSON 深拷贝</button>
+                    <button data-op="freeze">Object.freeze(obj)</button>
+                </div>
+            </div>
+
+            <div class="result">
+                <div class="expr"><span class="op">表达式：</span><span id="objExpr">点上面的按钮试试 →</span></div>
+                <pre class="code" id="objCode">// 这里会显示对应代码</pre>
+                <div class="ret-line"><span class="rk">返回值</span><b id="objRet">—</b><span class="tip" id="objTip"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="note">
+        <b>易混淆点：</b>① <code>obj.name</code> 与 <code>obj['name']</code> 等价，但方括号可以放变量：<code>obj[key]</code>；
+        ② <code>{ ...obj }</code> 是<b>浅拷贝</b>，嵌套对象仍指向同一块内存，改拷贝里的 <code>seller</code> 会连原对象一起变；
+        ③ <code>JSON.parse(JSON.stringify(obj))</code> 才是深拷贝，但它会丢掉函数、undefined 和 Date 类型。
+    </div>
+</section>
+
+<!-- ==================== 字符串 ==================== -->
+<section id="str">
+    <div class="sec-title">
+        <span class="dot" style="background:var(--str)"></span>
+        <h2>字符串 String</h2>
+        <span class="en">不可变的字符序列</span>
+    </div>
+    <p class="sec-desc">字符串一旦创建就不能被修改，所有方法都<b>返回新的字符串</b>，原字符串纹丝不动。下面把每个字符拆成格子，方便看清索引和切分结果。</p>
+
+    <div class="cols">
+        <div class="card">
+            <h3>原字符串 <span class="mono" style="color:#9aa1ab">str</span></h3>
+            <p class="sub">格子上方是字符（空格显示为 ␣），下方是该字符的索引，从 0 开始。</p>
+            <div class="str-input-row">
+                <input id="strInput" value="  Hello 闲鱼 JavaScript  " spellcheck="false">
+                <button id="strApply">应用</button>
+            </div>
+            <div class="charcells" id="strCells"></div>
+            <div class="stat-row">
+                <span>length <b id="strLen">0</b></span>
+                <span>首字符 <b id="strFirst">—</b></span>
+                <span>末字符 <b id="strLast">—</b></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>常用字符串方法</h3>
+            <p class="sub">点一下，下方会显示执行后的新字符串（变化部分高亮）。</p>
+
+            <div class="group">
+                <div class="gt">截取 / 切分</div>
+                <div class="btns s">
+                    <button data-sop="slice">slice(2, 7)</button>
+                    <button data-sop="substring">substring(7, 2)</button>
+                    <button data-sop="split">split(' ')</button>
+                    <button data-sop="chars">[...str]</button>
+                </div>
+            </div>
+            <div class="group">
+                <div class="gt">查找 / 判断</div>
+                <div class="btns s">
+                    <button data-sop="includes">includes('闲鱼')</button>
+                    <button data-sop="indexOf">indexOf('Java')</button>
+                    <button data-sop="startsWith">startsWith('  He')</button>
+                    <button data-sop="at">at(-1)</button>
+                </div>
+            </div>
+            <div class="group">
+                <div class="gt">替换 / 变形 / 补齐</div>
+                <div class="btns s">
+                    <button data-sop="replace">replace('Java','JS')</button>
+                    <button data-sop="replaceAll">replaceAll(' ','-')</button>
+                    <button data-sop="trim">trim()</button>
+                    <button data-sop="upper">toUpperCase()</button>
+                    <button data-sop="repeat">repeat(2)</button>
+                    <button data-sop="padStart">padStart(24,'*')</button>
+                    <button data-sop="template">模板字符串</button>
+                </div>
+            </div>
+
+            <div class="result">
+                <div class="expr"><span class="op">表达式：</span><span id="strExpr">点上面的按钮试试 →</span></div>
+                <pre class="code" id="strCode">// 这里会显示对应代码</pre>
+                <div class="ret-line"><span class="rk">返回值</span><b class="s" id="strRet">—</b><span class="tip" id="strTip"></span></div>
+                <div class="charcells" id="strResult" style="margin-top:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="note">
+        <b>易混淆点：</b>① <code>slice(2,7)</code> 与 <code>substring(7,2)</code> 结果相同，因为 substring 会自动交换两个参数，且不接受负数；
+        ② <code>replace</code> 只替换第一处，要全部替换得用 <code>replaceAll</code> 或正则 <code>/x/g</code>；
+        ③ <code>[...str]</code> 按“字符”拆（能正确处理 emoji），<code>split('')</code> 按 UTF-16 码元拆，遇到 emoji 会被拆坏。
+    </div>
+</section>
+
+<footer>© 2026 高级网页设计I · 16-2 对象与字符串演示</footer>
+
+<script>
+/* =====================================================================
+   一、对象部分
+   ===================================================================== */
+var BASE_OBJ = {
+    id: 1001,
+    name: 'iPhone 15',
+    price: 4999,
+    tags: ['数码', '手机'],
+    seller: { nick: '闲小鱼', level: 5 },
+    onSale: true
+};
+
+var current = null;   // 当前对象
+var frozen = false;   // 是否已被 freeze
+
+function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
+
+function typeOf(v) {
+    if (v === null) return 't-null';
+    if (Array.isArray(v)) return 't-arr';
+    switch (typeof v) {
+        case 'string': return 't-str';
+        case 'number': return 't-num';
+        case 'boolean': return 't-bool';
+        case 'object': return 't-obj';
+        default: return '';
+    }
+}
+
+function showVal(v) {
+    if (typeof v === 'string') return '"' + v + '"';
+    if (v === null) return 'null';
+    if (typeof v === 'undefined') return 'undefined';
+    if (Array.isArray(v)) return 'Array[' + v.length + ']';
+    if (typeof v === 'object') return 'Object{' + Object.keys(v).length + '}';
+    return String(v);
+}
+
+// 渲染对象（可带 diff 状态）
+function renderObject(rows) {
+    var view = document.getElementById('objView');
+    if (!rows) {
+        rows = Object.keys(current).map(function (k) {
+            return { k: k, v: current[k], st: 'keep' };
+        });
+    }
+    view.innerHTML = rows.map(function (r) {
+        var tagTxt = r.st === 'add' ? '新增' : (r.st === 'chg' ? '改写' : (r.st === 'del' ? '删除' : ''));
+        var tagCls = r.st === 'add' ? 'a' : (r.st === 'chg' ? 'c' : 'd');
+        var valHTML;
+        if (r.v && typeof r.v === 'object' && !Array.isArray(r.v)) {
+            valHTML = '<span class="nest">' + Object.keys(r.v).map(function (ik) {
+                return '<span class="chip"><b>' + ik + '</b> ' + showVal(r.v[ik]) + '</span>';
+            }).join('') + '</span>';
+        } else if (Array.isArray(r.v)) {
+            valHTML = '<span class="nest">' + r.v.map(function (x) {
+                return '<span class="chip">' + showVal(x) + '</span>';
+            }).join('') + '</span>';
+        } else {
+            valHTML = '<span class="v ' + typeOf(r.v) + '">' + showVal(r.v) + '</span>';
+        }
+        return '<div class="row ' + (r.st !== 'keep' ? r.st : '') + '">'
+             +   '<span class="k">' + r.k + '</span>'
+             +   valHTML
+             +   (tagTxt ? '<span class="tag ' + tagCls + '">' + tagTxt + '</span>' : '')
+             + '</div>';
+    }).join('');
+    document.getElementById('objCount').textContent = Object.keys(current).length;
+    document.getElementById('objJsonLen').textContent = JSON.stringify(current).length;
+}
+
+// 对比前后对象，生成带状态的 rows
+function diffObject(before, after) {
+    var rows = [];
+    Object.keys(before).forEach(function (k) {
+        if (!(k in after)) {
+            rows.push({ k: k, v: before[k], st: 'del' });
+        } else if (JSON.stringify(before[k]) !== JSON.stringify(after[k])) {
+            rows.push({ k: k, v: after[k], st: 'chg' });
+        } else {
+            rows.push({ k: k, v: after[k], st: 'keep' });
+        }
+    });
+    Object.keys(after).forEach(function (k) {
+        if (!(k in before)) rows.push({ k: k, v: after[k], st: 'add' });
+    });
+    return rows;
+}
+
+/* ---------- 操作定义 ---------- */
+var OPS = {
+    dot: {
+        expr: 'obj.name', code: "const obj = { id: 1001, name: 'iPhone 15', … };\nobj.name;   // 'iPhone 15'",
+        run: function (o) { return { ret: o.name, tip: '点号后直接写属性名，最常用' }; }
+    },
+    bracket: {
+        expr: "obj['price']", code: "obj['price'];   // 4999\nconst key = 'price';\nobj[key];       // 方括号可以放变量",
+        run: function (o) { return { ret: o['price'], tip: '方括号里可以放变量或表达式' }; }
+    },
+    nested: {
+        expr: 'obj.seller.nick', code: "obj.seller.nick;   // '闲小鱼'",
+        run: function (o) { return { ret: o.seller.nick, tip: '一层层往下点，拿到嵌套对象里的值' }; }
+    },
+    optional: {
+        expr: "obj.seller?.avatar ?? '暂无'", code: "obj.seller?.avatar ?? '暂无';\n// seller 没有 avatar → 返回 '暂无'，且不会报错",
+        run: function (o) {
+            var v = o.seller ? o.seller.avatar : undefined;
+            return { ret: (v === undefined || v === null) ? '暂无' : v, tip: '?. 遇到 undefined 立刻停下，?? 提供兜底值' };
+        }
+    },
+    in: {
+        expr: "'price' in obj", code: "'price' in obj;    // true\n'stock' in obj;    // false",
+        run: function (o) { return { ret: 'price' in o, tip: 'in 判断的是“键是否存在”，不是值是否为真' }; }
+    },
+    add: {
+        expr: 'obj.stock = 3', code: "obj.stock = 3;   // 新键直接赋值就是新增",
+        run: function (o) { o.stock = 3; return { ret: 3, tip: '原本没有 stock，赋值后对象多出一个键' }; }
+    },
+    edit: {
+        expr: 'obj.price = 4599', code: "obj.price = 4599;   // 已存在的键 → 覆盖",
+        run: function (o) { o.price = 4599; return { ret: 4599, tip: '键已存在，赋值就是修改' }; }
+    },
+    del: {
+        expr: 'delete obj.onSale', code: "delete obj.onSale;   // 返回 true",
+        run: function (o) { var r = delete o.onSale; return { ret: r, tip: 'delete 成功后返回 true，键从对象上消失' }; }
+    },
+    keys: {
+        expr: 'Object.keys(obj)', code: "Object.keys(obj);\n// ['id', 'name', 'price', 'tags', 'seller']",
+        run: function (o) { return { ret: Object.keys(o), tip: '返回所有键组成的数组' }; }
+    },
+    values: {
+        expr: 'Object.values(obj)', code: "Object.values(obj);\n// [1001, 'iPhone 15', 4999, [...], {...}]",
+        run: function (o) { return { ret: Object.values(o), tip: '返回所有值组成的数组' }; }
+    },
+    entries: {
+        expr: 'Object.entries(obj)', code: "Object.entries(obj);\n// [['id', 1001], ['name', 'iPhone 15'], …]\n// 常配合 for (const [k, v] of Object.entries(obj))",
+        run: function (o) { return { ret: Object.entries(o), tip: '返回 [键, 值] 二元组，遍历最方便' }; }
+    },
+    assign: {
+        expr: 'Object.assign({}, obj)', code: "Object.assign({}, obj);            // 浅拷贝\nObject.assign({}, obj, { price: 3999 }); // 拷贝并覆盖",
+        run: function (o) {
+            var copy = Object.assign({}, o);
+            return { ret: copy, tip: '第一个参数是目标对象，后面的对象依次合并进去' };
+        }
+    },
+    spread: {
+        expr: '{ ...obj }', code: "const copy = { ...obj };\ncopy === obj;            // false\ncopy.seller === obj.seller; // true ← 嵌套对象是同一个引用（浅拷贝）",
+        run: function (o) {
+            var copy = Object.assign({}, o);
+            return { ret: copy, tip: '浅拷贝：外层是新的，seller 仍指向同一个对象' };
+        }
+    },
+    deep: {
+        expr: 'JSON.parse(JSON.stringify(obj))', code: "const deep = JSON.parse(JSON.stringify(obj));\ndeep.seller === obj.seller;  // false ← 真正独立\n// 缺点：函数、undefined、Date 会丢失",
+        run: function (o) {
+            var d = deepClone(o);
+            return { ret: d, tip: '深拷贝：嵌套对象也全新创建，互不影响' };
+        }
+    },
+    freeze: {
+        expr: 'Object.freeze(obj); obj.price = 0', code: "Object.freeze(obj);\nobj.price = 0;\nobj.price;   // 4999 ← 冻结后改不动（严格模式会报错）",
+        run: function (o) {
+            Object.freeze(o);
+            frozen = true;
+            var old = o.price;
+            try { o.price = 0; } catch (e) { }
+            return { ret: o.price, tip: '冻结前价格是 ' + old + '，赋值无效，仍是 ' + o.price };
+        }
+    }
+};
+
+function runOp(name) {
+    var op = OPS[name];
+    if (!op) return;
+    var before = deepClone(current);
+    var r = op.run(current);
+    var after = deepClone(current);
+
+    renderObject(diffObject(before, after));
+
+    document.getElementById('objExpr').textContent = op.expr;
+    document.getElementById('objCode').textContent = op.code;
+    var retBox = document.getElementById('objRet');
+    retBox.textContent = fmtRet(r.ret);
+    document.getElementById('objTip').textContent = r.tip || '';
+}
+
+function fmtRet(v) {
+    if (typeof v === 'undefined') return 'undefined';
+    if (v === null) return 'null';
+    if (typeof v === 'string') return '"' + v + '"';
+    if (typeof v === 'object') {
+        try { return JSON.stringify(v); } catch (e) { return String(v); }
+    }
+    return String(v);
+}
+
+document.querySelectorAll('.btns[data-group]').forEach(function (box) {
+    box.addEventListener('click', function (e) {
+        var btn = e.target.closest('button');
+        if (!btn) return;
+        runOp(btn.dataset.op);
+    });
+});
+
+document.getElementById('objReset').addEventListener('click', function () {
+    current = deepClone(BASE_OBJ);
+    frozen = false;
+    renderObject(null);
+    document.getElementById('objExpr').textContent = '点上面的按钮试试 →';
+    document.getElementById('objCode').textContent = '// 这里会显示对应代码';
+    document.getElementById('objRet').textContent = '—';
+    document.getElementById('objTip').textContent = '';
+});
+
+/* =====================================================================
+   二、字符串部分
+   ===================================================================== */
+var str = document.getElementById('strInput').value;
+
+var SOPS = {
+    slice: {
+        expr: 'str.slice(2, 7)', code: "str.slice(2, 7);    // 从索引 2 开始，到 7 之前（不含 7）\nstr.slice(-3);     // 从倒数第 3 个到末尾",
+        run: function (s) { return { ret: s.slice(2, 7), tip: '支持负数索引，左闭右开' }; }
+    },
+    substring: {
+        expr: 'str.substring(7, 2)', code: "str.substring(7, 2);  // 自动交换成 (2, 7)\n// 结果与 slice(2, 7) 相同，但 substring 不接受负数",
+        run: function (s) { return { ret: s.substring(7, 2), tip: '参数写反了会自动交换' }; }
+    },
+    split: {
+        expr: "str.split(' ')", code: "str.split(' ');   // 按空格切成数组\nstr.split('');    // 按码元切（emoji 会被拆坏）",
+        run: function (s) { return { ret: s.split(' '), tip: '返回数组，不是字符串' }; }
+    },
+    chars: {
+        expr: '[...str]', code: "[...str];   // 按“字符”拆成数组，emoji 不会被拆坏",
+        run: function (s) { return { ret: Array.from(s), tip: '展开运算符按码点遍历，比 split("") 安全' }; }
+    },
+    includes: {
+        expr: "str.includes('闲鱼')", code: "str.includes('闲鱼');   // true\nstr.includes('闲鱼', 8); // 从索引 8 开始找",
+        run: function (s) { return { ret: s.includes('闲鱼'), tip: '返回布尔值，做条件判断最直观' }; }
+    },
+    indexOf: {
+        expr: "str.indexOf('Java')", code: "str.indexOf('Java');   // 9\nstr.indexOf('Python'); // -1",
+        run: function (s) { return { ret: s.indexOf('Java'), tip: '找不到返回 -1' }; }
+    },
+    startsWith: {
+        expr: "str.startsWith('  He')", code: "str.startsWith('  He');  // true\nstr.endsWith('  ');     // true",
+        run: function (s) { return { ret: s.startsWith('  He'), tip: '注意开头两个空格也算在匹配里' }; }
+    },
+    at: {
+        expr: 'str.at(-1)', code: "str.at(-1);   // 最后一个字符\nstr.at(-2);   // 倒数第二个",
+        run: function (s) { return { ret: s.at(-1), tip: 'at 支持负索引，charAt 不支持' }; }
+    },
+    replace: {
+        expr: "str.replace('Java','JS')", code: "str.replace('Java', 'JS');   // 只替换第一处\nstr.replace(/\\s+/g, '');   // 正则全局替换，去掉所有空白",
+        run: function (s) { return { ret: s.replace('Java', 'JS'), tip: 'replace 默认只换第一个匹配' }; }
+    },
+    replaceAll: {
+        expr: "str.replaceAll(' ','-')", code: "str.replaceAll(' ', '-');   // 所有空格变短横线",
+        run: function (s) { return { ret: s.replaceAll(' ', '-'), tip: 'replaceAll 不需要正则就能全局替换' }; }
+    },
+    trim: {
+        expr: 'str.trim()', code: "str.trim();       // 去掉首尾空白\nstr.trimStart();  // 只去开头\nstr.trimEnd();    // 只去结尾",
+        run: function (s) { return { ret: s.trim(), tip: '表单输入去除空格最常用' }; }
+    },
+    upper: {
+        expr: 'str.toUpperCase()', code: "str.toUpperCase();   // 转大写\nstr.toLowerCase();   // 转小写",
+        run: function (s) { return { ret: s.toUpperCase(), tip: '只影响字母，中文和空格不变' }; }
+    },
+    repeat: {
+        expr: 'str.repeat(2)', code: "str.repeat(2);   // 重复两次\n'-'.repeat(20);  // 画分隔线",
+        run: function (s) { return { ret: s.repeat(2), tip: '参数是次数，必须是非负整数' }; }
+    },
+    padStart: {
+        expr: "str.padStart(24,'*')", code: "str.padStart(24, '*');   // 不足 24 位就在前面补 *\n'7'.padStart(2, '0');  // '07' 常见于日期补零",
+        run: function (s) { return { ret: s.padStart(24, '*'), tip: 'padEnd 则是在末尾补' }; }
+    },
+    template: {
+        expr: '`编号：${id}，名称：${name}`', code: "const id = 1001, name = 'iPhone 15';\n`编号：${id}，名称：${name}`;\n// 模板字符串用反引号，${} 里可以写任意表达式，还能直接换行",
+        run: function () {
+            var o = current;
+            return { ret: '编号：' + o.id + '，名称：' + o.name, tip: '结果取自左侧当前对象的 id 与 name' };
+        }
+    }
+};
+
+// 渲染字符格
+function renderCells(box, text, states, animate) {
+    if (!text) { box.innerHTML = '<span style="color:#b0b6bf;font-size:12.5px">（空字符串）</span>'; return; }
+    var html = '';
+    for (var i = 0; i < text.length; i++) {
+        var ch = text[i];
+        var isSpace = ch === ' ';
+        var st = states ? states[i] : 'keep';
+        html += '<div class="charcell">'
+             +    '<div class="ch ' + st + (isSpace ? ' space' : '') + (animate && st !== 'keep' ? ' pop' : '') + '">'
+             +      (isSpace ? '␣' : escapeHTML(ch))
+             +    '</div>'
+             +    '<div class="ix">' + i + '</div>'
+             +  '</div>';
+    }
+    box.innerHTML = html;
+}
+
+// 字符级 diff：公共前后缀之外的部分标记为变化
+function charDiff(base, out) {
+    var p = 0;
+    while (p < base.length && p < out.length && base[p] === out[p]) p++;
+    var s = 0;
+    while (s < base.length - p && s < out.length - p &&
+           base[base.length - 1 - s] === out[out.length - 1 - s]) s++;
+    var states = [];
+    for (var i = 0; i < out.length; i++) {
+        states.push((i < p || i >= out.length - s) ? 'keep' : 'chg');
+    }
+    return states;
+}
+
+function escapeHTML(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderStrBase() {
+    str = document.getElementById('strInput').value;
+    renderCells(document.getElementById('strCells'), str, null, false);
+    document.getElementById('strLen').textContent = str.length;
+    document.getElementById('strFirst').textContent = str.length ? '"' + str[0] + '"' : '—';
+    document.getElementById('strLast').textContent = str.length ? '"' + str.at(-1) + '"' : '—';
+}
+
+function runSop(name) {
+    var op = SOPS[name];
+    if (!op) return;
+    if (!str) { renderStrBase(); }
+    var r = op.run(str);
+    document.getElementById('strExpr').textContent = op.expr;
+    document.getElementById('strCode').textContent = op.code;
+
+    var retBox = document.getElementById('strRet');
+    retBox.textContent = (typeof r.ret === 'string') ? '"' + r.ret + '"' : fmtRet(r.ret);
+    document.getElementById('strTip').textContent = r.tip || '';
+
+    var outBox = document.getElementById('strResult');
+    if (typeof r.ret === 'string') {
+        renderCells(outBox, r.ret, charDiff(str, r.ret), true);
+    } else if (Array.isArray(r.ret)) {
+        outBox.innerHTML = r.ret.map(function (x) {
+            return '<div class="charcell"><div class="ch add pop">' + (x === ' ' ? '␣' : escapeHTML(String(x))) + '</div>'
+                 + '<div class="ix">' + (x === ' ' ? 'sp' : '·') + '</div></div>';
+        }).join('');
+    } else {
+        outBox.innerHTML = '<span style="font-size:13px;color:#374151;font-family:Consolas,monospace">'
+                         + escapeHTML(fmtRet(r.ret)) + '</span>';
+    }
+}
+
+document.querySelectorAll('.btns.s').forEach(function (box) {
+    box.addEventListener('click', function (e) {
+        var btn = e.target.closest('button');
+        if (!btn) return;
+        runSop(btn.dataset.sop);
+    });
+});
+
+document.getElementById('strApply').addEventListener('click', function () {
+    renderStrBase();
+    document.getElementById('strResult').innerHTML = '';
+    document.getElementById('strExpr').textContent = '点上面的按钮试试 →';
+    document.getElementById('strCode').textContent = '// 这里会显示对应代码';
+    document.getElementById('strRet').textContent = '—';
+    document.getElementById('strTip').textContent = '';
+});
+
+document.getElementById('strInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('strApply').click();
+});
+
+/* ===================== 初始化 ===================== */
+current = deepClone(BASE_OBJ);
+renderObject(null);
+renderStrBase();
+</script>
+</body>
+</html>

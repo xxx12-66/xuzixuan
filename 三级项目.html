@@ -563,7 +563,7 @@ function renderGoods() {
     });
     var grid = document.getElementById('goodsGrid');
     if (list.length === 0) {
-        grid.innerHTML = '<div class="empty-tip">🈳 没有找到相关宝贝，换个分类或标签试试吧</div>';
+        grid.innerHTML = '<div class="empty-tip">[表情] 没有找到相关宝贝，换个分类或标签试试吧</div>';
     } else {
         grid.innerHTML = list.map(cardHTML).join('');
     }

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新浪排行榜 · Tab选项卡 · 16-4</title>
+<style>
+    /* 全局样式重置 */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body {
+        background: #f5f5f5;
+        color: #1a1a1a;
+        font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+    }
+
+    /* ========== 排行榜面板 ========== */
+    .rank-panel {
+        width: 580px;
+        max-width: 100%;
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        padding: 0 22px 12px;
+    }
+
+    /* 头部：左侧标题 + 右侧Tab选项卡 */
+    .rank-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        border-bottom: 2px solid #e5e5e5;
+        padding: 18px 0 0;
+    }
+    .rank-title {
+        font-size: 26px;
+        font-weight: 700;
+        color: #333;
+        letter-spacing: 1px;
+        padding-bottom: 10px;
+    }
+
+    /* Tab 选项卡按钮 */
+    .tab-list {
+        display: flex;
+        list-style: none;
+    }
+    .tab-item {
+        min-width: 56px;
+        padding: 8px 14px 10px;
+        text-align: center;
+        font-size: 16px;
+        color: #333;
+        background: #f7f7f7;
+        border: 1px solid #e5e5e5;
+        border-bottom: none;
+        margin-left: -1px;
+        cursor: pointer;
+        position: relative;
+        transition: color .18s ease, background .18s ease;
+        user-select: none;
+    }
+    .tab-item:hover {
+        color: #db0a20;
+    }
+    /* 当前选中的选项卡：白底红字，盖住下方边框线 */
+    .tab-item.active {
+        color: #db0a20;
+        font-weight: 700;
+        background: #fff;
+    }
+    .tab-item.active::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: -2px;
+        width: 100%;
+        height: 3px;
+        background: #db0a20;
+    }
+
+    /* ========== 排行列表 ========== */
+    .rank-content {
+        padding-top: 6px;
+    }
+    /* 面板切换动画 */
+    .rank-list {
+        display: none;
+        list-style: none;
+    }
+    .rank-list.show {
+        display: block;
+        animation: fadeIn .3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .rank-list li {
+        display: flex;
+        align-items: center;
+        height: 44px;
+        border-bottom: 1px dashed #eee;
+        overflow: hidden;
+    }
+    .rank-list li:last-child { border-bottom: none; }
+
+    /* 排名徽标：前三名红底白字，其余灰底 */
+    .rank-no {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        margin-right: 12px;
+        background: #b0b0b0;
+        color: #fff;
+        font-size: 13px;
+        line-height: 20px;
+        text-align: center;
+        border-radius: 3px;
+    }
+    .rank-no.top { background: #db0a20; }
+
+    .rank-list li a {
+        color: #333;
+        font-size: 15px;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: color .18s ease;
+    }
+    .rank-list li a:hover {
+        color: #db0a20;
+        text-decoration: underline;
+    }
+
+    /* ========== 小屏适配 ========== */
+    @media (max-width: 560px) {
+        .rank-title { font-size: 20px; }
+        .tab-item { min-width: 44px; padding: 6px 8px; font-size: 14px; }
+        .rank-list li { height: 40px; }
+        .rank-list li a { font-size: 14px; }
+    }
+</style>
+</head>
+<body>
+
+    <!-- ========== 排行榜 Tab选项卡面板 ========== -->
+    <div class="rank-panel">
+
+        <!-- 头部：标题 + 选项卡 -->
+        <div class="rank-header">
+            <h2 class="rank-title">排行榜</h2>
+            <ul class="tab-list" id="tabList">
+                <li class="tab-item active" data-tab="news">新闻</li>
+                <li class="tab-item" data-tab="stock">证券</li>
+                <li class="tab-item" data-tab="money">理财</li>
+                <li class="tab-item" data-tab="blog">博客</li>
+            </ul>
+        </div>
+
+        <!-- 内容区：与选项卡一一对应的面板 -->
+        <div class="rank-content" id="rankContent">
+
+            <!-- 面板1：新闻 -->
+            <ul class="rank-list show" id="news">
+                <li><span class="rank-no top">1</span><a href="#">构建“股市+债市”稳市机制！央行新工具来了</a></li>
+                <li><span class="rank-no top">2</span><a href="#">美媒：美军已准备好再打击伊朗 特朗普或中期选举后</a></li>
+                <li><span class="rank-no top">3</span><a href="#">姆巴佩发表涉中国不当言论，多家品牌终止合作，媒</a></li>
+                <li><span class="rank-no">4</span><a href="#">东鹏饮料集团：零容忍伤害民族感情行为，终止与姆</a></li>
+                <li><span class="rank-no">5</span><a href="#">300672，业绩暴增超5600%！10股业绩大增（附股）</a></li>
+                <li><span class="rank-no">6</span><a href="#">史上最大IPO要来了！7位创始人身价均超130亿美元</a></li>
+                <li><span class="rank-no">7</span><a href="#">外交部：对英国警方任意、过度执法行为表示强烈不</a></li>
+                <li><span class="rank-no">8</span><a href="#">1000000美元！特朗普重金悬赏</a></li>
+                <li><span class="rank-no">9</span><a href="#">张一鸣以6700亿元刷新中国首富财富纪录！《2026胡</a></li>
+                <li><span class="rank-no">10</span><a href="#">Gucci卖不动了 开云今年将关掉至少125家门店</a></li>
+            </ul>
+
+            <!-- 面板2：证券 -->
+            <ul class="rank-list" id="stock">
+                <li><span class="rank-no top">1</span><a href="#">沪指收涨1.2%重上3500点 券商板块全线爆发</a></li>
+                <li><span class="rank-no top">2</span><a href="#">北向资金净买入超百亿 重点加仓这些行业龙头</a></li>
+                <li><span class="rank-no top">3</span><a href="#">半导体产业链走强 多只芯片股涨停（附名单）</a></li>
+                <li><span class="rank-no">4</span><a href="#">新股申购提醒：本周共6只新股开放申购</a></li>
+                <li><span class="rank-no">5</span><a href="#">龙虎榜揭秘：机构席位抢筹3只强势股</a></li>
+                <li><span class="rank-no">6</span><a href="#">多家上市公司披露回购计划 金额合计超80亿元</a></li>
+                <li><span class="rank-no">7</span><a href="#">两融余额连续五日攀升 融资客青睐这些板块</a></li>
+                <li><span class="rank-no">8</span><a href="#">可转债市场升温 中签率创新低</a></li>
+                <li><span class="rank-no">9</span><a href="#">券商策略周报：A股有望迎来跨年行情</a></li>
+                <li><span class="rank-no">10</span><a href="#">ST板块再现跌停潮 退市新规效应显现</a></li>
+            </ul>
+
+            <!-- 面板3：理财 -->
+            <ul class="rank-list" id="money">
+                <li><span class="rank-no top">1</span><a href="#">存款利率下调后 银行理财规模重回30万亿</a></li>
+                <li><span class="rank-no top">2</span><a href="#">货币基金收益率跌破1.5% 低风险资金何去何从</a></li>
+                <li><span class="rank-no top">3</span><a href="#">黄金价格再创新高 金饰每克突破千元</a></li>
+                <li><span class="rank-no">4</span><a href="#">个人养老金理财产品的收益怎么样？</a></li>
+                <li><span class="rank-no">5</span><a href="#">国债逆回购节前走高 操作攻略来了</a></li>
+                <li><span class="rank-no">6</span><a href="#">银行大额存单额度告急 部分银行停售</a></li>
+                <li><span class="rank-no">7</span><a href="#">保险预定利率下调 增额终身寿成首选？</a></li>
+                <li><span class="rank-no">8</span><a href="#">债基持续吸金 纯债基金年内平均收益超3%</a></li>
+                <li><span class="rank-no">9</span><a href="#">指数基金规模首超主动权益基金</a></li>
+                <li><span class="rank-no">10</span><a href="#">理财子公司掀起费率价格战 部分产品零费率</a></li>
+            </ul>
+
+            <!-- 面板4：博客 -->
+            <ul class="rank-list" id="blog">
+                <li><span class="rank-no top">1</span><a href="#">财经博主解读：稳市工具对普通投资者意味着什么</a></li>
+                <li><span class="rank-no top">2</span><a href="#">从财报看消费复苏：哪些行业率先回暖？</a></li>
+                <li><span class="rank-no top">3</span><a href="#">年轻人在攒钱与消费之间寻找平衡点</a></li>
+                <li><span class="rank-no">4</span><a href="#">一线城市楼市回暖信号明显 刚需该出手了吗</a></li>
+                <li><span class="rank-no">5</span><a href="#">聊聊我的十年定投经历：时间是最好的朋友</a></li>
+                <li><span class="rank-no">6</span><a href="#">人工智能浪潮下的就业结构变化观察</a></li>
+                <li><span class="rank-no">7</span><a href="#">从“特种兵旅游”到“City Walk” 消费方式在变</a></li>
+                <li><span class="rank-no">8</span><a href="#">县域经济崛起：小城青年的消费新图景</a></li>
+                <li><span class="rank-no">9</span><a href="#">新能源汽车价格战还会持续多久？</a></li>
+                <li><span class="rank-no">10</span><a href="#">写给理财新手的十条避坑指南</a></li>
+            </ul>
+
+        </div>
+    </div>
+
+<script>
+/* ========== Tab选项卡切换逻辑 ========== */
+(function () {
+    var tabs = document.querySelectorAll('#tabList .tab-item');
+    var panels = document.querySelectorAll('#rankContent .rank-list');
+
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].addEventListener('click', function () {
+            // 1. 移除所有选项卡的选中状态
+            for (var j = 0; j < tabs.length; j++) {
+                tabs[j].classList.remove('active');
+            }
+            // 2. 当前选项卡高亮
+            this.classList.add('active');
+            // 3. 根据自定义属性 data-tab 找到对应面板并显示
+            var targetId = this.getAttribute('data-tab');
+            for (var k = 0; k < panels.length; k++) {
+                panels[k].classList.remove('show');
+                if (panels[k].id === targetId) {
+                    panels[k].classList.add('show');
+                }
+            }
+        });
+    }
+})();
+</script>
+</body>
+</html>

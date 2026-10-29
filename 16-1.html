@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript 数组方法可视化 · 16-1</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --bg: #f5f6f8;
+        --card: #ffffff;
+        --line: #e6e8ec;
+        --text: #1c1f23;
+        --muted: #6b7280;
+        --primary: #2f6bff;
+        --primary-soft: #eaf0ff;
+        --mut: #d9480f;
+        --mut-soft: #fff1e8;
+        --ok: #0f9d58;
+        --ok-soft: #e7f7ee;
+        --chg: #b7791f;
+        --chg-soft: #fff7e0;
+        --del: #d64545;
+        --radius: 14px;
+    }
+    body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+        line-height: 1.6;
+        padding-bottom: 60px;
+    }
+    code, pre { font-family: "Consolas", "JetBrains Mono", ui-monospace, monospace; }
+
+    /* ============ 顶部 ============ */
+    .hero {
+        background: linear-gradient(120deg, #ffffff 0%, #eef3ff 55%, #fdf6e3 100%);
+        border-bottom: 1px solid var(--line);
+        padding: 46px 24px 34px;
+    }
+    .hero-inner { max-width: 1180px; margin: 0 auto; }
+    .kicker {
+        display: inline-block;
+        font-size: 12.5px;
+        letter-spacing: 2px;
+        color: var(--primary);
+        background: #fff;
+        border: 1px solid #d7e2ff;
+        border-radius: 20px;
+        padding: 3px 12px;
+        margin-bottom: 14px;
+    }
+    .hero h1 { font-size: 34px; letter-spacing: .5px; }
+    .hero h1 em { font-style: normal; color: var(--primary); }
+    .hero p { margin-top: 10px; color: var(--muted); font-size: 15px; max-width: 760px; }
+
+    /* ============ 工具栏 ============ */
+    .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: rgba(245, 246, 248, .92);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+        padding: 12px 24px;
+    }
+    .toolbar-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .tab {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: #333;
+        border-radius: 999px;
+        padding: 7px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: .18s;
+    }
+    .tab:hover { border-color: #b9c9ff; color: var(--primary); }
+    .tab.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 700; }
+    .toolbar .spacer { flex: 1; }
+    .btn-run-all {
+        border: none;
+        background: #111;
+        color: #ffe600;
+        font-weight: 700;
+        font-size: 13.5px;
+        padding: 8px 18px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: .18s;
+    }
+    .btn-run-all:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.16); }
+
+    /* ============ 图例 ============ */
+    .legend {
+        max-width: 1180px;
+        margin: 18px auto -4px;
+        padding: 0 24px;
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        font-size: 12.5px;
+        color: var(--muted);
+        align-items: center;
+    }
+    .legend i {
+        display: inline-block;
+        width: 12px; height: 12px;
+        border-radius: 4px;
+        margin-right: 6px;
+        vertical-align: -1px;
+    }
+
+    /* ============ 卡片网格 ============ */
+    .grid {
+        max-width: 1180px;
+        margin: 22px auto 0;
+        padding: 0 24px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px 18px 16px;
+        box-shadow: 0 1px 2px rgba(16,24,40,.04);
+        display: flex;
+        flex-direction: column;
+        transition: box-shadow .2s, transform .2s;
+    }
+    .card:hover { box-shadow: 0 10px 26px rgba(16,24,40,.08); transform: translateY(-2px); }
+    .card.hide { display: none; }
+
+    .card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .card-head h3 { font-size: 19px; font-family: Consolas, monospace; color: #111; }
+    .badge {
+        font-size: 11.5px;
+        padding: 2px 9px;
+        border-radius: 999px;
+        font-weight: 700;
+        letter-spacing: .3px;
+    }
+    .badge.mut { color: var(--mut); background: var(--mut-soft); }
+    .badge.pure { color: var(--ok); background: var(--ok-soft); }
+    .card .desc { margin-top: 8px; font-size: 13.5px; color: #4b5563; min-height: 42px; }
+
+    .syn {
+        margin-top: 10px;
+        background: #f8f9fb;
+        border: 1px dashed #dfe3ea;
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 12.5px;
+        color: #374151;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .syn b { color: var(--primary); font-weight: 600; }
+
+    .code-box {
+        position: relative;
+        margin-top: 10px;
+        background: #1e2430;
+        border-radius: 10px;
+        padding: 12px 14px;
+        overflow-x: auto;
+    }
+    .code-box pre { font-size: 12.5px; line-height: 1.75; color: #d7dce6; white-space: pre; }
+    .code-box .cm { color: #7f8ea3; }
+    .code-box .kw { color: #ffcb6b; }
+    .copy {
+        position: absolute;
+        top: 8px; right: 8px;
+        border: 1px solid #39414f;
+        background: #262d3a;
+        color: #b9c2d0;
+        font-size: 11.5px;
+        padding: 2px 9px;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: 0;
+        transition: .18s;
+    }
+    .code-box:hover .copy { opacity: 1; }
+    .copy:hover { color: #fff; border-color: #5a6577; }
+
+    /* ============ 演示区 ============ */
+    .demo {
+        margin-top: 12px;
+        background: #fbfbfd;
+        border: 1px solid #edeff3;
+        border-radius: 10px;
+        padding: 12px;
+        flex: 1;
+    }
+    .demo-row { display: flex; align-items: center; gap: 10px; min-height: 46px; }
+    .demo-row + .demo-row { margin-top: 6px; }
+    .lbl {
+        width: 52px;
+        flex-shrink: 0;
+        font-size: 12px;
+        color: var(--muted);
+        text-align: right;
+    }
+    .cells { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .cell {
+        min-width: 38px;
+        height: 38px;
+        padding: 0 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-family: Consolas, monospace;
+        font-size: 13.5px;
+        color: #2b3440;
+        background: #fff;
+        border: 1.5px solid #e2e5ea;
+        transition: .25s;
+    }
+    .cell.keep { }
+    .cell.add { background: var(--ok-soft); border-color: #9fdcbb; color: #0b6b3d; }
+    .cell.chg { background: var(--chg-soft); border-color: #f0cf87; color: #8a5a08; }
+    .cell.del { background: #fdecec; border-color: #f0b4b4; color: #a33; text-decoration: line-through; }
+    .cell.empty { border-style: dashed; color: #b9bec8; background: transparent; }
+    .cell.new-anim { animation: pop .35s ease; }
+    @keyframes pop {
+        0% { transform: scale(.72); opacity: .2; }
+        70% { transform: scale(1.08); }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .arrow { font-size: 12px; color: #b6bcc6; padding-left: 52px; }
+
+    .ret-line {
+        margin-top: 8px;
+        font-size: 13px;
+        color: #374151;
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        flex-wrap: wrap;
+    }
+    .ret-line span.rk { color: var(--muted); font-size: 12px; }
+    .ret-line b {
+        background: var(--primary-soft);
+        color: #1d4ed8;
+        border-radius: 6px;
+        padding: 1px 8px;
+        font-family: Consolas, monospace;
+        font-weight: 600;
+    }
+    .ret-line b.none { background: #f1f2f5; color: #8a9099; }
+    .tip { font-size: 12px; color: #8a9099; }
+
+    .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .actions button {
+        border-radius: 8px;
+        font-size: 13px;
+        padding: 7px 16px;
+        cursor: pointer;
+        transition: .18s;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: #374151;
+    }
+    .actions button.run {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+        font-weight: 700;
+    }
+    .actions button.run:hover { background: #1e57e0; }
+    .actions button.reset:hover { border-color: #c9ced6; background: #f7f8fa; }
+
+    footer {
+        max-width: 1180px;
+        margin: 40px auto 0;
+        padding: 0 24px;
+        color: #9aa1ab;
+        font-size: 12.5px;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <span class="kicker">FEATURE · 16-1</span>
+            <h1>JavaScript <em>数组方法</em> 可视化演示</h1>
+            <p>每个卡片都能“运行”一次：上方是执行前的原数组，下方是执行后的结果，绿色＝新增、橙色＝被改写、红色删除线＝被移除。<br>点 <b>运行</b> 观察数组的变化，点 <b>重置</b> 回到初始状态。</p>
+        </div>
+    </header>
+
+    <div class="toolbar">
+        <div class="toolbar-inner" id="tabs">
+            <button class="tab active" data-cat="all">全部 29</button>
+            <button class="tab" data-cat="mut">增删改 · 改变原数组</button>
+            <button class="tab" data-cat="find">查找判断</button>
+            <button class="tab" data-cat="make">转换拼接</button>
+            <button class="tab" data-cat="calc">归约迭代</button>
+            <span class="spacer"></span>
+            <button class="btn-run-all" id="runAll">▶ 全部运行</button>
+        </div>
+    </div>
+
+    <div class="legend">
+        <span><i style="background:#fff;border:1.5px solid #e2e5ea"></i>未变化</span>
+        <span><i style="background:var(--ok-soft);border:1.5px solid #9fdcbb"></i>新增</span>
+        <span><i style="background:var(--chg-soft);border:1.5px solid #f0cf87"></i>被改写</span>
+        <span><i style="background:#fdecec;border:1.5px solid #f0b4b4"></i>被移除</span>
+    </div>
+
+    <main class="grid" id="grid"></main>
+
+    <footer>© 2026 高级网页设计I · 16-1 数组方法演示</footer>
+
+<script>
+/* =====================================================================
+   数据区：每个方法 = 一张卡片
+   cat：mut 增删改（改原数组） / find 查找 / make 转换 / calc 归约迭代
+   mut：true 表示会改变原数组
+   base：演示用的初始数组
+   run(a)：传入 base 的副本，返回 { out: 结果数组, ret: 返回值 }
+   ===================================================================== */
+
+var METHODS = [
+    /* ---------------- 增删改：会改变原数组 ---------------- */
+    {
+        cat: 'mut', name: 'push()', mut: true,
+        desc: '在数组末尾追加一个或多个元素，返回追加后的新长度。',
+        syn: 'arr.push(item1, …, itemN) → number',
+        code: "const arr = [1, 2, 3];\narr.push(4);        // 返回 4\narr.push(5, 6);     // 返回 6\n// arr → [1, 2, 3, 4, 5, 6]",
+        base: [1, 2, 3],
+        run: function (a) { return { out: a, ret: a.push(4) }; }
+    },
+    {
+        cat: 'mut', name: 'pop()', mut: true,
+        desc: '删除并返回数组的最后一个元素，数组长度减一。',
+        syn: 'arr.pop() → 被删除的元素',
+        code: "const arr = [1, 2, 3, 4];\nconst last = arr.pop();  // 4\n// arr → [1, 2, 3]",
+        base: [1, 2, 3, 4],
+        run: function (a) { return { out: a, ret: a.pop() }; }
+    },
+    {
+        cat: 'mut', name: 'unshift()', mut: true,
+        desc: '在数组开头插入一个或多个元素，返回新的长度。',
+        syn: 'arr.unshift(item1, …) → number',
+        code: "const arr = [1, 2, 3];\narr.unshift(0);      // 返回 4\n// arr → [0, 1, 2, 3]",
+        base: [1, 2, 3],
+        run: function (a) { return { out: a, ret: a.unshift(0) }; }
+    },
+    {
+        cat: 'mut', name: 'shift()', mut: true,
+        desc: '删除并返回数组的第一个元素，后面的元素整体前移。',
+        syn: 'arr.shift() → 被删除的元素',
+        code: "const arr = [1, 2, 3, 4];\nconst first = arr.shift();  // 1\n// arr → [2, 3, 4]",
+        base: [1, 2, 3, 4],
+        run: function (a) { return { out: a, ret: a.shift() }; }
+    },
+    {
+        cat: 'mut', name: 'splice()', mut: true,
+        desc: '万能增删改：从 start 开始删除 deleteCount 个元素，并把新元素插进去；返回被删除的元素组成的新数组。',
+        syn: 'arr.splice(start, deleteCount, …items) → 被删除的元素',
+        code: "const arr = ['a', 'b', 'c', 'd', 'e'];\nconst cut = arr.splice(1, 2, 'X');\n// cut → ['b', 'c']\n// arr → ['a', 'X', 'd', 'e']",
+        base: ['a', 'b', 'c', 'd', 'e'],
+        run: function (a) { var cut = a.splice(1, 2, 'X'); return { out: a, ret: cut }; }
+    },
+    {
+        cat: 'mut', name: 'sort()', mut: true,
+        desc: '原位排序。默认按“字符串”比较，所以数字 10 会排在 9 前面，必须传比较函数。',
+        syn: 'arr.sort([compareFn]) → 排好序的原数组',
+        code: "const arr = [10, 9, 100, 1];\narr.sort();               // [1, 10, 100, 9] ← 字符串比较\narr.sort((x, y) => x - y); // [1, 9, 10, 100] ← 数值比较",
+        base: [10, 9, 100, 1],
+        run: function (a) {
+            a.sort();
+            return { out: a, ret: a, tip: '默认按字符串比较，所以 100 排在了 9 前面' };
+        }
+    },
+    {
+        cat: 'mut', name: 'reverse()', mut: true,
+        desc: '原位反转数组顺序，返回同一个数组（引用不变）。',
+        syn: 'arr.reverse() → 反转后的原数组',
+        code: "const arr = [1, 2, 3, 4, 5];\narr.reverse();  // [5, 4, 3, 2, 1]",
+        base: [1, 2, 3, 4, 5],
+        run: function (a) { return { out: a, ret: a.reverse() }; }
+    },
+    {
+        cat: 'mut', name: 'fill()', mut: true,
+        desc: '用固定值填充指定区间（左闭右开），不传区间则填满整个数组。',
+        syn: 'arr.fill(value, start, end) → 修改后的原数组',
+        code: "const arr = [1, 2, 3, 4, 5];\narr.fill(0, 1, 3);  // [1, 0, 0, 4, 5]",
+        base: [1, 2, 3, 4, 5],
+        run: function (a) { return { out: a, ret: a.fill(0, 1, 3) }; }
+    },
+    {
+        cat: 'mut', name: 'copyWithin()', mut: true,
+        desc: '把数组的一部分复制到同数组的另一个位置（覆盖原内容），长度不变。',
+        syn: 'arr.copyWithin(target, start, end) → 修改后的原数组',
+        code: "const arr = [1, 2, 3, 4, 5];\narr.copyWithin(0, 3);  // [4, 5, 3, 4, 5]",
+        base: [1, 2, 3, 4, 5],
+        run: function (a) { return { out: a, ret: a.copyWithin(0, 3) }; }
+    },
+
+    /* ---------------- 查找判断 ---------------- */
+    {
+        cat: 'find', name: 'indexOf()', mut: false,
+        desc: '从头查找某个值第一次出现的位置，找不到返回 -1。使用严格相等比较。',
+        syn: 'arr.indexOf(value, [fromIndex]) → number',
+        code: "const arr = ['a', 'b', 'c', 'b'];\narr.indexOf('b');  // 1\narr.indexOf('z');  // -1",
+        base: ['a', 'b', 'c', 'b'],
+        run: function (a) { return { out: a.slice(), ret: a.indexOf('b') }; }
+    },
+    {
+        cat: 'find', name: 'lastIndexOf()', mut: false,
+        desc: '从后往前查找某个值最后一次出现的位置，找不到返回 -1。',
+        syn: 'arr.lastIndexOf(value, [fromIndex]) → number',
+        code: "const arr = ['a', 'b', 'c', 'b'];\narr.lastIndexOf('b');  // 3",
+        base: ['a', 'b', 'c', 'b'],
+        run: function (a) { return { out: a.slice(), ret: a.lastIndexOf('b') }; }
+    },
+    {
+        cat: 'find', name: 'includes()', mut: false,
+        desc: '判断数组是否包含某个值，返回布尔值。与 indexOf 不同，它能正确判断 NaN。',
+        syn: 'arr.includes(value) → boolean',
+        code: "const arr = [1, 2, 3, NaN];\narr.includes(2);    // true\narr.includes(NaN);  // true（indexOf 会返回 -1）",
+        base: [1, 2, 3, NaN],
+        run: function (a) { return { out: a.slice(), ret: a.includes(NaN), tip: 'NaN 也能被找到' }; }
+    },
+    {
+        cat: 'find', name: 'find()', mut: false,
+        desc: '返回第一个满足测试函数的元素，都不满足返回 undefined。',
+        syn: 'arr.find((item, index, arr) => boolean) → 元素 | undefined',
+        code: "const goods = [{ n: '苹果', p: 5 }, { n: '香蕉', p: 3 }];\ngoods.find(g => g.p < 4);\n// → { n: '香蕉', p: 3 }",
+        base: [{ n: '苹果', p: 5 }, { n: '香蕉', p: 3 }],
+        run: function (a) { return { out: a.slice(), ret: a.find(function (g) { return g.p < 4; }) }; }
+    },
+    {
+        cat: 'find', name: 'findIndex()', mut: false,
+        desc: '返回第一个满足测试函数的元素下标，都不满足返回 -1。',
+        syn: 'arr.findIndex(fn) → number',
+        code: "const goods = [{ n: '苹果', p: 5 }, { n: '香蕉', p: 3 }];\ngoods.findIndex(g => g.p < 4);  // 1",
+        base: [{ n: '苹果', p: 5 }, { n: '香蕉', p: 3 }],
+        run: function (a) { return { out: a.slice(), ret: a.findIndex(function (g) { return g.p < 4; }) }; }
+    },
+    {
+        cat: 'find', name: 'filter()', mut: false,
+        desc: '筛选出所有满足测试函数的元素，组成新数组返回；原数组不变。',
+        syn: 'arr.filter(fn) → 新数组',
+        code: "const arr = [1, 2, 3, 4, 5, 6];\narr.filter(n => n % 2 === 0);  // [2, 4, 6]",
+        base: [1, 2, 3, 4, 5, 6],
+        run: function (a) {
+            return { out: a.filter(function (n) { return n % 2 === 0; }), ret: a.filter(function (n) { return n % 2 === 0; }) };
+        }
+    },
+    {
+        cat: 'find', name: 'some() / every()', mut: false,
+        desc: 'some：只要有一个元素满足就返回 true；every：必须全部满足才返回 true。两者都会短路。',
+        syn: 'arr.some(fn) → boolean ｜ arr.every(fn) → boolean',
+        code: "const arr = [1, 2, 3];\narr.some(n => n > 2);   // true\narr.every(n => n > 0);  // true\narr.every(n => n > 1);  // false",
+        base: [1, 2, 3],
+        run: function (a) {
+            var s = a.some(function (n) { return n > 2; });
+            var e = a.every(function (n) { return n > 0; });
+            return { out: a.slice(), ret: 'some: ' + s + ' / every: ' + e };
+        }
+    },
+    {
+        cat: 'find', name: 'at()', mut: false,
+        desc: '按索引取值，支持负数索引（-1 表示最后一个元素），比 arr[arr.length-1] 更简洁。',
+        syn: 'arr.at(index) → 元素 | undefined',
+        code: "const arr = ['a', 'b', 'c', 'd'];\narr.at(1);   // 'b'\narr.at(-1);  // 'd'",
+        base: ['a', 'b', 'c', 'd'],
+        run: function (a) { return { out: a.slice(), ret: a.at(-1), tip: 'at(-1) 取到最后一个元素' }; }
+    },
+
+    /* ---------------- 转换拼接 ---------------- */
+    {
+        cat: 'make', name: 'slice()', mut: false,
+        desc: '截取 [start, end) 区间的元素，返回新数组；不传 end 则截到末尾。原数组不变。',
+        syn: 'arr.slice(start, end) → 新数组',
+        code: "const arr = [1, 2, 3, 4, 5];\narr.slice(1, 4);   // [2, 3, 4]\narr.slice(-2);     // [4, 5]",
+        base: [1, 2, 3, 4, 5],
+        run: function (a) { return { out: a.slice(1, 4), ret: a.slice(1, 4) }; }
+    },
+    {
+        cat: 'make', name: 'concat()', mut: false,
+        desc: '合并数组或值，返回一个新数组，不会修改任何原数组；嵌套数组只合并一层。',
+        syn: 'arr.concat(val1, […]) → 新数组',
+        code: "const a = [1, 2];\na.concat([3, 4], 5);  // [1, 2, 3, 4, 5]",
+        base: [1, 2],
+        run: function (a) { return { out: a.concat([3, 4], 5), ret: a.concat([3, 4], 5) }; }
+    },
+    {
+        cat: 'make', name: 'join()', mut: false,
+        desc: '把数组所有元素按分隔符拼成一个字符串，默认分隔符是逗号。',
+        syn: 'arr.join(separator) → string',
+        code: "const arr = ['闲', '鱼'];\narr.join('-');  // '闲-鱼'\narr.join('');   // '闲鱼'",
+        base: ['闲', '鱼'],
+        run: function (a) { return { out: a.slice(), ret: a.join('-') }; }
+    },
+    {
+        cat: 'make', name: 'map()', mut: false,
+        desc: '把每个元素映射成一个新值，长度不变，返回新数组。这是最常用的数据加工方法。',
+        syn: 'arr.map(fn) → 新数组',
+        code: "const arr = [1, 2, 3];\narr.map(n => n * 2);      // [2, 4, 6]\narr.map(n => `¥${n}`);    // ['¥1', '¥2', '¥3']",
+        base: [1, 2, 3],
+        run: function (a) {
+            return { out: a.map(function (n) { return n * 2; }), ret: a.map(function (n) { return n * 2; }) };
+        }
+    },
+    {
+        cat: 'make', name: 'flat()', mut: false,
+        desc: '按指定深度降维“拍平”嵌套数组，默认只拍一层。',
+        syn: 'arr.flat(depth = 1) → 新数组',
+        code: "const arr = [1, [2, [3, [4]]]];\narr.flat();    // [1, 2, [3, [4]]]\narr.flat(2);   // [1, 2, 3, [4]]\narr.flat(Infinity); // [1, 2, 3, 4]",
+        base: [1, [2, [3, [4]]]],
+        run: function (a) { return { out: a.flat(Infinity), ret: a.flat(2), tip: '返回值是 flat(2) 的结果，展示区为完全拍平' }; }
+    },
+    {
+        cat: 'make', name: 'flatMap()', mut: false,
+        desc: '先 map 再 flat(1) 的语法糖，适合“一个元素拆成多个”的场景。',
+        syn: 'arr.flatMap(fn) → 新数组',
+        code: "const arr = ['你好 世界', '闲鱼 二手'];\narr.flatMap(s => s.split(' '));\n// ['你好', '世界', '闲鱼', '二手']",
+        base: ['你好 世界', '闲鱼 二手'],
+        run: function (a) {
+            var f = function (s) { return s.split(' '); };
+            return { out: a.flatMap(f), ret: a.flatMap(f) };
+        }
+    },
+    {
+        cat: 'make', name: 'keys() / values() / entries()', mut: false,
+        desc: '返回迭代器，分别产出索引、值、[索引, 值]。常配合 for…of 或展开运算符使用。',
+        syn: 'arr.keys() / arr.values() / arr.entries() → Iterator',
+        code: "const arr = ['a', 'b'];\n[...arr.keys()];     // [0, 1]\n[...arr.values()];   // ['a', 'b']\n[...arr.entries()];  // [[0,'a'], [1,'b']]",
+        base: ['a', 'b'],
+        run: function (a) { return { out: Array.from(a.entries()), ret: 'entries: [[0,"a"],[1,"b"]]' }; }
+    },
+
+    /* ---------------- 归约迭代 ---------------- */
+    {
+        cat: 'calc', name: 'reduce()', mut: false,
+        desc: '把数组“归约”成一个值：累加器 acc 从初始值开始，依次与每个元素计算。求和、统计、分组都靠它。',
+        syn: 'arr.reduce((acc, item, index) => acc, initialValue) → 任意值',
+        code: "const arr = [1, 2, 3, 4];\narr.reduce((acc, n) => acc + n, 0);  // 10\n\n// 不传初始值时，第一个元素当 acc",
+        base: [1, 2, 3, 4],
+        run: function (a) {
+            return { out: a.slice(), ret: a.reduce(function (acc, n) { return acc + n; }, 0) };
+        }
+    },
+    {
+        cat: 'calc', name: 'reduceRight()', mut: false,
+        desc: '和 reduce 一样，但从小标末尾往前遍历，适合从右往左拼接字符串。',
+        syn: 'arr.reduceRight((acc, item) => acc, initialValue) → 任意值',
+        code: "const arr = ['a', 'b', 'c'];\narr.reduceRight((acc, c) => acc + c, '');  // 'cba'",
+        base: ['a', 'b', 'c'],
+        run: function (a) {
+            return { out: a.slice(), ret: a.reduceRight(function (acc, c) { return acc + c; }, '') };
+        }
+    },
+    {
+        cat: 'calc', name: 'forEach()', mut: false,
+        desc: '遍历数组执行回调，没有返回值（永远是 undefined），中途无法 break。',
+        syn: 'arr.forEach(fn) → undefined',
+        code: "const arr = [1, 2, 3];\narr.forEach((n, i) => {\n  console.log(i, n);   // 0 1 / 1 2 / 2 3\n});",
+        base: [1, 2, 3],
+        run: function (a) {
+            var sum = 0;
+            a.forEach(function (n) { sum += n; });
+            return { out: a.slice(), ret: undefined, tip: '回调里累加得到 ' + sum + '，但 forEach 自己不返回东西' };
+        }
+    },
+    {
+        cat: 'calc', name: 'Array.from()', mut: false,
+        desc: '把类数组（arguments、字符串、Set、NodeList）或可迭代对象转成真正的数组，还能顺带做映射。',
+        syn: 'Array.from(iterable, mapFn) → 新数组',
+        code: "Array.from('abc');            // ['a', 'b', 'c']\nArray.from({ length: 3 }, (_, i) => i);\n// [0, 1, 2]",
+        base: ['a', 'b', 'c'],
+        run: function (a) { return { out: Array.from('abcd'), ret: '由字符串 "abcd" 生成' }; }
+    },
+    {
+        cat: 'calc', name: 'Array.of() / Array.isArray()', mut: false,
+        desc: 'Array.of 用参数直接建数组（避免 new Array(3) 造出空数组的坑）；isArray 判断是否为数组。',
+        syn: 'Array.of(…items) → 新数组 ｜ Array.isArray(x) → boolean',
+        code: "Array.of(3);        // [3]\nnew Array(3);       // [ , , ] 长度为 3 的空数组\nArray.isArray([1]); // true\nArray.isArray('1'); // false",
+        base: [3],
+        run: function (a) { return { out: Array.of(3, 5, 7), ret: 'isArray([1]) → ' + Array.isArray([1]) }; }
+    }
+];
+
+/* ===================== 工具函数 ===================== */
+// 值 → 用于比较的键
+function keyOf(v) {
+    if (v === null) return 'null';
+    if (typeof v === 'object') return JSON.stringify(v);
+    if (typeof v === 'number' && isNaN(v)) return 'NaN';
+    return String(v);
+}
+// 值 → 展示文本
+function showValue(v) {
+    if (v === undefined) return 'undefined';
+    if (v === null) return 'null';
+    if (typeof v === 'string') return '"' + v + '"';
+    if (Array.isArray(v)) return '[' + v.map(showValue).join(', ') + ']';
+    if (typeof v === 'object') return JSON.stringify(v);
+    if (typeof v === 'number' && isNaN(v)) return 'NaN';
+    return String(v);
+}
+// 计算每个格子状态：keep / add / chg，并返回被移除的元素
+function diff(base, out) {
+    var n = Math.min(base.length, out.length);
+    var sameLen = base.length === out.length;
+    var pool = base.map(keyOf);
+    var marks = out.map(function (v) {
+        var k = keyOf(v);
+        var i = pool.indexOf(k);
+        if (i > -1) { pool.splice(i, 1); return { v: v, st: 'keep' }; }
+        return { v: v, st: 'add' };
+    });
+    if (sameLen) {
+        for (var j = 0; j < n; j++) {
+            if (keyOf(base[j]) !== keyOf(out[j]) && marks[j].st === 'keep') marks[j].st = 'chg';
+        }
+    }
+    return { marks: marks, removed: pool };
+}
+
+/* ===================== 渲染 ===================== */
+var grid = document.getElementById('grid');
+var cards = [];
+
+function cellsHTML(d, animate, showRemoved) {
+    var list = d.marks.slice();
+    if (showRemoved) {
+        list = list.concat(d.removed.map(function (v) { return { v: v, st: 'del' }; }));
+    }
+    if (list.length === 0) return '<span class="cell empty">空</span>';
+    return list.map(function (m) {
+        return '<span class="cell ' + m.st + (animate && m.st !== 'keep' ? ' new-anim' : '') + '">'
+             + showValue(m.v) + '</span>';
+    }).join('');
+}
+
+function buildCard(m, idx) {
+    var el = document.createElement('article');
+    el.className = 'card';
+    el.dataset.cat = m.cat;
+    el.dataset.idx = idx;
+
+    var mutLabel = m.mut
+        ? '<span class="badge mut">改变原数组</span>'
+        : '<span class="badge pure">返回新值</span>';
+
+    el.innerHTML =
+        '<div class="card-head"><h3>' + m.name + '</h3>' + mutLabel + '</div>'
+      + '<p class="desc">' + m.desc + '</p>'
+      + '<div class="syn"><b>语法：</b>' + m.syn + '</div>'
+      + '<div class="code-box"><button class="copy">复制</button><pre>' + escapeHTML(m.code) + '</pre></div>'
+      + '<div class="demo">'
+      +   '<div class="demo-row"><span class="lbl">执行前</span><div class="cells">' + cellsHTML(diff(m.base, m.base), false, false) + '</div></div>'
+      +   '<div class="demo-row"><span class="lbl">执行后</span><div class="cells" data-role="after">' + cellsHTML(diff(m.base, m.base), false, false) + '</div></div>'
+      +   '<div class="ret-line"><span class="rk">返回值</span><b class="none" data-role="ret">点“运行”查看</b>'
+      +   '<span class="tip" data-role="tip"></span></div>'
+      + '</div>'
+      + '<div class="actions"><button class="run">▶ 运行</button><button class="reset">重置</button></div>';
+
+    grid.appendChild(el);
+
+    var afterBox = el.querySelector('[data-role="after"]');
+    var retBox = el.querySelector('[data-role="ret"]');
+    var tipBox = el.querySelector('[data-role="tip"]');
+
+    function reset() {
+        afterBox.innerHTML = cellsHTML(diff(m.base, m.base), false, false);
+        retBox.className = 'none';
+        retBox.textContent = '点“运行”查看';
+        tipBox.textContent = '';
+    }
+
+    function run() {
+        var copy = m.base.map(function (v) { return (v && typeof v === 'object') ? JSON.parse(JSON.stringify(v)) : v; });
+        var r = m.run(copy);
+        var out = r.out || copy;
+        afterBox.innerHTML = cellsHTML(diff(m.base, out), true, true);
+        var txt = showValue(r.ret);
+        retBox.className = (r.ret === undefined) ? 'none' : '';
+        retBox.textContent = txt;
+        tipBox.textContent = r.tip || '';
+    }
+
+    el.querySelector('.run').addEventListener('click', run);
+    el.querySelector('.reset').addEventListener('click', reset);
+    el.querySelector('.copy').addEventListener('click', function () {
+        var btn = this;
+        navigator.clipboard.writeText(m.code).then(function () {
+            btn.textContent = '已复制';
+            setTimeout(function () { btn.textContent = '复制'; }, 1200);
+        }).catch(function () { btn.textContent = '复制失败'; });
+    });
+
+    return { el: el, run: run, reset: reset };
+}
+
+function escapeHTML(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* ===================== 筛选 & 批量运行 ===================== */
+document.getElementById('tabs').addEventListener('click', function (e) {
+    var tab = e.target.closest('.tab');
+    if (!tab) return;
+    document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    var cat = tab.dataset.cat;
+    cards.forEach(function (c) {
+        c.el.classList.toggle('hide', cat !== 'all' && c.el.dataset.cat !== cat);
+    });
+});
+
+document.getElementById('runAll').addEventListener('click', function () {
+    var i = 0;
+    cards.forEach(function (c) {
+        if (c.el.classList.contains('hide')) return;
+        setTimeout(c.run, i * 110);
+        i++;
+    });
+});
+
+/* ===================== 初始化 ===================== */
+METHODS.forEach(function (m, i) { cards.push(buildCard(m, i)); });
+</script>
+</body>
+</html>
