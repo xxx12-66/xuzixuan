@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>闲鱼 - 首页</title>
+    <style>
+        /* 全局样式重置 —— 徐梓轩 xzx */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        ul, li { list-style: none; }
+        a { text-decoration: none; color: #333; }
+        body { background: #f6f6f6; }
+
+        /* ========== 图片占位框：把 .ph 换成 <img src="..."> 即可 ========== */
+        .ph {
+            background: #f2f3f5;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+            color: #b0b0b0;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* ========== 1. 顶部黄色导航栏 ========== */
+        .header { background: #ffe600; padding: 18px 0 12px; }
+        .header-inner {
+            width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 36px;
+        }
+        .logo {
+            line-height: 46px;
+            cursor: pointer;
+        }
+        .logo img {
+            height: 46px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+        }
+        .search-wrap { flex: 1; }
+        .search-box {
+            display: flex;
+            height: 44px;
+            background: #fff;
+            border: 2px solid #111;
+            border-radius: 22px;
+            padding: 0 4px;
+            align-items: center;
+        }
+        .search-input { flex: 1; border: none; outline: none; padding: 0 12px 0 0; font-size: 14px; }
+        .search-ico { width: 18px; height: 18px; margin-left: 18px; object-fit: contain; flex-shrink: 0; }
+        .search-btn {
+            width: 86px;
+            height: 36px;
+            background: #ffe600;
+            border: none;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .search-btn:hover { background: #ffd900; }
+        .search-btn img { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; }
+        .hot-word { margin-top: 10px; display: flex; gap: 20px; font-size: 12.5px; padding-left: 4px; }
+        .hot-word a { color: #333; }
+        .hot-word a:hover { text-decoration: underline; }
+        .header-right { display: flex; gap: 26px; line-height: 44px; }
+        .header-right a { font-size: 14.5px; color: #111; font-weight: 500; }
+        .header-right a img { width: 17px; height: 17px; vertical-align: -3px; margin-right: 4px; }
+
+        /* ========== 白色圆角大面板 ========== */
+        .panel {
+            width: 1200px;
+            margin: 0 auto 16px;
+            background: #fff;
+            border-radius: 18px;
+            padding: 22px;
+        }
+
+        /* ========== 3. 左侧垂直分类菜单栏（斜杠格式，和截图一致） ========== */
+        .top-panel { display: flex; gap: 18px; align-items: flex-start; }
+        .left-cate {
+            width: 268px;
+            flex-shrink: 0;
+            background: #f7f8fa;
+            border-radius: 16px;
+            padding: 8px 18px;
+            height: 360px;              /* 与右侧 Banner 高度一致，顶底齐平 */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .cate-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;                    /* 10 行平分 360px 高度 */
+            padding: 0 10px;
+            font-size: 16.5px;
+            line-height: 1.4;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #111;
+        }
+        .cate-name { white-space: nowrap; font-weight: 500; }
+        .cate-sep { color: #666; margin: 0 11px; font-weight: 400; }
+        .cate-item:hover { background: #fff9d6; }
+        .cate-item.active { background: #ffe600; font-weight: 700; }
+        .cate-ico { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+
+        /* ========== 4. 运营 Banner + 彩色推荐卡片组 ========== */
+        .main { flex: 1; min-width: 0; }
+        .banner-row { display: flex; gap: 14px; }
+        .big-banner {
+            width: 300px;
+            height: 360px;
+            border-radius: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+            cursor: pointer;
+            background: #ff7722;
+        }
+        .big-banner img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .right-card-group {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 14px;
+        }
+        .theme-card {
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            gap: 10px;
+            cursor: pointer;
+            transition: transform .2s;
+        }
+        .theme-card:hover { transform: translateY(-3px); }
+        /* 左侧：标题 + 副标题 + 插画 */
+        .theme-left {
+            width: 92px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .theme-head { display: flex; align-items: center; gap: 6px; }
+        .theme-head h4 { font-size: 16px; color: #111; white-space: nowrap; }
+        .theme-head .arr {
+            display: inline-flex;
+            width: 17px;
+            height: 17px;
+            background: #222;
+            color: #fff;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            flex-shrink: 0;
+        }
+        .theme-sub { font-size: 12px; color: #555; margin-top: 4px; }
+        .theme-illus {
+            width: 84px;
+            height: 84px;
+            background: rgba(255,255,255,.5);
+            border-color: rgba(0,0,0,.12);
+            color: #999;
+        }
+        img.theme-illus { object-fit: cover; border-radius: 8px; }
+        /* 右侧：半透明白内嵌面板，装 2 个商品图 + 价格 */
+        .theme-inner {
+            flex: 1;
+            min-width: 0;
+            background: rgba(255,255,255,.45);
+            border-radius: 14px;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .mini-goods { flex: 1; min-width: 0; text-align: center; }
+        .mini-goods .ph, .mini-goods img {
+            width: 100%;
+            height: 95px;
+            border-radius: 10px;
+            background: #fff;
+            border-color: #ececec;
+        }
+        .mini-goods img { object-fit: cover; display: block; }
+        .mini-goods p { color: #ff4400; font-weight: 800; margin-top: 6px; font-size: 15px; }
+        .card-yellow { background: #fff064; }
+        .card-blue   { background: #c2e9ff; }
+        .card-green  { background: #c9f7d9; }
+        .card-pink   { background: #ffd3ec; }
+
+        /* ========== 5. 横向标签筛选栏 ========== */
+        .tag-bar { display: flex; gap: 9px; flex-wrap: nowrap; overflow-x: auto; margin-bottom: 18px; padding-bottom: 2px; }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 17px;
+            border-radius: 21px;
+            background: #fff;
+            border: 1px solid #ececec;
+            font-size: 14px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            cursor: pointer;
+            color: #333;
+        }
+        .tag:hover { border-color: #ffe600; }
+        .tag.active { background: #ffe600; border-color: #ffe600; font-weight: 700; color: #111; }
+        .tag-logo {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        /* ========== 6. 商品卡片信息流：一行 5 张 ========== */
+        .goods-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+        .goods-card { cursor: pointer; }
+        .goods-card .ph, .goods-card img {
+            width: 100%;
+            height: 168px;
+            border-radius: 12px;
+        }
+        .goods-card img { object-fit: cover; display: block; }
+        .goods-info { padding: 9px 2px 12px; }
+        .goods-title {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 40px;
+        }
+        .fp {
+            display: inline-block;
+            color: #ff4400;
+            font-size: 12.5px;
+            line-height: 18px;
+            margin-right: 5px;
+            font-weight: 700;
+            vertical-align: middle;
+        }
+        .goods-cond { margin-top: 4px; font-size: 12px; color: #999; }
+        .goods-cond i { font-style: normal; color: #ddd; margin: 0 7px; }
+        .price-row { display: flex; align-items: baseline; gap: 7px; margin-top: 6px; }
+        .price { color: #f40; font-weight: 800; font-size: 20px; }
+        .price .unit { font-size: 13px; font-weight: 700; }
+        .orig { font-size: 12px; color: #aaa; text-decoration: line-through; }
+        .want { font-size: 12px; color: #999; margin-left: auto; }
+        .svc {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #ff6600;
+            border: 1px solid rgba(255,102,0,.45);
+            border-radius: 4px;
+            padding: 0 5px;
+            line-height: 18px;
+        }
+        .disc {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #ff4400;
+            background: #fff1ea;
+            border-radius: 4px;
+            padding: 0 5px;
+            line-height: 18px;
+        }
+        .seller-row { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+        .zan { font-size: 11px; color: #ff9500; font-weight: 700; }
+        .sname { font-size: 12px; color: #999; }
+        .credit { font-size: 11.5px; color: #999; margin-left: 8px; }
+        .empty-tip {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+            font-size: 14px;
+            background: #fafafa;
+            border-radius: 12px;
+        }
+
+        /* ========== 7. 右侧悬浮工具栏 ========== */
+        .float-tool {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #fff;
+            border-radius: 26px;
+            box-shadow: 0 2px 14px rgba(0,0,0,.1);
+            padding: 12px 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 99;
+        }
+        .tool-btn {
+            width: 68px;
+            padding: 9px 0 7px;
+            text-align: center;
+            font-size: 12px;
+            color: #444;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+        .tool-btn:hover { background: #fffbe0; }
+        .tool-btn img.ico { width: 22px; height: 22px; display: block; margin: 0 auto 3px; object-fit: contain; }
+
+        footer { text-align: center; padding: 20px 0 30px; color: #999; font-size: 12.5px; }
+    </style>
+</head>
+<body>
+    <!-- ========== 1. 顶部导航：Logo + 搜索 + 热词 + 登录/订单 ========== -->
+    <div class="header">
+        <div class="header-inner">
+            <div class="logo" id="logo"><img src="img/20.png" alt="闲鱼"></div>
+            <div class="search-wrap">
+                <div class="search-box">
+                    <img class="search-ico" src="img/11.png" alt="">
+                    <input class="search-input" id="searchInput" placeholder="手机支架">
+                    <button class="search-btn" id="searchBtn"><img src="img/11.png" alt="">搜索</button>
+                </div>
+                <div class="hot-word" id="hotWord">
+                    <a href="#">笔记本电脑</a>
+                    <a href="#">电动车</a>
+                    <a href="#">电动车挡风被</a>
+                    <a href="#">苹果手机壳</a>
+                    <a href="#">手机支架</a>
+                    <a href="#">苹果17</a>
+                    <a href="#">运动裤</a>
+                    <a href="#">牛仔裤</a>
+                    <a href="#">半身裙</a>
+                    <a href="#">乐福鞋</a>
+                </div>
+            </div>
+            <div class="header-right">
+                <a href="#"><img class="hico" src="img/12.png" alt="">登录</a>
+                <a href="#"><img class="hico" src="img/13.png" alt="">订单</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 白色大面板 1：分类 + Banner + 彩卡 ========== -->
+    <div class="panel top-panel">
+        <!-- 3. 左侧分类菜单 -->
+        <div class="left-cate" id="cateList"></div>
+
+        <div class="main">
+            <!-- 4. Banner + 彩色推荐卡片组 -->
+            <div class="banner-row">
+                <div class="big-banner" id="bigBanner">
+                    <img src="img/xianyu.png" alt="校园闲置好物">
+                </div>
+                <div class="right-card-group" id="themeCards"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== 白色大面板 2：标签栏 + 商品信息流 ========== -->
+    <div class="panel feed-panel">
+        <!-- 5. 标签筛选栏 -->
+        <div class="tag-bar" id="tagBar"></div>
+        <!-- 6. 商品信息流 -->
+        <div class="goods-grid" id="goodsGrid"></div>
+    </div>
+
+    <!-- ========== 7. 右侧悬浮工具栏 ========== -->
+    <div class="float-tool">
+        <div class="tool-btn" id="sellBtn"><img class="ico" src="img/14.png" alt="">发闲置</div>
+        <div class="tool-btn"><img class="ico" src="img/15.png" alt="">消息</div>
+        <div class="tool-btn"><img class="ico" src="img/16.png" alt="">APP</div>
+        <div class="tool-btn"><img class="ico" src="img/17.png" alt="">反馈</div>
+        <div class="tool-btn"><img class="ico" src="img/18.png" alt="">客服</div>
+    </div>
+
+    <footer>© 2026 徐梓轩 · 校园闲置互助平台 · 三级项目</footer>
+
+<script>
+/* ================= 图片说明 =================
+   全部使用本地图片（ONLINE 已设为 false）：
+     - 彩卡插画  img/tubiao/1.png ~ 4.png
+     - 彩卡商品  img/goods/1.png ~ 8.png
+     - 商品图    img/goods/9.png ~ 13.png
+   如需改回在线图片（picsum 真实照片，断网自动回退本地图），把下面 ONLINE 改成 true。
+============================================= */
+
+// 分类（文案与闲鱼原版一致；cats = 该行点击后实际筛选的商品分类，空数组显示"暂无宝贝"）
+var CATS = [
+    { key: 'c1',  img: 'img/1.png',  name: ['手机', '数码', '电脑'],   cats: ['digital'] },
+    { key: 'c2',  img: 'img/2.png',  name: ['服饰', '箱包', '运动'],   cats: ['clothing', 'sports'] },
+    { key: 'c3',  img: 'img/3.png',  name: ['技能', '卡券', '潮玩'],   cats: ['skill'] },
+    { key: 'c4',  img: 'img/4.png',  name: ['母婴', '美妆', '个护'],   cats: ['beauty'] },
+    { key: 'c5',  img: 'img/5.png',  name: ['家具', '家电', '家装'],   cats: ['appliance'] },
+    { key: 'c6',  img: 'img/6.png',  name: ['文玩', '珠宝', '礼品'],   cats: ['free'] },
+    { key: 'c7',  img: 'img/7.png',  name: ['食品', '宠物', '花卉'],   cats: ['food'] },
+    { key: 'c8',  img: 'img/8.png',  name: ['图书', '游戏', '音像'],   cats: ['book', 'textbook', 'stationery'] },
+    { key: 'c9',  img: 'img/9.png',  name: ['汽车', '电动车', '租房'], cats: ['bike'] },
+    { key: 'c10', img: 'img/10.png', name: ['五金', '设备', '农牧'],   cats: ['hardware'] }
+];
+
+// 标签（筛选栏，与 goofish.com 官网 tab 一致，第一个为默认全部）
+var TAGS = ['猜你喜欢', '个人闲置', 'BJD娃娃', '垂钓', '吉他乐器', '台球', '摄影摄像', '钱币收藏', '女装穿搭', '居家好物', '大牌美妆', '机车'];
+
+/* 商品池：标题/价格/卖家等信息结构完全对齐闲鱼原版
+   free=包邮标  want=人想要数  cond=成色|规格副标题  orig=划线原价
+   service=服务标签  seller=卖家名  zan=赞标
+   img: ''  ← 空字符串显示占位框，填 'img/xx.jpg' 显示图片 */
+var GOODS = [
+    { title: '开店商用 五香老卤调味料 四川卤味卤肉料包卤醇臻猪...', price: 14, want: 32, free: true, service: '描述不符包邮退', seller: '淘**销', credit: '卖家信用极好', cat: 'food', tag: '个人闲置', img: 'img/goods/9.png' },
+    { title: '【全新未拆】适用小米 SU7车载香薰替换芯家苛香氛...', price: 24, want: 1, free: true, service: '描述不符包邮退', seller: '米**店', credit: '卖家信用极好', cat: 'digital', tag: '居家好物', img: 'img/goods/10.png' },
+    { title: '【低价出售】加厚加强版人字梯家用折叠伸缩升降室内...', price: 88, want: 24, free: true, seller: '梯**店', credit: '卖家信用极好', cat: 'appliance', tag: '个人闲置', img: 'img/goods/11.png' },
+    { title: '茶道六君子配件茶勺茶夹茶叶夹三件茶具工夫茶零...', price: 25, want: 22, free: true, service: '描述不符包邮退', seller: '掌**厂', credit: '卖家信用极好', cat: 'free', tag: '居家好物', img: 'img/goods/12.png' },
+    { title: '全新正品Luspeed排球网架 便携式设计，高度可调0...', price: 151, want: 18, free: true, service: '描述不符包邮退', seller: '体**店', credit: '卖家信用极好', cat: 'sports', tag: '个人闲置', img: 'img/goods/13.png' },
+    { title: '海钓失手绳316不锈钢 船钓失手绳 船竿护竿绳 全新包邮 4mm粗2米长 弹性非常好 绝对结实耐用', price: 35, want: 73, free: true, seller: '新***乐', cat: 'sports', tag: '垂钓', img: 'img/goods/13.png' },
+    { title: '全新3T自行车贴纸公路车轮组贴纸碳刀圈贴纸包邮 适用于60mm框高轮组', price: 35, orig: '¥45', free: true, seller: '君***备', cat: 'bike', tag: '机车', img: 'img/goods/10.png' },
+    { title: '跆拳道卷垫 格斗卷垫 搏击卷垫 健身房卷垫 柔道卷垫 摔跤卷垫 各种厚度 各种尺寸，欢迎咨询', price: 90, seller: '全***地', credit: '卖家信用极好', cat: 'sports', tag: '台球', img: 'img/goods/12.png' },
+    { title: '二保焊焊丝全新没用过的 感兴趣的话点“我想要”和我私聊吧～', price: 160, want: 9, seller: '渔***活', cat: 'hardware', tag: '居家好物', img: 'img/goods/9.png' },
+    { title: '1-1337418-0 品牌：TE Connectivity(泰科电子) 射频/同轴连接器，N型同轴，直型法兰安装', price: 135, orig: '¥168', seller: '好***件', credit: '卖家信用极好', cat: 'digital', tag: '摄影摄像', img: 'img/goods/10.png' },
+    { title: '打气筒！给孩子打了两回气球，一直闲置！最好自提！感兴趣的话点“我想要”和我私聊吧～', price: 10, want: 8, seller: '手***肢', credit: '卖家信用极好', cat: 'bike', tag: '机车', img: 'img/goods/11.png' },
+    { title: '最后5件，中古风桌面摆画新款装饰画电视柜摆件高级客厅卧室床头 30×30黑色铝合框', price: '16.80', want: 27, seller: '家***馆', cat: 'appliance', tag: '居家好物', img: 'img/goods/12.png' },
+    { title: '【狂欢价】手动榨汁机摆摊商用挤压器橙汁专用压榨器手压鲜榨神器', price: '123.84', disc: '购入价4.8折', seller: '韩***杨', credit: '卖家信用极好', cat: 'appliance', tag: '居家好物', img: 'img/goods/13.png' }
+];
+
+/* 彩色推荐卡片：文案/价格与闲鱼原版一致，mini 为固定展示的两个商品位
+   illus: '' ← 卡片左侧插画占位，可填 'img/illus1.jpg' */
+var THEMES = [
+    { color: 'card-yellow', title: '衣橱捡漏', sub: '时尚美衣低价淘', cat: 'clothing', illus: 'img/tubiao/1.png', mini: [{ img: 'img/goods/1.png', price: 270 },   { img: 'img/goods/2.png', price: 248 }] },
+    { color: 'card-blue',   title: '手机数码', sub: '热门装备省心入', cat: 'digital',  illus: 'img/tubiao/2.png', mini: [{ img: 'img/goods/3.png', price: '14.30' }, { img: 'img/goods/4.png', price: 3148 }] },
+    { color: 'card-green',  title: '二次元',   sub: '烫门新品随手入', cat: 'free',     illus: 'img/tubiao/3.png', mini: [{ img: 'img/goods/5.png', price: 700 },    { img: 'img/goods/6.png', price: 1 }] },
+    { color: 'card-pink',   title: '省钱卡券', sub: '吃喝玩乐放心购', cat: 'skill',    illus: 'img/tubiao/4.png', mini: [{ img: 'img/goods/7.png', price: 2 },      { img: 'img/goods/8.png', price: '0.01' }] }
+];
+
+/* ================= 状态 ================= */
+var state = { catKey: null, directCat: null, tag: '猜你喜欢', kw: '' };
+
+/* ================= 渲染 ================= */
+
+// 图片或占位框（fb = 加载失败时的本地兜底图）
+function imgOrPh(src, cls, fb) {
+    if (src) {
+        var err = fb ? ' onerror="this.onerror=null;this.src=\'' + fb + '\'"' : '';
+        return '<img src="' + src + '" alt="" class="' + (cls || '') + '" loading="lazy"' + err + '>';
+    }
+    return '<div class="ph ' + (cls || '') + '">图片位置</div>';
+}
+
+/* 在线图片开关：
+   false = 使用本地图片 img/goods/*.png、img/tubiao/*.png（当前使用）
+   true  = 使用在线图片（picsum.photos 真实照片，加载失败自动回退本地图） */
+var ONLINE = false;
+var PIC = 'https://picsum.photos/seed/';
+
+// 左侧分类
+function renderCats() {
+    var html = '';
+    CATS.forEach(function (c) {
+        html += '<div class="cate-item' + (state.catKey === c.key ? ' active' : '') + '" data-key="' + c.key + '">'
+             +    '<img class="cate-ico" src="' + c.img + '" alt="">'
+             +    '<span class="cate-name">' + c.name.join('<span class="cate-sep">/</span>') + '</span>'
+             +  '</div>';
+    });
+    document.getElementById('cateList').innerHTML = html;
+}
+
+// 彩色主题卡片：插画位 + 该分类前 2 个商品预览
+function renderThemes() {
+    var html = '';
+    THEMES.forEach(function (t, ti) {
+        var illusSrc = ONLINE ? PIC + 'illus' + (ti + 1) + '/400/400' : t.illus;
+        html += '<div class="theme-card ' + t.color + '" data-cat="' + t.cat + '">'
+             +    '<div class="theme-left">'
+             +      '<div>'
+             +        '<div class="theme-head"><h4>' + t.title + '</h4><span class="arr">➜</span></div>'
+             +        '<div class="theme-sub">' + t.sub + '</div>'
+             +      '</div>'
+             +      imgOrPh(illusSrc, 'theme-illus', t.illus)
+             +    '</div>'
+             +    '<div class="theme-inner">';
+        t.mini.forEach(function (m, mi) {
+            var mSrc = ONLINE ? PIC + 'theme' + (ti + 1) + '_' + (mi + 1) + '/400/400' : m.img;
+            html += '<div class="mini-goods">' + imgOrPh(mSrc, '', m.img) + '<p>¥' + m.price + '</p></div>';
+        });
+        html += '</div></div>';
+    });
+    document.getElementById('themeCards').innerHTML = html;
+}
+
+// 标签栏
+function renderTags() {
+    var html = '';
+    TAGS.forEach(function (t, i) {
+        html += '<div class="tag' + (state.tag === t ? ' active' : '') + '" data-tag="' + t + '">'
+             +    (i === 0 ? '<img class="tag-logo" src="img/19.png" alt="">' : '')
+             +    t
+             +  '</div>';
+    });
+    document.getElementById('tagBar').innerHTML = html;
+}
+
+// 商品卡片：图 + 包邮标 + 标题 + 成色行 + 价格/人想要 + 卖家行（完全对齐闲鱼原版）
+function cardHTML(g) {
+    var src = ONLINE ? PIC + 'goods' + (GOODS.indexOf(g) + 1) + '/400/400' : g.img;
+    return '<div class="goods-card">'
+         +    imgOrPh(src, '', g.img)
+         +    '<div class="goods-info">'
+         +      '<div class="goods-title">' + (g.free ? '<b class="fp">包邮</b>' : '') + g.title + '</div>'
+         +      (g.cond ? '<div class="goods-cond">' + g.cond.split('|').join('<i>|</i>') + '</div>' : '')
+         +      '<div class="price-row">'
+         +        '<span class="price"><span class="unit">¥</span>' + g.price + '</span>'
+         +        (g.orig ? '<span class="orig">' + g.orig + '</span>' : '')
+         +        (g.want ? '<span class="want">' + g.want + '人想要</span>' : '')
+         +      '</div>'
+         +      (g.service ? '<span class="svc">' + g.service + '</span>' : '')
+         +      (g.disc ? '<div><span class="disc">' + g.disc + '</span></div>' : '')
+         +      '<div class="seller-row">' + (g.zan ? '<span class="zan">赞</span>' : '') + '<span class="sname">' + g.seller + '</span>'
+         +        (g.credit ? '<span class="credit">' + g.credit + '</span>' : '') + '</div>'
+         +    '</div>'
+         +  '</div>';
+}
+
+// 分类匹配：左侧分类行按 cats 数组筛选，彩卡直达按单个分类筛选
+function inCat(g) {
+    if (state.directCat) return g.cat === state.directCat;
+    if (state.catKey) {
+        var row = null;
+        for (var i = 0; i < CATS.length; i++) {
+            if (CATS[i].key === state.catKey) { row = CATS[i]; break; }
+        }
+        return row ? row.cats.indexOf(g.cat) !== -1 : true;
+    }
+    return true;
+}
+
+// 核心：按 分类 + 标签 + 关键词 过滤后渲染
+function renderGoods() {
+    var list = GOODS.filter(function (g) {
+        if (!inCat(g)) return false;
+        if (state.tag !== '猜你喜欢' && g.tag !== state.tag) return false;
+        if (state.kw && g.title.toLowerCase().indexOf(state.kw.toLowerCase()) === -1) return false;
+        return true;
+    });
+    var grid = document.getElementById('goodsGrid');
+    if (list.length === 0) {
+        grid.innerHTML = '<div class="empty-tip">🈳 没有找到相关宝贝，换个分类或标签试试吧</div>';
+    } else {
+        grid.innerHTML = list.map(cardHTML).join('');
+    }
+}
+
+function renderAll() {
+    renderCats();
+    renderTags();
+    renderGoods();
+}
+
+/* ================= 事件 ================= */
+
+// 分类点击：再次点击同一分类 = 取消筛选
+document.getElementById('cateList').addEventListener('click', function (e) {
+    var item = e.target.closest('.cate-item');
+    if (!item) return;
+    var key = item.dataset.key;
+    if (state.catKey === key) { state.catKey = null; } else { state.catKey = key; state.directCat = null; }
+    renderAll();
+});
+
+// 标签点击切换
+document.getElementById('tagBar').addEventListener('click', function (e) {
+    var tag = e.target.closest('.tag');
+    if (!tag) return;
+    state.tag = tag.dataset.tag;
+    renderAll();
+});
+
+// 主题卡片点击 → 按对应分类筛选
+document.getElementById('themeCards').addEventListener('click', function (e) {
+    var card = e.target.closest('.theme-card');
+    if (!card) return;
+    var cat = card.dataset.cat;
+    if (state.directCat === cat) { state.directCat = null; } else { state.directCat = cat; state.catKey = null; }
+    renderAll();
+});
+
+// 搜索
+function doSearch() {
+    state.kw = document.getElementById('searchInput').value.trim();
+    renderGoods();
+}
+document.getElementById('searchBtn').addEventListener('click', doSearch);
+document.getElementById('searchInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doSearch();
+});
+
+// 热门词点击 → 填入并搜索
+document.getElementById('hotWord').addEventListener('click', function (e) {
+    if (e.target.tagName !== 'A') return;
+    e.preventDefault();
+    document.getElementById('searchInput').value = e.target.textContent;
+    doSearch();
+});
+
+// Banner / Logo / 发闲置 → 重置筛选回到顶部
+function resetFilter() {
+    state = { catKey: null, directCat: null, tag: '猜你喜欢', kw: '' };
+    document.getElementById('searchInput').value = '';
+    renderAll();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.getElementById('bigBanner').addEventListener('click', resetFilter);
+document.getElementById('logo').addEventListener('click', resetFilter);
+document.getElementById('sellBtn').addEventListener('click', resetFilter);
+
+/* ================= 初始化 ================= */
+renderThemes();
+renderAll();
+</script>
+</body>
+</html>
