@@ -10,7 +10,7 @@
     font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
     background: #f0f4f8; color: #2c3e50; line-height: 1.8; padding: 26px 20px 50px;
   }
-  .container { max-width: 980px; margin: 0 auto; }
+  .container { max-width: 1000px; margin: 0 auto; }
 
   header { text-align: center; margin-bottom: 22px; }
   header h1 { font-size: 28px; letter-spacing: 2px; }
@@ -44,7 +44,7 @@
   }
   .stage { font-size: 13px; color: #7f8c8d; }
 
-  /* 流程时间线 */
+  /* 面板 */
   .panel {
     background: #fff; border-radius: 12px; padding: 22px 24px; margin-bottom: 18px;
     box-shadow: 0 2px 12px rgba(0,0,0,.06);
@@ -54,11 +54,11 @@
     padding-left: 10px; margin-bottom: 16px;
   }
 
+  /* 时间线 */
   .flow { position: relative; padding-left: 6px; }
   .step { display: flex; gap: 14px; position: relative; padding-bottom: 12px; }
   .step:last-child { padding-bottom: 0; }
 
-  /* 左侧节点 + 连接线 */
   .rail { width: 40px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
   .dot {
     width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
@@ -69,7 +69,6 @@
   .line { width: 2px; flex: 1; background: #e6ebf0; margin: 4px 0; min-height: 12px; }
   .step:last-child .line { display: none; }
 
-  /* 状态：进行中 / 完成 */
   .step[data-state="running"] .dot {
     background: #f4eefa; border-color: #8e44ad; color: #8e44ad;
     animation: pulse 1.2s ease-in-out infinite;
@@ -83,10 +82,17 @@
 
   .card {
     flex: 1; background: #fafbfc; border: 1px solid #e6ebf0; border-radius: 10px;
-    padding: 12px 16px; transition: border-color .2s, background .2s;
+    padding: 12px 16px; transition: border-color .2s, background .2s, opacity .2s;
   }
   .step[data-state="running"] .card { background: #faf7fd; border-color: #dcc6ea; }
   .step[data-state="done"] .card { background: #f3fbf6; border-color: #c6e9d4; }
+
+  /* 单个分支卡片的状态（竞速用） */
+  .card[data-state="running"] { background: #faf7fd; border-color: #dcc6ea; }
+  .card[data-state="done"] { background: #f3fbf6; border-color: #c6e9d4; }
+  .card[data-state="lose"] { background: #fbfbfc; border-color: #e2e6ea; opacity: .72; }
+  .card[data-state="lose"] .name { color: #95a5a6; text-decoration: line-through; }
+  .card[data-state="lose"] .fill { background: #cfd6dd !important; }
 
   .card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .name { font-size: 15px; font-weight: 600; }
@@ -98,39 +104,43 @@
     height: 100%; width: 0; border-radius: 6px;
     background: linear-gradient(90deg, #8e44ad, #3498db);
   }
-  .step[data-state="done"] .fill { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+  .step[data-state="done"] .fill,
+  .card[data-state="done"] .fill { background: linear-gradient(90deg, #27ae60, #2ecc71); }
 
   .status-line {
-    display: flex; justify-content: space-between; margin-top: 6px;
+    display: flex; justify-content: space-between; gap: 6px; margin-top: 6px;
     font-size: 12px; color: #95a5a6; font-family: Consolas, monospace;
   }
   .status-line .st { font-weight: 600; }
-  .step[data-state="running"] .st { color: #8e44ad; }
-  .step[data-state="done"] .st { color: #27ae60; }
+  .card[data-state="running"] .st, .step[data-state="running"] .st { color: #8e44ad; }
+  .card[data-state="done"] .st, .step[data-state="done"] .st { color: #27ae60; }
+  .card[data-state="lose"] .st { color: #e67e22; }
 
-  /* 并行分支 */
+  /* 并行 / 竞速分支 */
   .parallel { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 640px) { .parallel { grid-template-columns: 1fr; } }
+  @media (max-width: 680px) { .parallel { grid-template-columns: 1fr; } }
 
-  .badge-parallel {
-    display: inline-block; font-size: 11px; background: #fff3e0; color: #e67e22;
-    border: 1px solid #ffd9a8; padding: 1px 8px; border-radius: 10px; margin-left: 8px;
+  .badge {
+    display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px; margin-left: 6px;
+    vertical-align: 2px;
   }
+  .badge.race { background: #fff3e0; color: #e67e22; border: 1px solid #ffd9a8; }
+  .badge.all  { background: #eaf4fb; color: #2980b9; border: 1px solid #bcd9ef; }
 
   /* 日志 */
   .log {
     background: #1f2b36; color: #d7e2ea; border-radius: 8px; padding: 14px 16px;
     font-family: "Consolas", monospace; font-size: 12.5px; line-height: 1.75;
-    height: 230px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+    height: 250px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
   }
   .log .t   { color: #7f8c8d; }
   .log .run { color: #f1c40f; }
   .log .ok  { color: #2ecc71; }
   .log .dim { color: #8fa3b3; }
   .log .sys { color: #5dade2; }
-  .log .end { color: #e879f9; font-weight: 700; }
+  .log .win { color: #e879f9; font-weight: 700; }
 
-  /* 完成提示 */
+  /* 完成横幅 */
   .done-banner {
     display: none; text-align: center; padding: 26px 20px; margin-bottom: 18px;
     background: linear-gradient(135deg, #f3fbf6, #faf7fd);
@@ -167,13 +177,13 @@
 
   <header>
     <h1><span>17-6</span> · Promise + async/await 包饺子</h1>
-    <p class="sub">买原料 → 取原料 →（和面 ∥ 和馅）→ 包饺子 → 吃饺子，每个环节用 setTimeout 模拟真实耗时</p>
+    <p class="sub">买原料（线上 ∥ 线下，先完成即可）→ 取原料 →（和面 ∥ 和馅）→ 包饺子 → 煮饺子 → 吃饺子</p>
   </header>
 
   <!-- 控制栏 -->
   <div class="bar">
     <button class="btn green" id="startBtn" onclick="start()">▶ 开始包饺子</button>
-    <button class="btn gray" id="resetBtn" onclick="resetAll()">↺ 重置</button>
+    <button class="btn gray" id="resetBtn" onclick="resetAll()" disabled>↺ 重置</button>
     <label style="margin-left:8px">播放速度：</label>
     <select id="speedSel">
       <option value="1">1 倍速（真实用时）</option>
@@ -189,7 +199,7 @@
   <!-- 完成横幅 -->
   <div class="done-banner" id="doneBanner">
     <span class="emoji">🥟</span>
-    <div class="txt">饺子真好吃！</div>
+    <div class="txt">饺子煮好了，开吃！</div>
     <div class="sub2" id="doneSub"></div>
   </div>
 
@@ -198,22 +208,37 @@
     <h2>制作流程</h2>
     <div class="flow">
 
-      <!-- 1. 买原料 -->
+      <!-- 1. 买原料：线上 ∥ 线下 竞速 -->
       <div class="step" id="step-buy" data-state="pending">
         <div class="rail">
           <div class="dot">🛒</div>
           <div class="line"></div>
         </div>
-        <div class="card">
-          <div class="card-top">
-            <span class="name">① 买原料</span>
-            <span class="time-tag">预计 6.0s</span>
+        <div class="parallel">
+          <div class="card" id="card-online" data-state="pending">
+            <div class="card-top">
+              <span class="name">① 线上购买 <span class="badge race">竞速</span></span>
+              <span class="time-tag">6.0s</span>
+            </div>
+            <div class="desc">在生鲜 App 下单，等骑手送到</div>
+            <div class="progress"><div class="fill" id="fill-online"></div></div>
+            <div class="status-line">
+              <span class="st" id="st-online">等待中</span>
+              <span id="el-online">—</span>
+            </div>
           </div>
-          <div class="desc">去菜市场买面粉、猪肉、白菜、葱姜</div>
-          <div class="progress"><div class="fill" id="fill-buy"></div></div>
-          <div class="status-line">
-            <span class="st" id="st-buy">等待中</span>
-            <span id="el-buy">—</span>
+
+          <div class="card" id="card-offline" data-state="pending">
+            <div class="card-top">
+              <span class="name">① 线下购买 <span class="badge race">竞速</span></span>
+              <span class="time-tag">8.0s</span>
+            </div>
+            <div class="desc">自己跑去菜市场买面粉、猪肉、白菜</div>
+            <div class="progress"><div class="fill" id="fill-offline"></div></div>
+            <div class="status-line">
+              <span class="st" id="st-offline">等待中</span>
+              <span id="el-offline">—</span>
+            </div>
           </div>
         </div>
       </div>
@@ -229,7 +254,7 @@
             <span class="name">② 取原料</span>
             <span class="time-tag">预计 2.0s</span>
           </div>
-          <div class="desc">把买好的原料拎回家、清洗备用</div>
+          <div class="desc">把买到的原料拿回家、清洗备用</div>
           <div class="progress"><div class="fill" id="fill-fetch"></div></div>
           <div class="status-line">
             <span class="st" id="st-fetch">等待中</span>
@@ -247,7 +272,7 @@
         <div class="parallel">
           <div class="card" id="card-dough" data-state="pending">
             <div class="card-top">
-              <span class="name">③ 和面 <span class="badge-parallel">同时进行</span></span>
+              <span class="name">③ 和面 <span class="badge all">并行</span></span>
               <span class="time-tag">4.0s</span>
             </div>
             <div class="desc">面粉加水，揉成光滑面团</div>
@@ -259,7 +284,7 @@
           </div>
           <div class="card" id="card-filling" data-state="pending">
             <div class="card-top">
-              <span class="name">③ 和馅 <span class="badge-parallel">同时进行</span></span>
+              <span class="name">③ 和馅 <span class="badge all">并行</span></span>
               <span class="time-tag">3.0s</span>
             </div>
             <div class="desc">肉馅加白菜、调料，顺着一个方向搅拌</div>
@@ -292,14 +317,34 @@
         </div>
       </div>
 
-      <!-- 5. 吃饺子 -->
+      <!-- 5. 煮饺子 -->
+      <div class="step" id="step-boil" data-state="pending">
+        <div class="rail">
+          <div class="dot">🍲</div>
+          <div class="line"></div>
+        </div>
+        <div class="card">
+          <div class="card-top">
+            <span class="name">⑤ 煮饺子</span>
+            <span class="time-tag">预计 3.0s</span>
+          </div>
+          <div class="desc">水开下锅，点两次凉水，浮起来就熟了</div>
+          <div class="progress"><div class="fill" id="fill-boil"></div></div>
+          <div class="status-line">
+            <span class="st" id="st-boil">等待中</span>
+            <span id="el-boil">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. 吃饺子 -->
       <div class="step" id="step-eat" data-state="pending">
         <div class="rail">
           <div class="dot">🍽️</div>
         </div>
         <div class="card">
           <div class="card-top">
-            <span class="name">⑤ 吃饺子</span>
+            <span class="name">⑥ 吃饺子</span>
             <span class="time-tag">预计 2.0s</span>
           </div>
           <div class="desc">蘸醋开吃，热气腾腾</div>
@@ -326,35 +371,39 @@
 <pre class="code"><span class="cm">// 用 Promise 包装 setTimeout：延时结束后 resolve</span>
 <span class="kw">function</span> <span class="fn">delay</span>(ms, name) {
     <span class="kw">return new</span> <span class="fn">Promise</span>(<span class="kw">function</span> (resolve) {
-        console.<span class="fn">log</span>(name + <span class="str">' 开始（Promise pending）'</span>);
-        <span class="fn">setTimeout</span>(<span class="kw">function</span> () {
-            resolve(name + <span class="str">' 完成'</span>);      <span class="cm">// → fulfilled</span>
-        }, ms);
+        <span class="fn">setTimeout</span>(<span class="kw">function</span> () { resolve(name); }, ms);
     });
 }
 
-<span class="cm">// async 函数 + await：像写同步代码一样写异步流程</span>
 <span class="kw">async function</span> <span class="fn">makeDumplings</span>() {
-    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">6000</span>, <span class="str">'买原料'</span>);          <span class="cm">// 串行：上一个完成才走下一个</span>
-    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">2000</span>, <span class="str">'取原料'</span>);
+    <span class="cm">// ① 竞速：线上 6s / 线下 8s 同时开始，谁先成功就用谁</span>
+    <span class="kw">var</span> winner = <span class="kw">await</span> Promise.<span class="fn">any</span>([
+        <span class="fn">delay</span>(<span class="num">6000</span>, <span class="str">'线上购买'</span>),
+        <span class="fn">delay</span>(<span class="num">8000</span>, <span class="str">'线下购买'</span>)
+    ]);                                  <span class="cm">// 较慢的那个不阻塞流程</span>
 
-    <span class="cm">// 并行：同时和面、和馅，两个都完成再往下走</span>
+    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">2000</span>, <span class="str">'取原料'</span>);       <span class="cm">// ② 串行</span>
+
+    <span class="cm">// ③ 并行：和面 + 和馅，两个都完成才继续</span>
     <span class="kw">await</span> Promise.<span class="fn">all</span>([
         <span class="fn">delay</span>(<span class="num">4000</span>, <span class="str">'和面'</span>),
         <span class="fn">delay</span>(<span class="num">3000</span>, <span class="str">'和馅'</span>)
     ]);
 
-    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">5000</span>, <span class="str">'包饺子'</span>);
-    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">2000</span>, <span class="str">'吃饺子'</span>);
-}
-
-<span class="fn">makeDumplings</span>().<span class="fn">then</span>(<span class="kw">function</span> () { console.<span class="fn">log</span>(<span class="str">'全部完成 ✅'</span>); });</pre>
+    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">5000</span>, <span class="str">'包饺子'</span>);       <span class="cm">// ④ 串行</span>
+    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">3000</span>, <span class="str">'煮饺子'</span>);       <span class="cm">// ⑤ 串行</span>
+    <span class="kw">await</span> <span class="fn">delay</span>(<span class="num">2000</span>, <span class="str">'吃饺子'</span>);       <span class="cm">// ⑥ 串行</span>
+}</pre>
     <p class="tips">
-      <b>要点：</b>① <code>await</code> 会等待 Promise 变成 fulfilled 才执行下一行，因此顺序流程写起来像同步代码；
-      ② 需要"同时做"的任务必须<b>先各自创建 Promise，再用 <code>Promise.all</code> 一起等待</b>——
-      写成两个 <code>await</code> 会变成串行（耗时 4s + 3s = 7s，而并行只需 4s）；
-      ③ 如果某个环节可能失败，用 <code>try...catch</code> 或 <code>Promise.allSettled</code> 处理；
-      ④ 本页的"播放速度"只是把毫秒数除以倍速，不改变代码结构。
+      <b>三个组合方法的分工：</b>
+      <code>Promise.all</code> —— 全部成功才继续（和面 + 和馅，用于"都要完成"）；
+      <code>Promise.any</code> —— <b>第一个成功</b>就继续（线上 / 线下买原料，用于"完成任何一个即可"）；
+      <code>Promise.race</code> —— 第一个"敲定"就继续（不论成功失败）。
+      <br>
+      <b>要点：</b>① 竞速的两个任务必须<b>先同时创建</b>，再交给 <code>Promise.any</code> 等待，写成两个 <code>await</code> 就成了串行；
+      ② 落败的任务并不会被取消，只是结果被忽略（本页日志会显示它最终也完成了）；
+      ③ 若所有任务都失败，<code>Promise.any</code> 才抛 <code>AggregateError</code>，可用 <code>try...catch</code> 兜底；
+      ④ "播放速度"只是把毫秒数除以倍速，不改变代码结构。
     </p>
   </div>
 
@@ -364,118 +413,175 @@
 <script>
 /* ================= 步骤配置（真实耗时，毫秒） ================= */
 var STEPS = {
-    buy:     { name: '买原料', ms: 6000 },
-    fetch:   { name: '取原料', ms: 2000 },
-    dough:   { name: '和面',   ms: 4000 },
-    filling: { name: '和馅',   ms: 3000 },
-    wrap:    { name: '包饺子', ms: 5000 },
-    eat:     { name: '吃饺子', ms: 2000 }
+    online:  { name: '线上购买', ms: 6000 },
+    offline: { name: '线下购买', ms: 8000 },
+    fetch:   { name: '取原料',   ms: 2000 },
+    dough:   { name: '和面',     ms: 4000 },
+    filling: { name: '和馅',     ms: 3000 },
+    wrap:    { name: '包饺子',   ms: 5000 },
+    boil:    { name: '煮饺子',   ms: 3000 },
+    eat:     { name: '吃饺子',   ms: 2000 }
 };
 
-var startBtn = document.getElementById('startBtn');
-var resetBtn = document.getElementById('resetBtn');
-var speedSel = document.getElementById('speedSel');
+var startBtn  = document.getElementById('startBtn');
+var resetBtn  = document.getElementById('resetBtn');
+var speedSel  = document.getElementById('speedSel');
 var stageText = document.getElementById('stageText');
 var timerText = document.getElementById('timerText');
-var logBox   = document.getElementById('log');
-var banner   = document.getElementById('doneBanner');
-var doneSub  = document.getElementById('doneSub');
+var logBox    = document.getElementById('log');
+var banner    = document.getElementById('doneBanner');
+var doneSub   = document.getElementById('doneSub');
 
 var running = false;
 var t0 = 0, tickId = null;
 
 /* ================= 工具 ================= */
 function el(id) { return document.getElementById(id); }
-function pad2(n) { return n < 10 ? '0' + n : '' + n; }
-
-/* 秒表显示：00.0s */
+function speedNow() { return parseFloat(speedSel.value) || 1; }
 function fmt(ms) { return (ms / 1000).toFixed(1) + 's'; }
 
-/* 统一日志输出，带相对时间戳 */
 function log(msg, cls) {
-    var ms = running || t0 ? (performance.now() - t0) : 0;
+    var ms = t0 ? (performance.now() - t0) : 0;
     var line = document.createElement('div');
     line.className = cls || '';
     line.innerHTML = '<span class="t">[' + fmt(ms).padStart(6, ' ') + ']</span> ' + msg;
     logBox.appendChild(line);
     logBox.scrollTop = logBox.scrollHeight;
 }
-
-/* 确保日志容器可滚动 */
 logBox.style.overflowY = 'auto';
 
 /* ================= 核心：Promise 包装 setTimeout ================= */
-function delay(ms, name) {
-    return new Promise(function (resolve) {
-        setTimeout(function () { resolve(name + ' 完成'); }, ms);
-    });
+function delay(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
 }
 
-/* ================= 单个步骤的 UI 状态 ================= */
+/* ================= 卡片状态 ================= */
+var STATE_TEXT = { pending: '等待中', running: '进行中…', done: '完成 ✓', lose: '已放弃' };
+
+function uiNode(key) { return el('step-' + key) || el('card-' + key); }
+
 function setState(key, state) {
-    var stepEl = el('step-' + key) || el('card-' + key);
-    if (stepEl) stepEl.setAttribute('data-state', state);
-
-    var stEl = el('st-' + key);
-    if (stEl) {
-        stEl.textContent = (state === 'running') ? '进行中…' : (state === 'done' ? '完成 ✓' : '等待中');
-    }
+    var node = uiNode(key);
+    if (node) node.setAttribute('data-state', state);
+    var st = el('st-' + key);
+    if (st) st.textContent = STATE_TEXT[state] || state;
 }
 
-/* 执行一个步骤：置为进行中 → 进度条动画 → 等待 → 置为完成 */
+/* 进度条：从 0 走到 100%，时长 = 真实等待时间 */
+function startBar(key, realMs) {
+    var fill = el('fill-' + key);
+    if (!fill) return;
+    fill.style.transition = 'none';
+    fill.style.width = '0%';
+    void fill.offsetWidth;
+    fill.style.transition = 'width ' + realMs + 'ms linear';
+    fill.style.width = '100%';
+}
+
+/* 冻结进度条（放弃时停住） */
+function freezeBar(key) {
+    var fill = el('fill-' + key);
+    if (!fill) return;
+    var w = fill.getBoundingClientRect().width;
+    var parentW = fill.parentNode.getBoundingClientRect().width || 1;
+    fill.style.transition = 'none';
+    fill.style.width = (w / parentW * 100).toFixed(1) + '%';
+}
+
+/* ================= 单步骤执行（串行环节用） ================= */
 async function runStep(key) {
     var cfg = STEPS[key];
-    var speed = parseFloat(speedSel.value) || 1;
-    var realMs = cfg.ms / speed;      // 倍速只影响展示时长
-
-    var fill = el('fill-' + key);
-    var elTime = el('el-' + key);
+    var realMs = cfg.ms / speedNow();
 
     setState(key, 'running');
     stageText.textContent = '正在进行：' + cfg.name;
-    log('▶ <span class="run">' + cfg.name + '</span> 开始（预计 ' + (cfg.ms / 1000).toFixed(1) + 's）' +
+    log('▶ <span class="run">' + cfg.name + '</span> 开始（' + (cfg.ms / 1000).toFixed(1) + 's）' +
         ' → <span class="dim">Promise {&lt;pending&gt;}</span>', 'sys');
 
-    // 进度条动画：transition 时长与实际等待一致
-    if (fill) {
-        fill.style.transition = 'none';
-        fill.style.width = '0%';
-        // 强制重排，让 transition 生效
-        void fill.offsetWidth;
-        fill.style.transition = 'width ' + realMs + 'ms linear';
-        fill.style.width = '100%';
-    }
-
+    startBar(key, realMs);
     var begin = performance.now();
-    var result = await delay(realMs, cfg.name);   // ← 这里就是"等待异步完成"
+    await delay(realMs);                       // ← 等待异步完成
     var used = performance.now() - begin;
 
-    if (elTime) elTime.textContent = '用时 ' + (used / 1000).toFixed(1) + 's';
     setState(key, 'done');
-    log('✅ <span class="ok">' + result + '</span> ← <span class="dim">Promise {&lt;fulfilled&gt;}</span>', 'sys');
+    var elTime = el('el-' + key);
+    if (elTime) elTime.textContent = '用时 ' + (used / 1000).toFixed(1) + 's';
+    log('✅ <span class="ok">' + cfg.name + ' 完成</span>（' + (used / 1000).toFixed(1) + 's）' +
+        ' ← <span class="dim">Promise {&lt;fulfilled&gt;}</span>', 'sys');
+}
 
-    return result;
+/* ================= 竞速环节：线上 ∥ 线下 ================= */
+async function runBuyRace() {
+    var speed = speedNow();
+    var onlineMs  = STEPS.online.ms / speed;
+    var offlineMs = STEPS.offline.ms / speed;
+
+    el('step-buy').setAttribute('data-state', 'running');
+    stageText.textContent = '正在进行：买原料（线上 ∥ 线下，先完成者胜出）';
+    log('⚡ <span class="run">买原料</span> 同时开始两个方案：线上 6.0s ∥ 线下 8.0s' +
+        ' → <span class="dim">Promise.any([...])</span>', 'sys');
+
+    // 两个任务同时开始（关键：先各自创建 Promise）
+    var branches = ['online', 'offline'].map(function (key) {
+        setState(key, 'running');
+        startBar(key, key === 'online' ? onlineMs : offlineMs);
+        return delay(key === 'online' ? onlineMs : offlineMs).then(function () { return key; });
+    });
+
+    var begin = performance.now();
+    // Promise.any：第一个成功的就返回；不支持时退化为 race
+    var winnerKey = (typeof Promise.any === 'function')
+        ? await Promise.any(branches)
+        : await Promise.race(branches);
+    var used = performance.now() - begin;
+
+    var loserKey = (winnerKey === 'online') ? 'offline' : 'online';
+
+    // 胜出者
+    setState(winnerKey, 'done');
+    var winTime = el('el-' + winnerKey);
+    if (winTime) winTime.textContent = '胜出 · ' + (used / 1000).toFixed(1) + 's';
+    log('🏁 <span class="win">' + STEPS[winnerKey].name + ' 先完成</span>（' + (used / 1000).toFixed(1) +
+        's），Promise.any 返回，流程立即继续', 'win');
+
+    // 落败者：进度条冻结，标记已放弃
+    freezeBar(loserKey);
+    setState(loserKey, 'lose');
+    var loseTime = el('el-' + loserKey);
+    if (loseTime) loseTime.textContent = '较慢，已放弃';
+    log('⏭ <span class="dim">' + STEPS[loserKey].name + ' 仍在进行，但已不阻塞流程（结果会被忽略）</span>', 'dim');
+
+    // 落败者最终完成时只记一条日志，不影响主流程
+    var loserMs = loserKey === 'online' ? onlineMs : offlineMs;
+    delay(loserMs - used).then(function () {
+        log('ℹ <span class="dim">' + STEPS[loserKey].name + ' 最终也完成了（' +
+            ((STEPS[loserKey].ms) / 1000).toFixed(1) + 's），但这次结果没人用了</span>', 'dim');
+    });
+
+    el('step-buy').setAttribute('data-state', 'done');
+    return STEPS[winnerKey].name;
 }
 
 /* ================= 主流程：async / await ================= */
 async function makeDumplings() {
-    // 1、2 串行：买完原料才能取原料
-    await runStep('buy');
+    // ① 竞速：完成任何一个即可
+    await runBuyRace();
+
+    // ② 串行：取原料
     await runStep('fetch');
 
-    // 3 并行：和面、和馅同时做，两个都完成才继续
-    log('⚡ 开始并行：和面 ∥ 和馅（Promise.all 同时等待）', 'run');
+    // ③ 并行：和面、和馅都完成才继续
+    log('⚡ 开始并行：和面 ∥ 和馅 → <span class="dim">Promise.all([...])</span>', 'run');
     el('step-parallel').setAttribute('data-state', 'running');
-    stageText.textContent = '正在进行：和面 ∥ 和馅（并行）';
+    stageText.textContent = '正在进行：和面 ∥ 和馅（都要完成）';
     await Promise.all([runStep('dough'), runStep('filling')]);
     el('step-parallel').setAttribute('data-state', 'done');
-    log('⚡ 并行任务全部完成（两者中较慢的 4.0s 决定总耗时）', 'run');
+    log('⚡ 并行任务全部完成（由较慢的和面 4.0s 决定总耗时）', 'run');
 
-    // 4、5 串行：包完才能吃
+    // ④⑤⑥ 串行
     await runStep('wrap');
+    await runStep('boil');
     await runStep('eat');
-
-    return '全部完成';
 }
 
 /* ================= 开始 / 重置 ================= */
@@ -493,25 +599,24 @@ async function start() {
         timerText.textContent = fmt(performance.now() - t0).padStart(6, ' ');
     }, 100);
 
-    log('🍜 <span class="sys">准备包饺子，流程开始</span>', 'run');
-    log('提示：console 中的 Promise 从 pending → fulfilled 即代表该环节完成', 'dim');
+    log('🍜 <span class="run">准备包饺子，流程开始</span>', 'run');
+    log('提示：日志里 Promise 从 pending → fulfilled 即代表该环节完成', 'dim');
 
     try {
-        var res = await makeDumplings();
-        clearInterval(tickId);
-        tickId = null;
+        await makeDumplings();
+        clearInterval(tickId); tickId = null;
         var total = performance.now() - t0;
         timerText.textContent = fmt(total);
         stageText.textContent = '全部完成 🎉';
 
-        log('🎉 <span class="end">' + res + '，总用时 ' + (total / 1000).toFixed(1) + 's</span>', 'end');
-        log('计算说明：6 + 2 + max(4, 3) + 5 + 2 = 19s（倍速播放时按比例缩短）', 'dim');
+        log('🎉 <span class="win">饺子吃完了，总用时 ' + (total / 1000).toFixed(1) + 's</span>', 'win');
+        log('计算说明：max(6, 8) + 2 + max(4, 3) + 5 + 3 + 2 = 22s（倍速播放按比例缩短）', 'dim');
 
-        doneSub.textContent = '总用时 ' + (total / 1000).toFixed(1) + 's —— 和面与和馅是同时进行的，只算较慢的那个';
+        doneSub.textContent = '总用时 ' + (total / 1000).toFixed(1) +
+            's —— 买原料取较快的线上（6s），和面与和馅同时进行取较慢的 4s';
         banner.classList.add('show');
     } catch (err) {
-        clearInterval(tickId);
-        tickId = null;
+        clearInterval(tickId); tickId = null;
         log('❌ 出错了：' + err.message, 'run');
         stageText.textContent = '流程中断';
     } finally {
@@ -523,17 +628,17 @@ async function start() {
 
 /* 重置所有步骤 UI */
 function resetStepsUI() {
-    ['buy', 'fetch', 'dough', 'filling', 'wrap', 'eat'].forEach(function (key) {
+    ['online', 'offline', 'fetch', 'dough', 'filling', 'wrap', 'boil', 'eat'].forEach(function (key) {
         setState(key, 'pending');
         var fill = el('fill-' + key);
-        if (fill) {
-            fill.style.transition = 'none';
-            fill.style.width = '0%';
-        }
+        if (fill) { fill.style.transition = 'none'; fill.style.width = '0%'; }
         var t = el('el-' + key);
         if (t) t.textContent = '—';
     });
-    el('step-parallel').setAttribute('data-state', 'pending');
+    ['buy', 'parallel', 'fetch', 'wrap', 'boil', 'eat'].forEach(function (key) {
+        var s = el('step-' + key);
+        if (s) s.setAttribute('data-state', 'pending');
+    });
     timerText.textContent = '00.0s';
     stageText.textContent = '等待开始…';
 }
@@ -543,17 +648,18 @@ function resetAll() {
     resetStepsUI();
     logBox.innerHTML = '';
     banner.classList.remove('show');
-    log('↺ <span class="dim">已重置，可重新开始</span>', 'dim');
     t0 = 0;
+    log('↺ <span class="dim">已重置，可重新开始</span>', 'dim');
 }
 
-/* 防止重复点击时残留定时器 */
+/* 离开页面时清理计时器 */
 window.addEventListener('beforeunload', function () {
     if (tickId) clearInterval(tickId);
 });
 
-/* 首屏提示 */
+/* 首屏 */
 log('点击左上角「开始包饺子」按钮运行流程', 'dim');
+log('流程：买原料（线上∥线下，先完成即可）→ 取原料 →（和面∥和馅）→ 包饺子 → 煮饺子 → 吃饺子', 'dim');
 resetStepsUI();
 </script>
 </body>
