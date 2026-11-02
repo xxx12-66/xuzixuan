@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17-5 JavaScript 定时器 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f0f4f8; color: #2c3e50; line-height: 1.8; padding: 30px 20px 50px;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 30px; letter-spacing: 2px; }
+  header h1 span { color: #8e44ad; }
+  header .sub { color: #7f8c8d; font-size: 14px; }
+
+  .section {
+    background: #fff; border-radius: 12px; padding: 26px 28px; margin-bottom: 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .section-title {
+    font-size: 20px; color: #8e44ad; border-left: 4px solid #8e44ad;
+    padding-left: 12px; margin-bottom: 16px;
+  }
+  .section-desc { font-size: 14px; color: #666; margin-bottom: 16px; }
+
+  .demo { border: 1px solid #e1e8ed; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+  .demo-header {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #f8fafb; padding: 10px 16px; border-bottom: 1px solid #e1e8ed;
+  }
+  .demo-name { font-weight: 600; font-size: 15px; }
+  .demo-tag { font-size: 11px; color: #8e44ad; background: #f4eefa; padding: 2px 8px; border-radius: 10px; }
+
+  .code {
+    background: #2c3e50; color: #ecf0f1; font-family: "Consolas","Monaco",monospace;
+    font-size: 13px; padding: 14px 18px; overflow-x: auto; white-space: pre; line-height: 1.65;
+  }
+  .code .kw { color: #e74c3c; font-weight: bold; }
+  .code .str { color: #2ecc71; }
+  .code .num { color: #f1c40f; }
+  .code .cm { color: #7f8c8d; }
+  .code .fn { color: #3498db; }
+
+  .run-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 12px 16px; background: #f8fafb; border-top: 1px solid #e1e8ed;
+  }
+  .run-row label { font-size: 13px; color: #555; }
+  .run-row input[type="number"], .run-row input[type="text"] {
+    border: 1px solid #ccd5db; border-radius: 4px; padding: 6px 8px; font-size: 13px; width: 100px;
+  }
+  .btn {
+    background: #8e44ad; color: #fff; border: none; border-radius: 4px;
+    padding: 7px 16px; font-size: 13px; cursor: pointer; font-family: inherit; transition: background .15s;
+  }
+  .btn:hover { background: #7d3c98; }
+  .btn.gray { background: #7f8c8d; } .btn.gray:hover { background: #5d6d7e; }
+  .btn.green { background: #27ae60; } .btn.green:hover { background: #219a52; }
+  .btn.red { background: #c0392b; } .btn.red:hover { background: #a93226; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .output {
+    padding: 14px 18px; background: #fff; font-family: "Consolas","Monaco",monospace;
+    font-size: 13px; min-height: 44px; max-height: 240px; overflow-y: auto;
+    border-top: 1px dashed #e1e8ed; white-space: pre-wrap; word-break: break-word;
+  }
+  .output .ok { color: #27ae60; } .output .info { color: #8e44ad; }
+  .output .warn { color: #e67e22; } .output .err { color: #c0392b; }
+  .output .dim { color: #95a5a6; }
+
+  /* 大号显示区（倒计时 / 时钟 / 秒表） */
+  .display {
+    padding: 18px; text-align: center; font-family: "Consolas", monospace;
+    font-size: 40px; font-weight: 700; color: #8e44ad; letter-spacing: 2px;
+    background: #faf7fd; border-top: 1px dashed #e1e8ed; min-height: 84px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .display.small { font-size: 26px; }
+
+  /* 进度条 */
+  .progress-wrap { padding: 16px 18px; border-top: 1px dashed #e1e8ed; }
+  .progress-outer { background: #eee; border-radius: 10px; height: 18px; overflow: hidden; }
+  .progress-inner {
+    height: 100%; width: 0; border-radius: 10px;
+    background: linear-gradient(90deg, #8e44ad, #3498db); transition: width .1s linear;
+  }
+  .progress-tip { font-size: 12px; color: #7f8c8d; margin-top: 6px; text-align: right; }
+
+  /* 对比表 */
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.cmp th, table.cmp td { border: 1px solid #e1e8ed; padding: 10px 12px; text-align: left; }
+  table.cmp th { background: #f4eefa; color: #8e44ad; }
+  table.cmp tbody tr:nth-child(even) { background: #fafbfc; }
+  table.cmp code { background: #f0f0f4; padding: 1px 6px; border-radius: 3px; font-family: Consolas, monospace; font-size: 12.5px; }
+
+  .warn-box {
+    background: #fef9e7; border-left: 4px solid #e67e22; border-radius: 6px;
+    padding: 12px 16px; font-size: 13px; color: #7e5109; margin-top: 14px; line-height: 1.8;
+  }
+  .warn-box b { color: #c0392b; }
+
+  footer { text-align: center; color: #95a5a6; font-size: 13px; margin-top: 24px; }
+  footer span { color: #8e44ad; }
+
+  @media (max-width: 640px) {
+    .section { padding: 20px 16px; }
+    header h1 { font-size: 24px; }
+    .display { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>17-5</span> · JavaScript 两种定时器</h1>
+    <p class="sub">setTimeout（延时一次）与 setInterval（循环执行）—— 点击按钮观察执行过程</p>
+  </header>
+
+  <!-- ============ 一、setTimeout ============ -->
+  <section class="section">
+    <h2 class="section-title">一、setTimeout —— 延时执行一次</h2>
+    <p class="section-desc">
+      语法：<code>var id = setTimeout(回调函数, 延迟毫秒, 参数...)</code>；
+      返回一个数字 id，可用 <code>clearTimeout(id)</code> 在触发前取消。
+    </p>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 基本用法：延时后执行一次</span>
+        <span class="demo-tag">setTimeout</span>
+      </div>
+<pre class="code"><span class="kw">var</span> timerId = <span class="fn">setTimeout</span>(<span class="kw">function</span> () {
+    console.<span class="fn">log</span>(<span class="str">"3 秒后我才执行，而且只执行一次"</span>);
+}, <span class="num">3000</span>);
+
+<span class="cm">// 在触发前取消</span>
+<span class="fn">clearTimeout</span>(timerId);</pre>
+      <div class="run-row">
+        <label>延时：</label>
+        <input type="number" id="delayMs" value="3000" min="0" step="500">
+        <span style="font-size:13px;color:#7f8c8d">ms</span>
+        <button class="btn green" onclick="runTimeout()">▶ 启动定时器</button>
+        <button class="btn red" onclick="cancelTimeout()">■ 取消 clearTimeout</button>
+        <button class="btn gray" onclick="clearOut('outTimeout')">清空</button>
+      </div>
+      <div class="output" id="outTimeout"></div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">② 递归 setTimeout 实现倒计时</span>
+        <span class="demo-tag">循环的经典写法</span>
+      </div>
+<pre class="code"><span class="kw">var</span> n = <span class="num">5</span>;
+<span class="kw">function</span> <span class="fn">tick</span>() {
+    console.<span class="fn">log</span>(n + <span class="str">" ..."</span>);
+    n--;
+    <span class="kw">if</span> (n &gt; <span class="num">0</span>) {
+        <span class="fn">setTimeout</span>(tick, <span class="num">1000</span>);   <span class="cm">// 自己调用自己 → 形成循环</span>
+    } <span class="kw">else</span> {
+        console.<span class="fn">log</span>(<span class="str">"出发！"</span>);
+    }
+}
+<span class="fn">tick</span>();</pre>
+      <div class="run-row">
+        <button class="btn green" onclick="startCountdown()">▶ 开始 5 秒倒计时</button>
+        <button class="btn red" onclick="stopCountdown()">■ 停止</button>
+      </div>
+      <div class="display" id="countdownDisplay">00</div>
+      <div class="output" id="outCountdown"></div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">③ 延时设为 0：也不会立刻执行</span>
+        <span class="demo-tag">异步 / 事件循环</span>
+      </div>
+<pre class="code">console.<span class="fn">log</span>(<span class="str">"1. 同步代码"</span>);
+<span class="fn">setTimeout</span>(<span class="kw">function</span> () { console.<span class="fn">log</span>(<span class="str">"3. 定时器回调（宏任务）"</span>); }, <span class="num">0</span>);
+console.<span class="fn">log</span>(<span class="str">"2. 同步代码结束"</span>);
+<span class="cm">// 结果顺序：1 → 2 → 3，定时器回调永远排在同步代码之后</span></pre>
+      <div class="run-row">
+        <button class="btn" onclick="runZeroDelay()">▶ 运行看执行顺序</button>
+        <button class="btn gray" onclick="clearOut('outZero')">清空</button>
+      </div>
+      <div class="output" id="outZero"></div>
+    </div>
+  </section>
+
+  <!-- ============ 二、setInterval ============ -->
+  <section class="section">
+    <h2 class="section-title">二、setInterval —— 每隔一段时间重复执行</h2>
+    <p class="section-desc">
+      语法：<code>var id = setInterval(回调函数, 间隔毫秒)</code>；
+      必须手动 <code>clearInterval(id)</code> 才会停止，否则会一直运行下去。
+    </p>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 每秒计数器</span>
+        <span class="demo-tag">setInterval</span>
+      </div>
+<pre class="code"><span class="kw">var</span> count = <span class="num">0</span>;
+<span class="kw">var</span> id = <span class="fn">setInterval</span>(<span class="kw">function</span> () {
+    count++;
+    console.<span class="fn">log</span>(<span class="str">"已经过了 "</span> + count + <span class="str">" 秒"</span>);
+    <span class="kw">if</span> (count &gt;= <span class="num">10</span>) <span class="fn">clearInterval</span>(id);   <span class="cm">// 到条件就停止</span>
+}, <span class="num">1000</span>);</pre>
+      <div class="run-row">
+        <label>间隔：</label>
+        <input type="number" id="intervalMs" value="1000" min="100" step="100">
+        <span style="font-size:13px;color:#7f8c8d">ms</span>
+        <button class="btn green" onclick="startCounter()">▶ 开始计数</button>
+        <button class="btn red" onclick="stopCounter()">■ 停止 clearInterval</button>
+        <button class="btn gray" onclick="clearOut('outCounter')">清空</button>
+      </div>
+      <div class="output" id="outCounter"></div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">② 实时电子时钟</span>
+        <span class="demo-tag">每秒刷新</span>
+      </div>
+<pre class="code"><span class="kw">var</span> clockId = <span class="fn">setInterval</span>(<span class="kw">function</span> () {
+    <span class="kw">var</span> now = <span class="kw">new</span> <span class="fn">Date</span>();
+    <span class="kw">var</span> h = <span class="fn">pad</span>(now.<span class="fn">getHours</span>());
+    <span class="kw">var</span> m = <span class="fn">pad</span>(now.<span class="fn">getMinutes</span>());
+    <span class="kw">var</span> s = <span class="fn">pad</span>(now.<span class="fn">getSeconds</span>());
+    clockEl.textContent = h + <span class="str">":"</span> + m + <span class="str">":"</span> + s;
+}, <span class="num">1000</span>);</pre>
+      <div class="run-row">
+        <button class="btn green" id="clockBtn" onclick="toggleClock()">▶ 启动时钟</button>
+        <button class="btn gray" onclick="clearOut('outClock')">清空</button>
+      </div>
+      <div class="display" id="clockDisplay">--:--:--</div>
+      <div class="output" id="outClock"></div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">③ 进度条动画（可暂停 / 继续 / 重置）</span>
+        <span class="demo-tag">定时器 + DOM</span>
+      </div>
+<pre class="code"><span class="kw">var</span> percent = <span class="num">0</span>;
+<span class="kw">var</span> barId = <span class="fn">setInterval</span>(<span class="kw">function</span> () {
+    percent += <span class="num">2</span>;
+    bar.style.width = percent + <span class="str">"%"</span>;
+    <span class="kw">if</span> (percent &gt;= <span class="num">100</span>) <span class="fn">clearInterval</span>(barId);   <span class="cm">// 满了就停</span>
+}, <span class="num">100</span>);</pre>
+      <div class="run-row">
+        <button class="btn green" id="barBtn" onclick="toggleBar()">▶ 开始</button>
+        <button class="btn gray" onclick="resetBar()">↺ 重置</button>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-outer"><div class="progress-inner" id="barInner"></div></div>
+        <div class="progress-tip" id="barTip">0%</div>
+      </div>
+      <div class="output" id="outBar"></div>
+    </div>
+  </section>
+
+  <!-- ============ 三、两者对比 ============ -->
+  <section class="section">
+    <h2 class="section-title">三、setTimeout 与 setInterval 对比</h2>
+    <table class="cmp">
+      <thead>
+        <tr><th style="width:130px">对比项</th><th>setTimeout</th><th>setInterval</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>执行次数</td><td>延迟后执行 <b>一次</b></td><td>每隔固定时间 <b>重复执行</b>，直到被清除</td></tr>
+        <tr><td>语法</td><td><code>setTimeout(fn, ms)</code></td><td><code>setInterval(fn, ms)</code></td></tr>
+        <tr><td>取消方法</td><td><code>clearTimeout(id)</code></td><td><code>clearInterval(id)</code></td></tr>
+        <tr><td>返回值</td><td colspan="2">都是一个数字 <b>定时器 id</b>，浏览器环境下从 1 开始递增（两者 id 各自独立编号）</td></tr>
+        <tr><td>实现循环</td><td>需在回调内<b>递归</b>再次调用自身</td><td>天然循环</td></tr>
+        <tr><td>间隔准确性</td><td>递归方式<b>保证两次执行之间</b>至少间隔 ms</td><td>若回调耗时 &gt; 间隔，会造成<b>任务堆积</b></td></tr>
+        <tr><td>常见用途</td><td>防抖 debounce、延时提示、延时跳转、动画收尾</td><td>轮询、时钟、轮播图、进度刷新</td></tr>
+      </tbody>
+    </table>
+    <div class="warn-box">
+      <b>注意：</b>① 定时器回调里的 <code>this</code> 默认指向 <code>window</code>（严格模式下为 <code>undefined</code>），需要访问外部 this 请用箭头函数或先存 <code>var self = this</code>；
+      ② 页面卸载前记得 <code>clearInterval</code>，否则定时器一直占用内存；
+      ③ 时间参数单位是<b>毫秒</b>（1000ms = 1 秒），且只表示"最快什么时候执行"，不保证精确。
+    </div>
+  </section>
+
+  <!-- ============ 四、经典陷阱 ============ -->
+  <section class="section">
+    <h2 class="section-title">四、经典陷阱：循环里的 var + 定时器</h2>
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 为什么输出的都是 5？</span>
+        <span class="demo-tag">闭包</span>
+      </div>
+<pre class="code"><span class="cm">// ❌ var 是函数作用域，5 个回调共享同一个 i，执行时循环早已结束</span>
+<span class="kw">for</span> (<span class="kw">var</span> i = <span class="num">0</span>; i &lt; <span class="num">5</span>; i++) {
+    <span class="fn">setTimeout</span>(<span class="kw">function</span> () { console.<span class="fn">log</span>(i); }, <span class="num">100</span>);
+}   <span class="cm">// 输出：5 5 5 5 5</span>
+
+<span class="cm">// ✅ 改法一：let 是块级作用域，每次循环都是新的 i</span>
+<span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; <span class="num">5</span>; i++) {
+    <span class="fn">setTimeout</span>(<span class="kw">function</span> () { console.<span class="fn">log</span>(i); }, <span class="num">100</span>);
+}   <span class="cm">// 输出：0 1 2 3 4</span>
+
+<span class="cm">// ✅ 改法二：用 setTimeout 的第三个参数把值传进去</span>
+<span class="kw">for</span> (<span class="kw">var</span> j = <span class="num">0</span>; j &lt; <span class="num">5</span>; j++) {
+    <span class="fn">setTimeout</span>(<span class="kw">function</span> (n) { console.<span class="fn">log</span>(n); }, <span class="num">100</span>, j);
+}</pre>
+      <div class="run-row">
+        <button class="btn red" onclick="runVarTrap()">▶ 运行 var（错误示范）</button>
+        <button class="btn green" onclick="runLetFix()">▶ 运行 let（正确）</button>
+        <button class="btn" onclick="runParamFix()">▶ 运行 第三参数传值</button>
+        <button class="btn gray" onclick="clearOut('outTrap')">清空</button>
+      </div>
+      <div class="output" id="outTrap"></div>
+    </div>
+  </section>
+
+  <!-- ============ 五、综合实战：秒表 ============ -->
+  <section class="section">
+    <h2 class="section-title">五、综合实战：秒表（setInterval + 清除）</h2>
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">开始 / 暂停 / 继续 / 重置</span>
+        <span class="demo-tag">综合练习</span>
+      </div>
+<pre class="code"><span class="kw">var</span> ms = <span class="num">0</span>, running = <span class="kw">false</span>, swId = <span class="kw">null</span>;
+
+<span class="kw">function</span> <span class="fn">start</span>() {
+    <span class="kw">if</span> (running) <span class="kw">return</span>;
+    running = <span class="kw">true</span>;
+    swId = <span class="fn">setInterval</span>(<span class="kw">function</span> () {
+        ms += <span class="num">100</span>;                       <span class="cm">// 每 100ms 累加一次</span>
+        showEl.textContent = <span class="fn">format</span>(ms);
+    }, <span class="num">100</span>);
+}
+<span class="kw">function</span> <span class="fn">pause</span>() { running = <span class="kw">false</span>; <span class="fn">clearInterval</span>(swId); }   <span class="cm">// 清除即暂停</span>
+<span class="kw">function</span> <span class="fn">reset</span>() { <span class="fn">pause</span>(); ms = <span class="num">0</span>; showEl.textContent = <span class="str">"00:00.0"</span>; }</pre>
+      <div class="run-row">
+        <button class="btn green" id="swBtn" onclick="toggleStopwatch()">▶ 开始</button>
+        <button class="btn gray" onclick="resetStopwatch()">↺ 重置</button>
+        <button class="btn" onclick="lapStopwatch()">⏱ 记一圈（lap）</button>
+      </div>
+      <div class="display" id="swDisplay">00:00.0</div>
+      <div class="output" id="outSw"></div>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 <span>徐梓轩</span> · 17-5 JavaScript 定时器 · 《高级网页设计》课堂练习
+  </footer>
+</div>
+
+<script>
+/* ================= 全局：保存各个定时器 id ================= */
+var tTimeout = null;     // 延时定时器
+var tCountdown = null;   // 倒计时
+var tCounter = null;     // 计数器
+var tClock = null;       // 时钟
+var tBar = null;         // 进度条
+var tStopwatch = null;   // 秒表
+
+/* ================= 工具 ================= */
+function clearOut(id) { document.getElementById(id).innerHTML = ''; }
+function log(id, msg, cls) {
+    var el = document.getElementById(id);
+    var span = document.createElement('span');
+    span.className = cls || 'info';
+    span.textContent = msg;
+    el.appendChild(span);
+    el.appendChild(document.createTextNode('\n'));
+    el.scrollTop = el.scrollHeight;
+}
+function now() {
+    var d = new Date();
+    return d.toTimeString().slice(0, 8);
+}
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+/* ================= 一、setTimeout ================= */
+function runTimeout() {
+    var ms = parseInt(document.getElementById('delayMs').value, 10);
+    if (isNaN(ms) || ms < 0) ms = 1000;
+    if (tTimeout) clearTimeout(tTimeout);
+
+    var start = Date.now();
+    log('outTimeout', '▶ ' + now() + ' 已设定：' + ms + ' ms 后执行（id 已保存，可点"取消"）', 'info');
+
+    tTimeout = setTimeout(function () {
+        log('outTimeout', '✅ 定时器触发了！实际约 ' + (Date.now() - start) + ' ms 后执行', 'ok');
+        log('outTimeout', '提示：setTimeout 只执行一次，触发后自动结束。', 'dim');
+        tTimeout = null;
+    }, ms);
+}
+
+function cancelTimeout() {
+    if (tTimeout) {
+        clearTimeout(tTimeout);
+        tTimeout = null;
+        log('outTimeout', '■ 已 clearTimeout，定时器被取消，回调不会执行', 'warn');
+    } else {
+        log('outTimeout', '当前没有等待中的 setTimeout', 'dim');
+    }
+}
+
+/* 倒计时：递归 setTimeout */
+var cdNum = 0;
+function startCountdown() {
+    stopCountdown();
+    cdNum = 5;
+    clearOut('outCountdown');
+    log('outCountdown', '⏳ 倒计时开始（每次输出后用 setTimeout 再安排下一次）', 'info');
+    tick();
+}
+function tick() {
+    document.getElementById('countdownDisplay').textContent = pad(cdNum);
+    log('outCountdown', '  ' + cdNum + ' ...', 'ok');
+    cdNum--;
+    if (cdNum > 0) {
+        tCountdown = setTimeout(tick, 1000);
+    } else {
+        tCountdown = setTimeout(function () {
+            document.getElementById('countdownDisplay').textContent = 'GO';
+            log('outCountdown', '🚀 出发！倒计时结束', 'warn');
+            tCountdown = null;
+        }, 1000);
+    }
+}
+function stopCountdown() {
+    if (tCountdown) { clearTimeout(tCountdown); tCountdown = null; }
+    clearOut('outCountdown');
+    log('outCountdown', '■ 倒计时已停止', 'warn');
+    document.getElementById('countdownDisplay').textContent = '00';
+}
+
+/* 延时 0 */
+function runZeroDelay() {
+    clearOut('outZero');
+    log('outZero', '1. 同步代码（立即输出）', 'ok');
+    setTimeout(function () {
+        log('outZero', '3. setTimeout 回调（延时 0 也排在最后）', 'info');
+    }, 0);
+    log('outZero', '2. 同步代码结束（立即输出）', 'ok');
+    log('outZero', '结论：定时器是异步的，会等同步代码全部执行完才运行。', 'warn');
+}
+
+/* ================= 二、setInterval ================= */
+var counter = 0;
+function startCounter() {
+    var ms = parseInt(document.getElementById('intervalMs').value, 10);
+    if (isNaN(ms) || ms < 50) ms = 1000;
+    if (tCounter) { log('outCounter', '计数器已在运行中，请先停止', 'warn'); return; }
+
+    counter = 0;
+    clearOut('outCounter');
+    log('outCounter', '▶ 每 ' + ms + ' ms 执行一次，点"停止"才会结束', 'info');
+    tCounter = setInterval(function () {
+        counter++;
+        log('outCounter', '第 ' + counter + ' 次执行（' + now() + '）', 'ok');
+        if (counter >= 10) {
+            clearInterval(tCounter);
+            tCounter = null;
+            log('outCounter', '⏹ 已执行 10 次，自动 clearInterval 停止', 'warn');
+        }
+    }, ms);
+}
+function stopCounter() {
+    if (tCounter) {
+        clearInterval(tCounter);
+        tCounter = null;
+        log('outCounter', '■ 已 clearInterval，共执行 ' + counter + ' 次', 'warn');
+    } else {
+        log('outCounter', '当前没有运行中的 setInterval', 'dim');
+    }
+}
+
+/* 时钟 */
+function toggleClock() {
+    var btn = document.getElementById('clockBtn');
+    if (tClock) {
+        clearInterval(tClock);
+        tClock = null;
+        btn.textContent = '▶ 启动时钟';
+        btn.className = 'btn green';
+        log('outClock', '■ 时钟已停止（' + now() + '）', 'warn');
+        return;
+    }
+    clearOut('outClock');
+    function update() {
+        var d = new Date();
+        document.getElementById('clockDisplay').textContent =
+            pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+    update();
+    tClock = setInterval(update, 1000);
+    btn.textContent = '⏸ 停止时钟';
+    btn.className = 'btn red';
+    log('outClock', '▶ 时钟启动，每秒刷新一次（' + now() + '）', 'info');
+}
+
+/* 进度条 */
+var barPercent = 0;
+function toggleBar() {
+    var btn = document.getElementById('barBtn');
+    if (tBar) {
+        clearInterval(tBar);
+        tBar = null;
+        btn.textContent = '▶ 继续';
+        btn.className = 'btn green';
+        log('outBar', '⏸ 已暂停在 ' + barPercent + '%', 'warn');
+        return;
+    }
+    btn.textContent = '⏸ 暂停';
+    btn.className = 'btn red';
+    log('outBar', '▶ 每 100 ms 增加 2%，到 100% 自动停止', 'info');
+    tBar = setInterval(function () {
+        barPercent += 2;
+        if (barPercent > 100) barPercent = 100;
+        document.getElementById('barInner').style.width = barPercent + '%';
+        document.getElementById('barTip').textContent = barPercent + '%';
+        if (barPercent >= 100) {
+            clearInterval(tBar);
+            tBar = null;
+            btn.textContent = '▶ 开始';
+            btn.className = 'btn green';
+            log('outBar', '✅ 已完成 100%，clearInterval 自动停止', 'ok');
+        }
+    }, 100);
+}
+function resetBar() {
+    if (tBar) { clearInterval(tBar); tBar = null; }
+    barPercent = 0;
+    document.getElementById('barInner').style.width = '0%';
+    document.getElementById('barTip').textContent = '0%';
+    var btn = document.getElementById('barBtn');
+    btn.textContent = '▶ 开始';
+    btn.className = 'btn green';
+    clearOut('outBar');
+    log('outBar', '↺ 已重置', 'dim');
+}
+
+/* ================= 四、陷阱演示 ================= */
+function runVarTrap() {
+    clearOut('outTrap');
+    log('outTrap', 'for (var i...) 的结果：', 'info');
+    for (var i = 0; i < 5; i++) {
+        setTimeout(function () { log('outTrap', '  i = ' + i, 'err'); }, 100);
+    }
+    setTimeout(function () {
+        log('outTrap', '❌ 全是 5：var 只有函数作用域，回调执行时循环已结束', 'warn');
+    }, 300);
+}
+function runLetFix() {
+    clearOut('outTrap');
+    log('outTrap', 'for (let i...) 的结果：', 'info');
+    for (let i = 0; i < 5; i++) {
+        setTimeout(function () { log('outTrap', '  i = ' + i, 'ok'); }, 100);
+    }
+    setTimeout(function () {
+        log('outTrap', '✅ 0~4：let 每次循环生成独立的作用域', 'ok');
+    }, 300);
+}
+function runParamFix() {
+    clearOut('outTrap');
+    log('outTrap', 'setTimeout(fn, ms, 参数) 的结果：', 'info');
+    for (var j = 0; j < 5; j++) {
+        setTimeout(function (n) { log('outTrap', '  参数 n = ' + n, 'ok'); }, 100, j);
+    }
+    setTimeout(function () {
+        log('outTrap', '✅ 第三个参数会把值传给回调函数', 'ok');
+    }, 300);
+}
+
+/* ================= 五、秒表 ================= */
+var swMs = 0, swRunning = false, swLap = 0;
+function formatMs(ms) {
+    var totalSec = Math.floor(ms / 1000);
+    var m = Math.floor(totalSec / 60);
+    var s = totalSec % 60;
+    var tenth = Math.floor((ms % 1000) / 100);
+    return pad(m) + ':' + pad(s) + '.' + tenth;
+}
+function toggleStopwatch() {
+    var btn = document.getElementById('swBtn');
+    if (swRunning) {
+        clearInterval(tStopwatch);
+        tStopwatch = null;
+        swRunning = false;
+        btn.textContent = '▶ 继续';
+        btn.className = 'btn green';
+        log('outSw', '⏸ 暂停于 ' + formatMs(swMs), 'warn');
+        return;
+    }
+    swRunning = true;
+    btn.textContent = '⏸ 暂停';
+    btn.className = 'btn red';
+    log('outSw', '▶ 开始计时（每 100 ms 刷新一次）', 'info');
+    tStopwatch = setInterval(function () {
+        swMs += 100;
+        document.getElementById('swDisplay').textContent = formatMs(swMs);
+    }, 100);
+}
+function resetStopwatch() {
+    if (tStopwatch) { clearInterval(tStopwatch); tStopwatch = null; }
+    swRunning = false;
+    swMs = 0; swLap = 0;
+    document.getElementById('swDisplay').textContent = '00:00.0';
+    document.getElementById('swBtn').textContent = '▶ 开始';
+    document.getElementById('swBtn').className = 'btn green';
+    clearOut('outSw');
+    log('outSw', '↺ 秒表已重置（clearInterval + 数据归零）', 'dim');
+}
+function lapStopwatch() {
+    if (!swRunning && swMs === 0) { log('outSw', '请先点击"开始"', 'warn'); return; }
+    swLap++;
+    var last = swLap === 1 ? swMs : swMs - (window._lastLapMs || 0);
+    log('outSw', '⏱ 第 ' + swLap + ' 圈：总计 ' + formatMs(swMs) + '（本圈 ' + formatMs(last) + '）', 'info');
+    window._lastLapMs = swMs;
+}
+
+/* 页面关闭前清理所有定时器，养成好习惯 */
+window.addEventListener('beforeunload', function () {
+    if (tTimeout) clearTimeout(tTimeout);
+    if (tCountdown) clearTimeout(tCountdown);
+    if (tCounter) clearInterval(tCounter);
+    if (tClock) clearInterval(tClock);
+    if (tBar) clearInterval(tBar);
+    if (tStopwatch) clearInterval(tStopwatch);
+});
+</script>
+</body>
+</html>

@@ -1,419 +1,751 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1020 徐梓轩的《高级网页设计》课堂实践</title>
-    <style>
-        /* ========== 全局重置 ========== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1020 徐梓轩的《高级网页设计》课堂实践</title>
+<style>
+/* ==========================================================================
+   主题变量
+   ========================================================================== */
+:root {
+  --bg:            #0a0b12;
+  --bg-soft:       #10121c;
+  --card:          rgba(255, 255, 255, .045);
+  --card-hover:    rgba(255, 255, 255, .085);
+  --border:        rgba(255, 255, 255, .09);
+  --border-strong: rgba(255, 255, 255, .18);
+  --text:          #eef1f8;
+  --text-2:        #a5aec6;
+  --text-3:        #6b7690;
+  --accent:        #7c6cff;
+  --accent-2:      #35d6c8;
+  --accent-3:      #ff77b7;
+  --shadow:        0 18px 50px rgba(0, 0, 0, .45);
+  --pill:          rgba(255, 255, 255, .06);
+  --grid:          rgba(255, 255, 255, .035);
+}
+html[data-theme="light"] {
+  --bg:            #f4f5fa;
+  --bg-soft:       #ffffff;
+  --card:          rgba(255, 255, 255, .78);
+  --card-hover:    #ffffff;
+  --border:        rgba(18, 22, 40, .09);
+  --border-strong: rgba(18, 22, 40, .18);
+  --text:          #131725;
+  --text-2:        #4c5670;
+  --text-3:        #8a93a8;
+  --accent:        #5b4bdb;
+  --accent-2:      #0fa89c;
+  --accent-3:      #d94f92;
+  --shadow:        0 14px 40px rgba(24, 32, 64, .12);
+  --pill:          rgba(24, 32, 64, .05);
+  --grid:          rgba(24, 32, 64, .05);
+}
 
-        body {
-            font-family: "Microsoft YaHei", "SimHei", "PingFang SC", sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            min-height: 100vh;
-            color: #e0e0e0;
-            line-height: 1.8;
-        }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* ========== 头部区域 ========== */
-        header {
-            text-align: center;
-            padding: 50px 20px 30px;
-            background: linear-gradient(180deg, rgba(48, 43, 99, 0.9), transparent);
-        }
+html { scroll-behavior: smooth; }
 
-        header h1 {
-            font-size: 36px;
-            font-weight: 700;
-            letter-spacing: 4px;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(100, 200, 255, 0.5), 0 0 40px rgba(100, 200, 255, 0.2);
-            margin-bottom: 10px;
-        }
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background .35s ease, color .35s ease;
+}
 
-        header .subtitle {
-            font-size: 16px;
-            color: #a0a0d0;
-            letter-spacing: 2px;
-        }
+/* ==========================================================================
+   背景装饰：极光光斑 + 网格
+   ========================================================================== */
+.bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.bg::before {
+  content: ""; position: absolute; inset: 0;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .5; }
+.orb.o1 { width: 46vw; height: 46vw; left: -12vw; top: -14vw; background: #5b4bdb; }
+.orb.o2 { width: 38vw; height: 38vw; right: -10vw; top: -6vw; background: #0f9d94; opacity: .35; }
+.orb.o3 { width: 34vw; height: 34vw; left: 30vw; top: 42vh; background: #d94f92; opacity: .18; }
 
-        header .divider {
-            width: 120px;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #6c63ff, transparent);
-            margin: 20px auto 0;
-            border-radius: 2px;
-        }
+/* 顶部滚动进度条 */
+.progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px; width: 0;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  z-index: 100; transition: width .1s linear;
+}
 
-        /* ========== 主体内容 ========== */
-        main {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 30px 20px 50px;
-        }
+/* ==========================================================================
+   头部
+   ========================================================================== */
+.hero {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 74px 26px 26px;
+}
+.brand {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 13px; letter-spacing: 2px; color: var(--text-2);
+  padding: 7px 14px 7px 8px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--pill);
+  backdrop-filter: blur(10px);
+}
+.brand .mark {
+  width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-3));
+  color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0;
+}
+.hero h1 {
+  font-size: clamp(34px, 6vw, 62px);
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin: 22px 0 14px;
+  font-weight: 800;
+}
+.grad {
+  background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 48%, var(--accent-3) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lead {
+  font-size: 15.5px; color: var(--text-2); max-width: 620px; margin-bottom: 26px;
+}
+.lead code {
+  font-family: Consolas, monospace; font-size: 13.5px;
+  background: var(--pill); border: 1px solid var(--border);
+  padding: 1px 7px; border-radius: 5px; color: var(--text);
+}
 
-        /* ========== 链接卡片区域 ========== */
-        .section-title {
-            font-size: 22px;
-            color: #b8b8ff;
-            margin-bottom: 20px;
-            padding-left: 14px;
-            border-left: 4px solid #6c63ff;
-            letter-spacing: 1px;
-        }
+/* 统计 */
+.stats { display: flex; flex-wrap: wrap; gap: 12px; }
+.stat {
+  flex: 1 1 150px; min-width: 132px;
+  padding: 14px 18px; border-radius: 14px;
+  border: 1px solid var(--border); background: var(--card);
+  backdrop-filter: blur(12px);
+}
+.stat b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+.stat span { font-size: 12px; color: var(--text-3); letter-spacing: .5px; }
 
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
+/* ==========================================================================
+   工具栏（吸顶）
+   ========================================================================== */
+.toolbar-wrap {
+  position: sticky; top: 0; z-index: 50;
+  padding: 14px 26px;
+  background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid var(--border);
+  transition: background .35s ease;
+}
+.toolbar {
+  max-width: 1128px; margin: 0 auto;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.search {
+  position: relative; flex: 1 1 260px; max-width: 380px;
+  display: flex; align-items: center;
+}
+.search svg { position: absolute; left: 13px; width: 16px; height: 16px; stroke: var(--text-3); fill: none; stroke-width: 2; }
+.search input {
+  width: 100%; padding: 10px 46px 10px 38px;
+  border-radius: 11px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text);
+  font-size: 13.5px; font-family: inherit;
+  transition: border-color .2s, background .2s;
+}
+.search input::placeholder { color: var(--text-3); }
+.search input:focus { outline: none; border-color: var(--accent); background: var(--bg-soft); }
+.search kbd {
+  position: absolute; right: 10px; font-size: 11px; font-family: Consolas, monospace;
+  color: var(--text-3); border: 1px solid var(--border); border-radius: 5px;
+  padding: 1px 6px; background: var(--pill);
+}
 
-        .card {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 24px 20px;
-            text-decoration: none;
-            color: #e0e0e0;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
+.chips { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 2px; flex: 1 1 auto; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0; font-size: 12.5px; padding: 6px 13px; border-radius: 999px;
+  border: 1px solid var(--border); background: transparent; color: var(--text-2);
+  cursor: pointer; font-family: inherit; transition: all .18s;
+  white-space: nowrap;
+}
+.chip:hover { color: var(--text); border-color: var(--border-strong); }
+.chip.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-3));
+  color: #fff; border-color: transparent;
+  box-shadow: 0 6px 18px rgba(124, 108, 255, .36);
+}
+.icon-btn {
+  width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px;
+  border: 1px solid var(--border); background: var(--card); color: var(--text);
+  cursor: pointer; font-size: 15px; display: grid; place-items: center;
+  transition: all .18s;
+}
+.icon-btn:hover { border-color: var(--border-strong); transform: translateY(-1px); }
 
-        .card::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(90deg, #6c63ff, #48c6ef);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.3s ease;
-        }
+/* ==========================================================================
+   主体
+   ========================================================================== */
+main { max-width: 1180px; margin: 0 auto; padding: 34px 26px 20px; }
 
-        .card:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(108, 99, 255, 0.4);
-            transform: translateY(-4px);
-            box-shadow: 0 8px 30px rgba(108, 99, 255, 0.15);
-        }
+.chapter { margin-bottom: 44px; }
+.chapter-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+  padding-bottom: 12px; border-bottom: 1px solid var(--border);
+}
+.chapter-head .ico { font-size: 20px; }
+.chapter-head h2 { font-size: 19px; font-weight: 700; letter-spacing: .5px; }
+.chapter-head .badge {
+  font-size: 11.5px; color: var(--text-3); border: 1px solid var(--border);
+  border-radius: 999px; padding: 1px 9px;
+}
+.chapter-head .rule {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
 
-        .card:hover::before {
-            transform: scaleX(1);
-        }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 16px;
+}
 
-        .card .card-icon {
-            font-size: 32px;
-            margin-bottom: 10px;
-            display: inline-block;
-        }
+.card {
+  position: relative;
+  display: flex; flex-direction: column;
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  text-decoration: none; color: inherit;
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  transition: transform .25s cubic-bezier(.2,.8,.2,1), border-color .25s, background .25s, box-shadow .25s;
+  opacity: 0; transform: translateY(14px);
+}
+.card.in { opacity: 1; transform: none; }
+.card::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(420px circle at 50% -20%, rgba(124, 108, 255, .22), transparent 62%);
+  opacity: 0; transition: opacity .3s;
+}
+.card:hover {
+  transform: translateY(-5px);
+  border-color: var(--border-strong);
+  background: var(--card-hover);
+  box-shadow: var(--shadow);
+}
+.card:hover::before { opacity: 1; }
 
-        .card .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 6px;
-        }
+.card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.card-top .icon {
+  width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+  font-size: 19px;
+  background: var(--pill); border: 1px solid var(--border);
+  transition: transform .25s;
+}
+.card:hover .icon { transform: scale(1.08) rotate(-4deg); }
+.card-top .num {
+  font-family: Consolas, monospace; font-size: 11.5px; color: var(--text-3);
+  border: 1px solid var(--border); border-radius: 6px; padding: 1px 7px;
+  letter-spacing: .5px;
+}
+.card h3 { font-size: 15.5px; font-weight: 700; line-height: 1.45; margin-bottom: 6px; }
+.card p { font-size: 12.5px; color: var(--text-2); line-height: 1.65; flex: 1; }
+.card-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border);
+}
+.tag {
+  font-size: 11px; letter-spacing: .3px; color: var(--accent-2);
+  background: rgba(53, 214, 200, .12);
+  border: 1px solid rgba(53, 214, 200, .25);
+  padding: 2px 9px; border-radius: 999px;
+}
+html[data-theme="light"] .tag { color: #0b7a71; background: rgba(15,168,156,.1); border-color: rgba(15,168,156,.25); }
+.arrow {
+  font-size: 14px; color: var(--text-3);
+  transition: transform .25s, color .25s;
+}
+.card:hover .arrow { transform: translateX(4px); color: var(--accent); }
 
-        .card .card-desc {
-            font-size: 13px;
-            color: #999;
-            line-height: 1.6;
-        }
+/* 空状态 */
+.empty {
+  text-align: center; padding: 80px 20px; border: 1px dashed var(--border);
+  border-radius: 18px; color: var(--text-3); font-size: 14px;
+}
+.empty .big { font-size: 34px; display: block; margin-bottom: 10px; }
 
-        .card .card-tag {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 2px 10px;
-            font-size: 11px;
-            border-radius: 20px;
-            background: rgba(108, 99, 255, 0.2);
-            color: #9d97ff;
-            letter-spacing: 0.5px;
-        }
+/* 页脚 */
+footer {
+  max-width: 1180px; margin: 20px auto 0; padding: 30px 26px 46px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--text-3);
+}
+footer .tech { display: flex; gap: 7px; flex-wrap: wrap; }
+footer .tech span {
+  padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--pill); font-size: 11.5px; color: var(--text-2);
+}
+footer b { color: var(--text); }
 
-        /* ========== 提示词区域 ========== */
-        .prompt-section {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 28px 24px;
-            margin-top: 10px;
-        }
+/* 右下角模式提示 */
+.mode-toast {
+  position: fixed; right: 20px; bottom: 20px; z-index: 60;
+  max-width: 300px; padding: 10px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--bg-soft);
+  box-shadow: var(--shadow); font-size: 12px; color: var(--text-2);
+  opacity: 0; transform: translateY(10px); transition: all .3s;
+}
+.mode-toast.show { opacity: 1; transform: none; }
+.mode-toast b { color: var(--text); }
+.mode-toast code {
+  font-family: Consolas, monospace; background: var(--pill);
+  padding: 1px 5px; border-radius: 4px;
+}
 
-        .prompt-section .section-title {
-            margin-bottom: 14px;
-        }
-
-        .prompt-box {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(108, 99, 255, 0.25);
-            border-radius: 8px;
-            padding: 20px;
-            font-size: 14px;
-            color: #c0c0e0;
-            line-height: 1.9;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .prompt-box .label {
-            color: #6c63ff;
-            font-weight: 600;
-        }
-
-        /* ========== 页脚 ========== */
-        footer {
-            text-align: center;
-            padding: 30px 20px;
-            color: #666;
-            font-size: 13px;
-            letter-spacing: 1px;
-        }
-
-        footer span {
-            color: #6c63ff;
-        }
-
-        /* ========== 装饰动画 ========== */
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        .float-dot {
-            position: fixed;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: rgba(108, 99, 255, 0.3);
-            animation: float 4s ease-in-out infinite;
-            pointer-events: none;
-        }
-
-        .float-dot:nth-child(1) { top: 15%; left: 8%; animation-delay: 0s; }
-        .float-dot:nth-child(2) { top: 40%; left: 92%; animation-delay: 1s; width: 8px; height: 8px; }
-        .float-dot:nth-child(3) { top: 70%; left: 5%; animation-delay: 2s; }
-        .float-dot:nth-child(4) { top: 85%; left: 88%; animation-delay: 0.5s; width: 5px; height: 5px; }
-        .float-dot:nth-child(5) { top: 25%; left: 95%; animation-delay: 1.5s; width: 4px; height: 4px; }
-        .float-dot:nth-child(6) { top: 60%; left: 3%; animation-delay: 2.5s; width: 7px; height: 7px; }
-    </style>
+@media (max-width: 720px) {
+  .hero { padding-top: 48px; }
+  .toolbar { gap: 8px; }
+  .search { max-width: none; flex-basis: 100%; }
+  .stat { flex: 1 1 45%; }
+  main { padding-top: 24px; }
+}
+</style>
 </head>
 <body>
 
-    <!-- 装饰浮动点 -->
-    <div class="float-dot"></div>
-    <div class="float-dot"></div>
-    <div class="float-dot"></div>
-    <div class="float-dot"></div>
-    <div class="float-dot"></div>
-    <div class="float-dot"></div>
+<div class="bg"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span></div>
+<div class="progress-bar" id="progressBar"></div>
 
-    <!-- 头部 -->
-    <header>
-        <h1>&#x1F4BB; 徐梓轩的《高级网页设计》课堂实践</h1>
-        <p class="subtitle">Advanced Web Design &mdash; Class Practice Portfolio</p>
-        <div class="divider"></div>
-    </header>
+<!-- ================= 头部 ================= -->
+<header class="hero">
+  <div class="brand"><span class="mark">徐</span> 高级网页设计 · 课堂实践</div>
+  <h1>徐梓轩的<br><span class="grad">网页设计作品集</span></h1>
+  <p class="lead">
+    从 <code>HTML</code> 元素结构，到 <code>CSS</code> 布局与动画，再到 <code>JavaScript</code> 交互、
+    <code>fetch</code> 接口与 <code>Promise</code> 异步流程 —— 共 <b id="leadCount">33</b> 个课堂实践页面。
+  </p>
+  <div class="stats">
+    <div class="stat"><b id="statPages">—</b><span>实践页面</span></div>
+    <div class="stat"><b id="statChapters">—</b><span>技术章节</span></div>
+    <div class="stat"><b id="statJs">—</b><span>JavaScript 交互</span></div>
+    <div class="stat"><b id="statTags">—</b><span>技术标签</span></div>
+  </div>
+</header>
 
-    <!-- 主体 -->
-    <main>
+<!-- ================= 工具栏 ================= -->
+<div class="toolbar-wrap">
+  <div class="toolbar">
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" id="searchInput" placeholder="搜索页面、知识点或标签…" autocomplete="off">
+      <kbd>/</kbd>
+    </div>
+    <div class="chips" id="chips"></div>
+    <button class="icon-btn" id="themeBtn" title="切换主题">🌙</button>
+  </div>
+</div>
 
-        <!-- 页面导航链接（动态生成） -->
-        <h2 class="section-title">&#x1F517; 课堂实践页面导航 <span id="fileCount" style="font-size:13px;color:#7f7fc0;margin-left:8px;"></span></h2>
-        <div class="card-grid" id="cardGrid"></div>
+<!-- ================= 列表 ================= -->
+<main id="main"></main>
 
-        <!-- 提示词内容 -->
-        <div class="prompt-section">
-            <h2 class="section-title">&#x1F4CB; 本页面生成提示词</h2>
-            <div class="prompt-box"><span class="label">提示词：</span>"更新首页，包括所有html文件"
+<footer>
+  <div>&copy; 2026 <b>徐梓轩</b> · 《高级网页设计》课堂实践 · 1020 班</div>
+  <div class="tech">
+    <span>HTML5</span><span>CSS3</span><span>Flex / Grid</span>
+    <span>JavaScript</span><span>Fetch / JSON</span><span>Promise</span>
+  </div>
+</footer>
 
-<span class="label">自动更新：</span>已启用 — 每次目录中新增 / 修改 / 删除 html 文件，首页会自动刷新并重新生成卡片（需通过 serve.py 本地服务器访问）</div>
-        </div>
+<div class="mode-toast" id="modeToast"></div>
 
-    </main>
+<script>
+/* ==========================================================================
+   1. 数据：文件清单 + 章节信息 + 每页标题描述
+   ========================================================================== */
 
-    <!-- 页脚 -->
-    <footer>
-        &copy; 2026 <span>徐梓轩</span> &mdash; 《高级网页设计》课堂实践 &mdash; All Rights Reserved
-    </footer>
+/* 离线兜底清单（按章节顺序） */
+var FALLBACK = [
+  '2-1.html','2-2.html',
+  '3-1 form.html','3-2 css.html',
+  '4-1.html',
+  '5-1.html','5-2.html',
+  '6-1 flex.html','6-2.html',
+  '7-1上图下文.html','7-2左图右文.html',
+  '8-1css3.html','9-1.html',
+  '10-1.html','10-2.html','10-3.html','10-4.html',
+  '12-1.html','12-2.html',
+  '15-1.html','15-2.html',
+  '16-1.html','16-2.html','16-3.html','16-4.html',
+  '17-1.html','17-2.html','17-3.html','17-3-detail.html','17-4.html','17-5.html','17-6.html',
+  '三级项目.html'
+];
 
-    <!-- 自动扫描目录、动态渲染卡片 + 热更新 -->
-    <script>
-    (function () {
-        var GRID = document.getElementById('cardGrid');
-        var COUNT = document.getElementById('fileCount');
+/* 章节：序号 → 名称、图标 */
+var CHAPTERS = {
+  0:  { name: '综合项目',       icon: '🏆' },
+  2:  { name: 'HTML 基础',      icon: '🧱' },
+  3:  { name: '表单与 CSS 入门', icon: '📝' },
+  4:  { name: 'CSS 选择器',     icon: '🎯' },
+  5:  { name: '层叠与盒模型',   icon: '📦' },
+  6:  { name: 'Flex 弹性布局',  icon: '🧩' },
+  7:  { name: '图文混排',       icon: '🖼️' },
+  8:  { name: 'CSS3 新特性',    icon: '✨' },
+  9:  { name: '过渡与动画',     icon: '🌊' },
+  10: { name: '动画与响应式',   icon: '📱' },
+  12: { name: 'CSS 进阶',       icon: '🎨' },
+  15: { name: 'JavaScript 入门', icon: '🚀' },
+  16: { name: 'DOM 与交互',     icon: '⚡' },
+  17: { name: '异步与接口',     icon: '🔌' }
+};
 
-        // 离线兜底：真实创建时间顺序（最旧 → 最新）
-        var FALLBACK = [
-            '2-1.html','2-2.html',
-            '3-1 form.html','3-2 css.html',
-            '4-1.html',
-            '5-1.html','5-2.html',
-            '6-1 flex.html','6-2.html',
-            '7-1上图下文.html','7-2左图右文.html',
-            '8-1css3.html','9-1.html',
-            '10-1.html','10-2.html','10-3.html','10-4.html',
-            '12-1.html','12-2.html',
-            '15-1.html','15-2.html',
-            '16-1.html','16-2.html','16-3.html','16-4.html',
-            '三级项目.html'
-        ];
+/* 每个页面的标题 / 描述 / 标签 */
+var META = {
+  '2-1.html':      ['HTML 元素结构',       '开始标签 + 内容 + 结束标记，认识最基础的 HTML 元素', 'HTML 基础'],
+  '2-2.html':      ['HTML 基础页面',       '标题、段落、列表与图片的综合练习', 'HTML 基础'],
+  '3-1 form.html': ['表单 Form',           '文本、密码、单选、复选、下拉、文本域、日期与文件上传', '表单'],
+  '3-2 css.html':  ['层叠样式表',          'CSS 引入方式、选择器与常用样式属性', 'CSS 基础'],
+  '4-1.html':      ['群组与后代选择器',    'CSS 群组选择器、后代选择器的综合运用', 'CSS 进阶'],
+  '5-1.html':      ['层叠与继承',          '样式层叠性、继承性与选择器优先级', 'CSS 优先级'],
+  '5-2.html':      ['盒模型 Box Model',    'content、padding、border、margin 的计算与运用', '盒模型'],
+  '6-1 flex.html': ['Flex 弹性布局',       'display:flex、主轴对齐、换行与常见页面布局', 'Flex 布局'],
+  '6-2.html':      ['Flex 布局练习',       '用弹性盒子实现卡片与标题的排列', 'Flex 布局'],
+  '7-1上图下文.html': ['上图下文布局',      '图片在上、文字在下的图文卡片结构', '图文布局'],
+  '7-2左图右文.html': ['左图右文布局',      '图片在左、文字在右的横向图文结构', '图文布局'],
+  '8-1css3.html':  ['CSS3 新特性',         '圆角、阴影、渐变、变换等 CSS3 视觉增强', 'CSS3'],
+  '9-1.html':      ['transition 过渡',     '属性过渡、时长、缓动函数与触发方式', '过渡动画'],
+  '10-1.html':     ['背景颜色动画',        '@keyframes 关键帧与 background 动画', 'CSS 动画'],
+  '10-2.html':     ['CSS 幻灯片',          '纯 CSS 实现的轮播 / 幻灯片效果', 'CSS 动画'],
+  '10-3.html':     ['媒体查询',            '@media 断点、屏幕适配与移动端样式', '响应式'],
+  '10-4.html':     ['Media Query 布局',    '多断点下的响应式页面布局实战', '响应式'],
+  '12-1.html':     ['CSS 变量',            '自定义属性 --var 与 var() 函数，主题色切换', 'CSS 变量'],
+  '12-2.html':     ['Grid 网格布局',       '二维网格、行列定义与区域划分', 'Grid 布局'],
+  '15-1.html':     ['数 7 游戏',           '7 的倍数或含 7 的数字 → 空盒子，循环 + 条件练习', '趣味练习'],
+  '15-2.html':     ['JavaScript 程序结构', '条件结构（if/switch/三元）与循环结构（for/while/for...of）', 'JavaScript'],
+  '16-1.html':     ['数组方法可视化',      'map、filter、reduce、sort 等数组方法交互演示', 'JavaScript'],
+  '16-2.html':     ['对象与字符串可视化',  '对象属性操作与字符串常用方法演示', 'JavaScript'],
+  '16-3.html':     ['商品分类导航',        '分类菜单样式与点击高亮交互', '综合练习'],
+  '16-4.html':     ['Tab 选项卡 · 排行榜', '新浪排行榜风格选项卡切换，榜单徽标与内容面板', 'JavaScript'],
+  '17-1.html':     ['JSON 数据格式',       'JSON 语法规则、stringify / parse 与表格渲染', 'JSON'],
+  '17-2.html':     ['Fetch 请求接口',      '原生 fetch 调用 fakestoreapi 并渲染商品列表', 'Ajax'],
+  '17-3.html':     ['商品列表页',          'fetch 列表接口，分页渲染并跳转详情页', 'Ajax'],
+  '17-3-detail.html': ['商品详情页',       '从地址栏取 id，请求单条商品数据并渲染', 'Ajax'],
+  '17-4.html':     ['接口调试工具',        'GET/POST/PUT/DELETE 通用请求，展示状态码、耗时与错误', 'Ajax'],
+  '17-5.html':     ['JS 两种定时器',       'setTimeout 与 setInterval 演示、对比与秒表实战', '定时器'],
+  '17-6.html':     ['Promise 包饺子',      'async/await + Promise.all 演示串行与并行异步流程', 'Promise'],
+  '三级项目.html':  ['闲鱼 · 首页',         '校园闲置互助平台首页：布局、分类、标签与搜索筛选', '项目实战']
+};
 
-        var ICONS = ['📐','🎨','💡','✨','📝','🔧','🚀','📊','🎯','⚡','🧩','🏗️','🌐','📚','🔥','💻','🛠️','🎪','🎭','🎬','📦','🔄'];
+/* ==========================================================================
+   2. 解析文件 → 卡片数据
+   ========================================================================== */
+function parseFile(filename) {
+  var meta = META[filename] || null;
+  var name = filename.replace(/\.html$/i, '');
+  var m = name.match(/^(\d+)-(\d+)\s*(.*)$/);
 
-        // 文件名 → 标题/描述/标签
-        function parseFile(filename) {
-            var name = filename.replace(/\.html$/i, '');
-            var numMatch = name.match(/^(\d+-\d+)\s*(.*)$/);
-            var prefix = numMatch ? numMatch[1] : '';
-            var suffix = numMatch ? (numMatch[2] || '') : name;
+  var ch = 0, num = '', sub = '';
+  if (m) {
+    ch = parseInt(m[1], 10);
+    num = m[1] + '-' + m[2];
+    sub = m[3] || '';
+  }
 
-            var kwMap = [
-                { re: /三级项目|闲鱼/i,        t: '三级项目 · 闲鱼首页', d: '闲鱼风格校园闲置互助平台首页：完整布局 + 分类/标签/搜索筛选', tag: '三级项目' },
-                { re: /16-1/,                 t: 'JS 数组方法可视化',   d: 'map、filter、reduce、sort 等数组方法交互演示',              tag: 'JavaScript' },
-                { re: /16-2/,                 t: 'JS 对象与字符串可视化', d: '对象操作与字符串方法交互演示',                              tag: 'JavaScript' },
-                { re: /16-4/,                 t: 'Tab选项卡 · 排行榜',  d: '新浪排行榜 Tab 选项卡切换交互',                                tag: 'JavaScript' },
-                { re: /16-3/,                 t: '商品分类导航',        d: '分类菜单与商品筛选联动',                                       tag: '综合练习' },
-                { re: /form|表单/i,           t: '表单Form',           d: '文本输入、密码、单选、复选、下拉、文本域、日期、文件与按钮', tag: '表单' },
-                { re: /css3/i,                t: 'CSS3新特性',         d: '圆角、阴影、渐变、过渡、变换、动画等视觉增强',              tag: 'CSS3' },
-                { re: /动画|keyframes/i,       t: 'CSS3动画',           d: '@keyframes 关键帧动画、animation、transform',                tag: 'CSS3 动画' },
-                { re: /javascript|js|程序|结构|条件|循环/i, t: 'JavaScript 程序结构', d: '条件结构（if/switch/三元）+ 循环结构（for/while/for...of）', tag: 'JavaScript' },
-                { re: /flex/i,                t: 'Flex弹性布局',       d: 'display:flex、justify-content、align-items、flex-wrap',     tag: 'Flex 布局' },
-                { re: /盒模型|box/i,           t: '盒模型',             d: 'content、padding、border、margin 的运用',                    tag: '盒模型' },
-                { re: /层叠|继承|优先级/i,      t: '层叠与继承',         d: 'CSS 层叠性、继承性、选择器优先级',                            tag: 'CSS 优先级' },
-                { re: /群组|后代|选择器/i,      t: 'CSS选择器',          d: '群组选择器、后代选择器的综合运用',                             tag: 'CSS 进阶' },
-                { re: /css/i,                 t: 'CSS层叠样式表',      d: 'CSS选择器与样式属性',                                        tag: 'CSS 基础' },
-                { re: /上图下文/i,             t: '上图下文布局',       d: '图片上方、文字下方的图文布局',                                 tag: '图文布局' },
-                { re: /左图右文/i,             t: '左图右文布局',       d: '图片左侧、文字右侧的图文布局',                                 tag: '图文布局' },
-                { re: /超链接|表格/i,           t: '超链接与表格',       d: '超链接、图片、相对路径与绝对路径',                             tag: 'HTML 进阶' },
-                { re: /grid|网格/i,            t: 'Grid网格布局',       d: 'CSS Grid 二维网格布局系统',                                   tag: 'Grid 布局' },
-                { re: /变量|variable/i,        t: 'CSS变量',           d: 'CSS 自定义属性与 var() 函数',                                tag: 'CSS 进阶' },
-                { re: /数7|游戏|规则/i,         t: '数7游戏',           d: '7 的倍数或个位是 7 的空盒子游戏',                             tag: '趣味练习' },
-                { re: /基础|元素/i,             t: 'HTML基础元素',       d: 'HTML 元素结构、列表与 DIV 布局',                              tag: 'HTML 基础' },
-            ];
+  // 详情页标题加后缀
+  var title = meta ? meta[0]
+            : (num ? (sub ? num + ' ' + sub : num + ' 课堂实践') : name);
 
-            var match = null;
-            for (var i = 0; i < kwMap.length; i++) {
-                if (suffix && kwMap[i].re.test(suffix)) { match = kwMap[i]; break; }
-                if (!match && kwMap[i].re.test(name)) { match = kwMap[i]; }
-            }
+  var desc = meta ? meta[1] : '课堂实践练习页面';
+  var tag  = meta ? meta[2] : '课堂实践';
 
-            var title, desc, tag;
-            if (match) {
-                title = prefix ? (prefix + ' ' + match.t) : match.t;
-                desc  = match.d;
-                tag   = match.tag;
-            } else if (prefix && suffix) {
-                title = prefix + ' ' + suffix; desc = '课堂实践练习'; tag = '课堂实践';
-            } else if (prefix) {
-                title = prefix + ' 课堂实践'; desc = '课堂实践练习'; tag = '课堂实践';
-            } else {
-                title = name || '未命名'; desc = '课堂实践练习'; tag = '课堂实践';
-            }
+  return {
+    file: filename,
+    href: './' + encodeURIComponent(filename),
+    ch: ch,
+    num: num || '★',
+    icon: (CHAPTERS[ch] || { icon: '📄' }).icon,
+    title: title,
+    desc: desc,
+    tag: tag
+  };
+}
 
-            // 稳定图标
-            var iconIdx = 0;
-            if (prefix) {
-                var parts = prefix.split('-');
-                iconIdx = (parseInt(parts[0],10)*7 + parseInt(parts[1]||'0',10)*3) % ICONS.length;
-            } else {
-                for (var k=0; k<name.length; k++) iconIdx = (iconIdx + name.charCodeAt(k)) % ICONS.length;
-            }
+/* 排序：章节号 → 小节号 → 详情页排在本体之后 */
+function sortKey(item) {
+  var m = item.num.match(/^(\d+)-(\d+)/);
+  var a = m ? parseInt(m[1], 10) : 999;
+  var b = m ? parseInt(m[2], 10) : 999;
+  var isDetail = /detail/i.test(item.file) ? 1 : 0;
+  return [a, b, isDetail];
+}
+function compareItems(x, y) {
+  var kx = sortKey(x), ky = sortKey(y);
+  for (var i = 0; i < 3; i++) {
+    if (kx[i] !== ky[i]) return kx[i] - ky[i];
+  }
+  return x.file.localeCompare(y.file);
+}
 
-            return {
-                filename: filename,
-                href: './' + filename,
-                icon: ICONS[iconIdx],
-                title: title,
-                desc: desc,
-                tag: tag
-            };
+/* ==========================================================================
+   3. 状态与渲染
+   ========================================================================== */
+var ALL = [];            // 全部条目
+var activeChapter = 'all';
+var keyword = '';
+var main = document.getElementById('main');
+var chipsBox = document.getElementById('chips');
+var searchInput = document.getElementById('searchInput');
+var modeToast = document.getElementById('modeToast');
+var observer = null;
+
+/* 章节排序：综合项目（0）永远排在最后 */
+function chOrder(ch) { return ch === 0 ? 999 : ch; }
+
+function buildChips() {
+  var chapters = [];
+  var seen = {};
+  ALL.forEach(function (it) {
+    if (!seen[it.ch]) { seen[it.ch] = true; chapters.push(it.ch); }
+  });
+  chapters.sort(function (a, b) { return chOrder(a) - chOrder(b); });
+
+  var html = '<button class="chip active" data-ch="all">全部 ' + ALL.length + '</button>';
+  chapters.forEach(function (ch) {
+    var c = CHAPTERS[ch] || { name: ch + ' 章', icon: '📄' };
+    var count = ALL.filter(function (it) { return it.ch === ch; }).length;
+    html += '<button class="chip" data-ch="' + ch + '">' + c.icon + ' ' + c.name + ' ' + count + '</button>';
+  });
+  chipsBox.innerHTML = html;
+}
+
+function render() {
+  var kw = keyword.trim().toLowerCase();
+  var list = ALL.filter(function (it) {
+    var okCh = (activeChapter === 'all') || (it.ch === Number(activeChapter));
+    var okKw = !kw || (it.title + it.desc + it.tag + it.file).toLowerCase().indexOf(kw) > -1;
+    return okCh && okKw;
+  });
+
+  if (list.length === 0) {
+    main.innerHTML = '<div class="empty"><span class="big">🔍</span>没有找到匹配的页面<br>换个关键字试试，或点「全部」查看所有内容</div>';
+    return;
+  }
+
+  // 按章节分组
+  var groups = {};
+  list.forEach(function (it) { (groups[it.ch] = groups[it.ch] || []).push(it); });
+
+  var html = '';
+  Object.keys(groups).map(Number).sort(function (a, b) { return chOrder(a) - chOrder(b); }).forEach(function (ch) {
+    var c = CHAPTERS[ch] || { name: '第 ' + ch + ' 章', icon: '📄' };
+    var items = groups[ch];
+    html += '<section class="chapter">' +
+              '<div class="chapter-head">' +
+                '<span class="ico">' + c.icon + '</span>' +
+                '<h2>' + c.name + '</h2>' +
+                '<span class="badge">' + items.length + ' 个页面</span>' +
+                '<span class="rule"></span>' +
+              '</div>' +
+              '<div class="grid">';
+
+    items.forEach(function (it) {
+      html += '<a class="card" href="' + it.href + '">' +
+                '<div class="card-top">' +
+                  '<span class="icon">' + it.icon + '</span>' +
+                  '<span class="num">' + it.num + '</span>' +
+                '</div>' +
+                '<h3>' + escapeHtml(it.title) + '</h3>' +
+                '<p>' + escapeHtml(it.desc) + '</p>' +
+                '<div class="card-foot">' +
+                  '<span class="tag">' + escapeHtml(it.tag) + '</span>' +
+                  '<span class="arrow">→</span>' +
+                '</div>' +
+              '</a>';
+    });
+    html += '</div></section>';
+  });
+
+  main.innerHTML = html;
+  revealCards();
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* 滚动渐入 */
+function revealCards() {
+  var cards = main.querySelectorAll('.card');
+  if (!('IntersectionObserver' in window)) {
+    for (var i = 0; i < cards.length; i++) cards[i].classList.add('in');
+    return;
+  }
+  if (observer) observer.disconnect();
+  observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (en.isIntersecting) {
+        en.target.classList.add('in');
+        observer.unobserve(en.target);
+      }
+    });
+  }, { rootMargin: '0px 0px -40px 0px' });
+
+  for (var j = 0; j < cards.length; j++) {
+    cards[j].style.transitionDelay = (j % 6) * 40 + 'ms';
+    observer.observe(cards[j]);
+  }
+}
+
+/* ==========================================================================
+   4. 统计
+   ========================================================================== */
+function updateStats() {
+  var chapters = {};
+  var tags = {};
+  var jsCount = 0;
+  ALL.forEach(function (it) {
+    chapters[it.ch] = true;
+    tags[it.tag] = true;
+    if (it.ch >= 15) jsCount++;
+  });
+  document.getElementById('statPages').textContent = ALL.length;
+  document.getElementById('statChapters').textContent = Object.keys(chapters).length;
+  document.getElementById('statJs').textContent = jsCount;
+  document.getElementById('statTags').textContent = Object.keys(tags).length;
+  document.getElementById('leadCount').textContent = ALL.length;
+}
+
+/* ==========================================================================
+   5. 事件
+   ========================================================================== */
+chipsBox.addEventListener('click', function (e) {
+  var chip = e.target.closest('.chip');
+  if (!chip) return;
+  var all = chipsBox.querySelectorAll('.chip');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('active');
+  chip.classList.add('active');
+  activeChapter = chip.getAttribute('data-ch');
+  render();
+});
+
+var searchTimer = null;
+searchInput.addEventListener('input', function () {
+  clearTimeout(searchTimer);
+  var v = this.value;
+  searchTimer = setTimeout(function () {
+    keyword = v;
+    render();
+  }, 120);
+});
+
+// "/" 聚焦搜索框，Esc 清空
+document.addEventListener('keydown', function (e) {
+  if (e.key === '/' && document.activeElement !== searchInput) {
+    e.preventDefault();
+    searchInput.focus();
+  }
+  if (e.key === 'Escape' && document.activeElement === searchInput) {
+    searchInput.value = '';
+    keyword = '';
+    render();
+    searchInput.blur();
+  }
+});
+
+/* 主题切换 */
+var themeBtn = document.getElementById('themeBtn');
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  themeBtn.textContent = (t === 'dark') ? '🌙' : '☀️';
+  try { localStorage.setItem('xzx-theme', t); } catch (e) {}
+}
+themeBtn.addEventListener('click', function () {
+  var now = document.documentElement.getAttribute('data-theme');
+  applyTheme(now === 'dark' ? 'light' : 'dark');
+});
+(function initTheme() {
+  var saved = null;
+  try { saved = localStorage.getItem('xzx-theme'); } catch (e) {}
+  applyTheme(saved || 'dark');
+})();
+
+/* 滚动进度条 */
+window.addEventListener('scroll', function () {
+  var h = document.documentElement.scrollHeight - window.innerHeight;
+  var p = h > 0 ? (window.scrollY / h) * 100 : 0;
+  document.getElementById('progressBar').style.width = p + '%';
+}, { passive: true });
+
+/* ==========================================================================
+   6. 加载（优先服务端扫描，失败用离线清单）
+   ========================================================================== */
+function start(names, online) {
+  ALL = names.map(parseFile).sort(compareItems);
+  buildChips();
+  updateStats();
+  render();
+
+  if (online) {
+    showToast('⚡ <b>自动同步模式</b>：目录中的 html 文件变化后页面会自动刷新。');
+    startHotReload();
+  } else {
+    showToast('📋 <b>本地清单模式</b>（' + ALL.length + ' 页）。<br>想自动发现新文件？在该目录运行 <code>python serve.py</code> 后访问 <code>http://localhost:8000/</code>。');
+  }
+}
+
+function showToast(html) {
+  modeToast.innerHTML = html;
+  setTimeout(function () { modeToast.classList.add('show'); }, 600);
+  setTimeout(function () { modeToast.classList.remove('show'); }, 9000);
+}
+
+function loadFromServer() {
+  return fetch('/files', { cache: 'no-store' })
+    .then(function (r) {
+      if (!r.ok) throw new Error('no endpoint');
+      return r.json();
+    })
+    .then(function (data) {
+      return Object.keys(data).sort(function (a, b) {
+        return (data[a] || 0) - (data[b] || 0);
+      });
+    });
+}
+
+var latestStamp = 0;
+function startHotReload() {
+  fetch('/check-update', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { latestStamp = d.latest || 0; })
+    .catch(function () {});
+
+  setInterval(function () {
+    fetch('/check-update', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.latest && d.latest !== latestStamp) {
+          latestStamp = d.latest;
+          location.reload();
         }
+      })
+      .catch(function () {});
+  }, 3000);
+}
 
-        function render(list) {
-            GRID.innerHTML = '';
-            var html = '';
-            list.forEach(function (item) {
-                html +=
-                    '<a class="card" href="' + item.href + '">' +
-                    '<span class="card-icon">' + item.icon + '</span>' +
-                    '<div class="card-title">' + item.title + '</div>' +
-                    '<div class="card-desc">' + item.desc + '</div>' +
-                    '<span class="card-tag">' + item.tag + '</span>' +
-                    '</a>';
-            });
-            GRID.innerHTML = html;
-            COUNT.textContent = '（共 ' + list.length + ' 页）';
-        }
-
-        var currentLatest = 0;
-
-        function loadFromServer() {
-            return fetch('/files', { cache: 'no-store' })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    // data = { filename: mtime }，按 mtime 升序（越旧越靠前）
-                    return Object.keys(data).sort(function (a, b) {
-                        return (data[a] || 0) - (data[b] || 0);
-                    });
-                });
-        }
-
-        function loadFromFallback() {
-            // FALLBACK 已按真实创建时间排列，直接返回拷贝
-            return new Promise(function (resolve) { resolve(FALLBACK.slice()); });
-        }
-
-        function load() {
-            loadFromServer().then(function (names) {
-                render(names.map(parseFile));
-                startHotReload();
-            }).catch(function () {
-                loadFromFallback().then(function (names) {
-                    render(names.map(parseFile));
-                    showFallbackTip();
-                });
-            });
-        }
-
-        function showFallbackTip() {
-            var tip = document.createElement('div');
-            tip.style.cssText = 'grid-column:1/-1;text-align:center;padding:20px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.2);border-radius:10px;color:#a0a0c0;font-size:13px;';
-            tip.innerHTML = '💡 当前为离线清单（' + FALLBACK.length + ' 个文件）。<br>想启用"自动发现 + 热更新"？请在 <code style="color:#b8b8ff;">d:\\VSCode</code> 下运行：<code style="color:#b8b8ff;">python serve.py</code>，然后访问 <code style="color:#b8b8ff;">http://localhost:8000/</code>';
-            GRID.parentNode.insertBefore(tip, GRID.nextSibling);
-        }
-
-        function startHotReload() {
-            fetch('/check-update', { cache: 'no-store' })
-                .then(function (r) { return r.json(); })
-                .then(function (d) { currentLatest = d.latest || 0; })
-                .catch(function () {});
-
-            setInterval(function () {
-                fetch('/check-update', { cache: 'no-store' })
-                    .then(function (r) { return r.json(); })
-                    .then(function (d) {
-                        if (d.latest && d.latest !== currentLatest) {
-                            currentLatest = d.latest;
-                            location.reload();
-                        }
-                    })
-                    .catch(function () {});
-            }, 3000);
-        }
-
-        load();
-    })();
-    </script>
-
+loadFromServer()
+  .then(function (names) { start(names, true); })
+  .catch(function () { start(FALLBACK, false); });
+</script>
 </body>
 </html>

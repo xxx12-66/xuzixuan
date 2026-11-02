@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17-1 JSON 数据格式 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", sans-serif;
+    background: #f0f4f8;
+    color: #2c3e50;
+    line-height: 1.8;
+    padding: 30px 20px;
+  }
+  .container { max-width: 1000px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 30px; }
+  header h1 {
+    font-size: 32px;
+    color: #2c3e50;
+    margin-bottom: 6px;
+    letter-spacing: 2px;
+  }
+  header h1 span { color: #8e44ad; }
+  header .sub { color: #7f8c8d; font-size: 14px; letter-spacing: 1px; }
+
+  .section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .section-title {
+    font-size: 20px;
+    color: #8e44ad;
+    border-left: 4px solid #8e44ad;
+    padding-left: 12px;
+    margin-bottom: 18px;
+  }
+  .section-desc { font-size: 14px; color: #666; margin-bottom: 16px; }
+
+  /* ===== 语法规则表 ===== */
+  .rule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .rule-table th, .rule-table td {
+    border: 1px solid #e1e8ed;
+    padding: 10px 12px;
+    text-align: left;
+  }
+  .rule-table th {
+    background: #f4eefa;
+    color: #8e44ad;
+    font-weight: 600;
+  }
+  .rule-table tbody tr:nth-child(even) { background: #fafbfc; }
+  .rule-table code {
+    background: #f0f0f4;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: "Consolas", monospace;
+    font-size: 13px;
+  }
+  .yes { color: #27ae60; font-weight: 600; }
+  .no  { color: #c0392b; font-weight: 600; }
+
+  /* ===== 演示卡片 ===== */
+  .demo {
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .demo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafb;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e1e8ed;
+  }
+  .demo-name { font-weight: 600; font-size: 15px; color: #2c3e50; }
+  .demo-tag {
+    font-size: 11px;
+    color: #8e44ad;
+    background: #f4eefa;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .code {
+    background: #2c3e50;
+    color: #ecf0f1;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 13px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.65;
+  }
+  .code .kw  { color: #e74c3c; font-weight: bold; }
+  .code .str { color: #2ecc71; }
+  .code .num { color: #f1c40f; }
+  .code .cm  { color: #7f8c8d; }
+  .code .fn  { color: #3498db; }
+
+  .run-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f8fafb;
+    border-top: 1px solid #e1e8ed;
+    flex-wrap: wrap;
+  }
+  .run-row label { font-size: 13px; color: #555; line-height: 30px; }
+  .run-row select {
+    border: 1px solid #ccd5db;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 13px;
+  }
+  .btn {
+    background: #8e44ad;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 7px 18px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+    height: 30px;
+  }
+  .btn:hover { background: #7d3c98; }
+  .btn.gray { background: #7f8c8d; }
+  .btn.gray:hover { background: #5d6d7e; }
+  .btn.red { background: #c0392b; }
+  .btn.red:hover { background: #a93226; }
+
+  textarea.json-input {
+    width: 100%;
+    min-height: 110px;
+    border: 1px solid #ccd5db;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #2c3e50;
+    background: #fff;
+    resize: vertical;
+  }
+  textarea.json-input:focus { outline: none; border-color: #8e44ad; }
+  .field { flex: 1 1 100%; }
+
+  .output {
+    padding: 14px 18px;
+    background: #fff;
+    font-family: "Consolas", "Monaco", monospace;
+    font-size: 13px;
+    color: #2c3e50;
+    min-height: 40px;
+    max-height: 300px;
+    overflow: auto;
+    border-top: 1px dashed #e1e8ed;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .output .ok   { color: #27ae60; }
+  .output .info { color: #8e44ad; }
+  .output .warn { color: #e67e22; }
+  .output .err  { color: #c0392b; }
+  .output .key  { color: #2980b9; }
+  .output .val-str { color: #27ae60; }
+  .output .val-num { color: #d35400; }
+  .output .val-bool{ color: #8e44ad; }
+  .output .val-null{ color: #95a5a6; }
+  .output .punc { color: #7f8c8d; }
+
+  /* ===== 渲染表格 ===== */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  .data-table th, .data-table td {
+    border: 1px solid #e1e8ed;
+    padding: 9px 12px;
+    text-align: center;
+  }
+  .data-table th { background: #f4eefa; color: #8e44ad; }
+  .data-table tbody tr:nth-child(even) { background: #fafbfc; }
+  .data-table tbody tr:hover { background: #fdf5ff; }
+  .data-table .tag {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    background: #e8f6ef;
+    color: #27ae60;
+  }
+  .data-table .tag.off { background: #fdecea; color: #c0392b; }
+  .empty { padding: 20px; text-align: center; color: #95a5a6; font-size: 13px; }
+
+  .tree {
+    background: #2c3e50;
+    color: #ecf0f1;
+    font-family: "Consolas", monospace;
+    font-size: 13px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.7;
+  }
+  .tree .k { color: #5dade2; }
+  .tree .s { color: #2ecc71; }
+  .tree .n { color: #f1c40f; }
+  .tree .b { color: #bb8fce; }
+  .tree .p { color: #7f8c8d; }
+
+  footer {
+    text-align: center;
+    color: #95a5a6;
+    font-size: 13px;
+    margin-top: 20px;
+  }
+  footer span { color: #8e44ad; }
+
+  @media (max-width: 640px) {
+    .section { padding: 20px 16px; }
+    header h1 { font-size: 24px; }
+    .run-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>17-1</span> · JSON 数据格式</h1>
+    <p class="sub">JSON 语法规则 · JSON.stringify() · JSON.parse() · 遍历与渲染 —— 点击 "运行" 查看结果</p>
+  </header>
+
+  <!-- ============ 一、什么是 JSON ============ -->
+  <section class="section">
+    <h2 class="section-title">一、什么是 JSON</h2>
+    <p class="section-desc">
+      JSON（JavaScript Object Notation）是一种<b>轻量级的数据交换格式</b>，本质是"符合特定语法的字符串"。
+      它独立于语言，常被用于前后端数据传输与配置文件。
+    </p>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 一份典型的 JSON 数据</span>
+        <span class="demo-tag">对象 + 数组 + 嵌套</span>
+      </div>
+      <pre class="tree" id="sampleJson"></pre>
+    </div>
+
+    <table class="rule-table">
+      <thead>
+        <tr><th style="width:180px">语法规则</th><th>说明</th><th style="width:230px">示例</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>键名必须双引号</td>
+          <td>JSON 的键必须用 <code>""</code> 包裹，不能省略、不能用单引号</td>
+          <td><span class="yes">✓</span> <code>{"name":"张三"}</code> &nbsp; <span class="no">✗</span> <code>{name:'张三'}</code></td>
+        </tr>
+        <tr>
+          <td>字符串必须双引号</td>
+          <td>字符串值只能用双引号，不能用单引号或反引号</td>
+          <td><span class="yes">✓</span> <code>"北京"</code> &nbsp; <span class="no">✗</span> <code>'北京'</code></td>
+        </tr>
+        <tr>
+          <td>支持的数据类型</td>
+          <td>对象、数组、字符串、数字、布尔、null</td>
+          <td><code>{"age":20,"vip":true,"tel":null}</code></td>
+        </tr>
+        <tr>
+          <td>不支持的类型</td>
+          <td>不能出现 <code>undefined</code>、函数、日期对象、注释</td>
+          <td><span class="no">✗</span> <code>{"fn":function(){}}</code></td>
+        </tr>
+        <tr>
+          <td>末尾不能多余逗号</td>
+          <td>最后一个成员后面不能再写逗号</td>
+          <td><span class="no">✗</span> <code>{"a":1,}</code></td>
+        </tr>
+        <tr>
+          <td>两种结构</td>
+          <td>对象 <code>{ }</code>（键值对集合）与数组 <code>[ ]</code>（有序列表），可任意嵌套</td>
+          <td><code>[{"id":1},{"id":2}]</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 二、JSON.stringify() ============ -->
+  <section class="section">
+    <h2 class="section-title">二、JSON.stringify() —— 对象转 JSON 字符串</h2>
+    <p class="section-desc">
+      语法：<code>JSON.stringify(value, replacer?, space?)</code>。第三个参数控制缩进，用于"格式化输出（美化）"。
+    </p>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 对象 → JSON 字符串（含缩进参数对比）</span>
+        <span class="demo-tag">序列化</span>
+      </div>
+<pre class="code"><span class="kw">var</span> student = { name: <span class="str">"徐梓轩"</span>, age: <span class="num">20</span>, score: <span class="num">92.5</span>, vip: <span class="kw">true</span> };
+
+<span class="cm">// 1. 不带缩进：压缩成一行（网络传输用）</span>
+JSON.<span class="fn">stringify</span>(student);
+<span class="cm">// 2. 缩进 2 个空格：格式化（调试查看用）</span>
+JSON.<span class="fn">stringify</span>(student, <span class="kw">null</span>, <span class="num">2</span>);
+
+<span class="cm">// typeof 检测：结果是字符串，不再是对象</span>
+console.<span class="fn">log</span>(<span class="kw">typeof</span> JSON.<span class="fn">stringify</span>(student));  <span class="cm">// "string"</span></pre>
+      <div class="run-row">
+        <label>缩进空格数：</label>
+        <select id="indentSel">
+          <option value="0">0（压缩一行）</option>
+          <option value="2" selected>2（推荐）</option>
+          <option value="4">4</option>
+          <option value="\t">Tab 制表符</option>
+        </select>
+        <button class="btn" onclick="runStringify()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outStringify')">清空</button>
+      </div>
+      <div class="output" id="outStringify"></div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">② 数组 / 嵌套对象 同样适用</span>
+        <span class="demo-tag">数组序列化</span>
+      </div>
+<pre class="code"><span class="kw">var</span> list = [
+  { id: <span class="num">1</span>, name: <span class="str">"HTML"</span>,  hour: <span class="num">16</span> },
+  { id: <span class="num">2</span>, name: <span class="str">"CSS"</span>,   hour: <span class="num">24</span> },
+  { id: <span class="num">3</span>, name: <span class="str">"JavaScript"</span>, hour: <span class="num">32</span> }
+];
+
+console.<span class="fn">log</span>(JSON.<span class="fn">stringify</span>(list, <span class="kw">null</span>, <span class="num">2</span>));</pre>
+      <div class="run-row">
+        <button class="btn" onclick="runStringifyArray()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outArr')">清空</button>
+      </div>
+      <div class="output" id="outArr"></div>
+    </div>
+  </section>
+
+  <!-- ============ 三、JSON.parse() ============ -->
+  <section class="section">
+    <h2 class="section-title">三、JSON.parse() —— JSON 字符串转对象</h2>
+    <p class="section-desc">
+      语法：<code>JSON.parse(text)</code>。把后端返回的 JSON 字符串"还原"成 JS 对象/数组，之后才能用
+      <code>obj.name</code>、<code>arr[0]</code> 等方式取值。
+    </p>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 字符串 → 对象，并读取属性</span>
+        <span class="demo-tag">反序列化</span>
+      </div>
+<pre class="code"><span class="kw">var</span> text = <span class="str">'{"name":"徐梓轩","age":20,"skills":["HTML","CSS","JS"]}'</span>;
+
+<span class="kw">var</span> obj = JSON.<span class="fn">parse</span>(text);        <span class="cm">// 字符串 → 对象</span>
+console.<span class="fn">log</span>(obj.name);            <span class="cm">// "徐梓轩"   点语法取值</span>
+console.<span class="fn">log</span>(obj[<span class="str">"age"</span>]);          <span class="cm">// 20         中括号取值</span>
+console.<span class="fn">log</span>(obj.skills[<span class="num">1</span>]);       <span class="cm">// "CSS"      数组下标取值</span></pre>
+      <div class="run-row">
+        <div class="field">
+          <textarea class="json-input" id="parseInput">{"name":"徐梓轩","age":20,"skills":["HTML","CSS","JS"],"address":{"city":"北京","zip":100000}}</textarea>
+        </div>
+        <button class="btn" onclick="runParse()">▶ 运行 parse</button>
+        <button class="btn gray" onclick="clearOut('outParse')">清空</button>
+      </div>
+      <div class="output" id="outParse"></div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">② 非法 JSON 会报错 → 用 try...catch 捕获</span>
+        <span class="demo-tag">异常处理</span>
+      </div>
+<pre class="code"><span class="kw">var</span> bad = <span class="str">"{name:'徐梓轩',}"</span>;   <span class="cm">// 键没加双引号 + 末尾多余逗号</span>
+
+<span class="kw">try</span> {
+    <span class="kw">var</span> o = JSON.<span class="fn">parse</span>(bad);
+    console.<span class="fn">log</span>(<span class="str">"解析成功"</span>, o);
+} <span class="kw">catch</span> (e) {
+    console.<span class="fn">log</span>(<span class="str">"解析失败："</span> + e.message);   <span class="cm">// 不写 try 会中断整个脚本</span>
+}</pre>
+      <div class="run-row">
+        <div class="field">
+          <textarea class="json-input" id="badInput" style="min-height:70px">{name:'徐梓轩', age:20,}</textarea>
+        </div>
+        <button class="btn red" onclick="runBadParse()">▶ 运行（故意出错）</button>
+        <button class="btn" onclick="runSafeParse()">▶ 用 try...catch 保护</button>
+        <button class="btn gray" onclick="clearOut('outBad')">清空</button>
+      </div>
+      <div class="output" id="outBad"></div>
+    </div>
+  </section>
+
+  <!-- ============ 四、遍历 JSON 数据 ============ -->
+  <section class="section">
+    <h2 class="section-title">四、遍历 JSON 数据</h2>
+    <p class="section-desc">解析后的 JSON 就是普通的 JS 对象/数组，数组用 <code>for</code> / <code>forEach</code>，对象用 <code>for...in</code>。</p>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 遍历 JSON 数组 + 统计</span>
+        <span class="demo-tag">for / forEach</span>
+      </div>
+<pre class="code"><span class="kw">var</span> json = <span class="str">'[{"name":"张三","score":88},{"name":"李四","score":95},{"name":"王五","score":72}]'</span>;
+<span class="kw">var</span> arr = JSON.<span class="fn">parse</span>(json);
+
+<span class="kw">var</span> sum = <span class="num">0</span>, max = <span class="num">0</span>;
+<span class="kw">for</span> (<span class="kw">var</span> i = <span class="num">0</span>; i &lt; arr.length; i++) {
+    console.<span class="fn">log</span>(arr[i].name + <span class="str">"："</span> + arr[i].score);
+    sum += arr[i].score;
+    <span class="kw">if</span> (arr[i].score &gt; max) max = arr[i].score;
+}
+console.<span class="fn">log</span>(<span class="str">"平均分："</span> + (sum / arr.length).<span class="fn">toFixed</span>(<span class="num">1</span>) + <span class="str">"，最高分："</span> + max);</pre>
+      <div class="run-row">
+        <button class="btn" onclick="runTraverse()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outTrav')">清空</button>
+      </div>
+      <div class="output" id="outTrav"></div>
+    </div>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">② for...in 遍历 JSON 对象的键</span>
+        <span class="demo-tag">枚举键名</span>
+      </div>
+<pre class="code"><span class="kw">var</span> obj = JSON.<span class="fn">parse</span>(<span class="str">'{"title":"高级网页设计","credit":3,"teacher":"徐老师"}'</span>);
+<span class="kw">for</span> (<span class="kw">var</span> key <span class="kw">in</span> obj) {
+    console.<span class="fn">log</span>(key + <span class="str">" = "</span> + obj[key]);
+}</pre>
+      <div class="run-row">
+        <button class="btn" onclick="runForIn()">▶ 运行</button>
+        <button class="btn gray" onclick="clearOut('outForIn')">清空</button>
+      </div>
+      <div class="output" id="outForIn"></div>
+    </div>
+  </section>
+
+  <!-- ============ 五、实战：JSON 渲染成表格 ============ -->
+  <section class="section">
+    <h2 class="section-title">五、实战：把 JSON 渲染成页面表格</h2>
+    <p class="section-desc">
+      这是 JSON 最常见的用途：拿到 JSON 数据 → <code>JSON.parse()</code> → 遍历拼接 HTML → 插入页面。
+      下面模拟"接口返回的 JSON 字符串"渲染学生表格，可按班级筛选、按成绩排序。
+    </p>
+
+    <div class="demo">
+      <div class="demo-header">
+        <span class="demo-name">① 模拟接口返回的 JSON 字符串</span>
+        <span class="demo-tag">原始数据</span>
+      </div>
+      <pre class="tree" id="rawJson"></pre>
+      <div class="run-row">
+        <label>班级筛选：</label>
+        <select id="classFilter">
+          <option value="">全部班级</option>
+          <option value="软件1班">软件1班</option>
+          <option value="软件2班">软件2班</option>
+        </select>
+        <label>排序：</label>
+        <select id="sortSel">
+          <option value="default">默认（按学号）</option>
+          <option value="desc">成绩从高到低</option>
+          <option value="asc">成绩从低到高</option>
+        </select>
+        <button class="btn" onclick="renderTable()">▶ 渲染表格</button>
+      </div>
+      <div style="padding:0 16px 16px;">
+        <div id="tableBox"></div>
+        <div class="output" id="outTable" style="padding:12px 0 0;border:none;"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 <span>徐梓轩</span> · 17-1 JSON 数据格式演示 · 《高级网页设计》课堂练习
+  </footer>
+</div>
+
+<script>
+/* ========== 工具函数 ========== */
+function clearOut(id) { document.getElementById(id).innerHTML = ''; }
+
+function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function log(id, msg, cls) {
+    var el = document.getElementById(id);
+    var span = document.createElement('span');
+    span.className = cls || 'info';
+    span.innerHTML = msg;
+    el.appendChild(span);
+    el.appendChild(document.createTextNode('\n'));
+}
+
+/* 把 JSON 字符串做语法高亮（键 / 字符串 / 数字 / 布尔 / null） */
+function highlightJSON(str) {
+    var s = escapeHtml(str);
+    s = s.replace(/&quot;/g, '"');
+    // 先保护字符串字面量
+    var tokens = [];
+    s = s.replace(/"(?:\\.|[^"\\])*"/g, function (m) {
+        tokens.push(m);
+        return '\u0000' + (tokens.length - 1) + '\u0000';
+    });
+    s = s.replace(/\b(true|false)\b/g, '<span class="val-bool">$1</span>');
+    s = s.replace(/\bnull\b/g, '<span class="val-null">null</span>');
+    s = s.replace(/(-?\d+\.?\d*)/g, '<span class="val-num">$1</span>');
+    s = s.replace(/([{}\[\],:])/g, '<span class="punc">$1</span>');
+    s = s.replace(/\u0000(\d+)\u0000/g, function (_, i) {
+        var raw = tokens[+i];
+        return '<span class="val-str">' + raw + '</span>';
+    });
+    // 把 "键": 中的键单独标色
+    s = s.replace(/<span class="val-str">("[^"]*")<\/span>(\s*<span class="punc">:<\/span>)/g,
+                  '<span class="key">$1</span>$2');
+    return s;
+}
+
+/* 树形高亮（用于展示示例代码块） */
+function highlightTree(str) {
+    var s = escapeHtml(str);
+    s = s.replace(/&quot;/g, '"');
+    var tokens = [];
+    s = s.replace(/"(?:\\.|[^"\\])*"/g, function (m) { tokens.push(m); return '\u0000' + (tokens.length - 1) + '\u0000'; });
+    s = s.replace(/\b(true|false|null)\b/g, '<span class="b">$1</span>');
+    s = s.replace(/(-?\d+\.?\d*)/g, '<span class="n">$1</span>');
+    s = s.replace(/([{}\[\],:])/g, '<span class="p">$1</span>');
+    s = s.replace(/\u0000(\d+)\u0000/g, function (_, i) {
+        return '<span class="s">' + tokens[+i] + '</span>';
+    });
+    s = s.replace(/<span class="s">("[^"]*")<\/span>(\s*<span class="p">:<\/span>)/g,
+                  '<span class="k">$1</span>$2');
+    return s;
+}
+
+/* ========== 示例数据 ========== */
+var student = { name: '徐梓轩', age: 20, score: 92.5, vip: true, tel: null };
+
+var courses = [
+    { id: 1, name: 'HTML', hour: 16 },
+    { id: 2, name: 'CSS', hour: 24 },
+    { id: 3, name: 'JavaScript', hour: 32 }
+];
+
+var studentsJSON = '[' +
+    '{"id":1001,"name":"徐梓轩","class":"软件1班","score":92,"skills":["HTML","CSS","JS"],"passed":true},' +
+    '{"id":1002,"name":"张三","class":"软件1班","score":78,"skills":["HTML","CSS"],"passed":true},' +
+    '{"id":1003,"name":"李四","class":"软件2班","score":95,"skills":["JS","Vue"],"passed":true},' +
+    '{"id":1004,"name":"王五","class":"软件2班","score":58,"skills":["HTML"],"passed":false},' +
+    '{"id":1005,"name":"赵六","class":"软件1班","score":86,"skills":["CSS","JS"],"passed":true}' +
+']';
+
+/* 页面加载时展示示例 JSON */
+document.getElementById('sampleJson').innerHTML = highlightTree(
+    JSON.stringify(student, null, 2)
+);
+document.getElementById('rawJson').innerHTML = highlightTree(
+    JSON.stringify(JSON.parse(studentsJSON), null, 2)
+);
+
+/* ========== 二、JSON.stringify() ========== */
+function runStringify() {
+    clearOut('outStringify');
+    var sel = document.getElementById('indentSel').value;
+    var space = (sel === '\\t') ? '\t' : parseInt(sel, 10);
+    var result = JSON.stringify(student, null, space);
+    log('outStringify', 'JSON.stringify(student, null, ' + (sel === '\\t' ? '"\\t"' : space) + ')：', 'info');
+    log('outStringify', highlightJSON(result));
+    log('outStringify', 'typeof 结果 → ' + typeof result + '，长度 ' + result.length + ' 个字符', 'ok');
+}
+
+function runStringifyArray() {
+    clearOut('outArr');
+    log('outArr', 'JSON.stringify(courses, null, 2)：', 'info');
+    log('outArr', highlightJSON(JSON.stringify(courses, null, 2)));
+    log('outArr', '数组共 ' + courses.length + ' 项，已转为字符串：' + typeof JSON.stringify(courses), 'ok');
+}
+
+/* ========== 三、JSON.parse() ========== */
+function runParse() {
+    clearOut('outParse');
+    var text = document.getElementById('parseInput').value;
+    try {
+        var obj = JSON.parse(text);
+        log('outParse', '解析成功，typeof = ' + typeof obj, 'ok');
+        log('outParse', '格式化后的内容：', 'info');
+        log('outParse', highlightJSON(JSON.stringify(obj, null, 2)));
+        log('outParse', '取值演示：', 'info');
+        log('outParse', '  obj.name        → ' + obj.name, 'ok');
+        log('outParse', '  obj["age"]      → ' + obj['age'], 'ok');
+        if (obj.skills) log('outParse', '  obj.skills[1]   → ' + obj.skills[1] + '（数组下标）', 'ok');
+        if (obj.address) log('outParse', '  obj.address.city→ ' + obj.address.city + '（嵌套对象）', 'ok');
+    } catch (e) {
+        log('outParse', '解析失败：' + e.message, 'err');
+        log('outParse', '请检查：键名与字符串是否用双引号、末尾是否多了逗号。', 'warn');
+    }
+}
+
+function runBadParse() {
+    clearOut('outBad');
+    var text = document.getElementById('badInput').value;
+    try {
+        var obj = JSON.parse(text);
+        log('outBad', '居然解析成功了：' + JSON.stringify(obj), 'ok');
+    } catch (e) {
+        log('outBad', '❌ 抛出 SyntaxError：' + e.message, 'err');
+        log('outBad', '说明：不加 try...catch 时，这句之后的脚本都不会执行。', 'warn');
+    }
+}
+
+function runSafeParse() {
+    clearOut('outBad');
+    var text = document.getElementById('badInput').value;
+    var obj = null;
+    try {
+        obj = JSON.parse(text);
+        log('outBad', '✅ 解析成功：', 'ok');
+        log('outBad', highlightJSON(JSON.stringify(obj, null, 2)));
+    } catch (e) {
+        log('outBad', '✅ 已被 try...catch 捕获，程序继续运行', 'ok');
+        log('outBad', '错误信息：' + e.message, 'warn');
+        obj = {};   // 兜底默认值
+    }
+    log('outBad', '后续代码照常执行，兜底值 = ' + JSON.stringify(obj), 'info');
+}
+
+/* ========== 四、遍历 ========== */
+function runTraverse() {
+    clearOut('outTrav');
+    var arr = JSON.parse('[{"name":"张三","score":88},{"name":"李四","score":95},{"name":"王五","score":72}]');
+    var sum = 0, max = 0, maxName = '';
+    log('outTrav', 'for 循环遍历 JSON 数组：', 'info');
+    for (var i = 0; i < arr.length; i++) {
+        log('outTrav', '  [' + i + '] ' + arr[i].name + '：' + arr[i].score + ' 分', 'ok');
+        sum += arr[i].score;
+        if (arr[i].score > max) { max = arr[i].score; maxName = arr[i].name; }
+    }
+    log('outTrav', '平均分：' + (sum / arr.length).toFixed(1) + '，最高分：' + max + '（' + maxName + '）', 'info');
+
+    log('outTrav', '\nforEach 写法（等价）：', 'info');
+    arr.forEach(function (item, idx) {
+        log('outTrav', '  [' + idx + '] ' + item.name, 'ok');
+    });
+}
+
+function runForIn() {
+    clearOut('outForIn');
+    var obj = JSON.parse('{"title":"高级网页设计","credit":3,"teacher":"徐老师"}');
+    log('outForIn', 'for...in 遍历对象键名：', 'info');
+    for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            log('outForIn', '  ' + key + '  →  ' + obj[key], 'ok');
+        }
+    }
+    log('outForIn', '共 ' + Object.keys(obj).length + ' 个属性', 'info');
+}
+
+/* ========== 五、渲染表格 ========== */
+function renderTable() {
+    var arr = JSON.parse(studentsJSON);
+    var cls = document.getElementById('classFilter').value;
+    var sort = document.getElementById('sortSel').value;
+
+    // 1. 筛选
+    if (cls) {
+        arr = arr.filter(function (s) { return s['class'] === cls; });
+    }
+    // 2. 排序
+    if (sort === 'desc') arr = arr.slice().sort(function (a, b) { return b.score - a.score; });
+    if (sort === 'asc')  arr = arr.slice().sort(function (a, b) { return a.score - b.score; });
+
+    // 3. 拼接 HTML
+    var html = '';
+    if (arr.length === 0) {
+        html = '<div class="empty">没有符合条件的数据</div>';
+    } else {
+        html += '<table class="data-table">';
+        html += '<thead><tr><th>学号</th><th>姓名</th><th>班级</th><th>成绩</th><th>技能</th><th>是否通过</th></tr></thead><tbody>';
+        for (var i = 0; i < arr.length; i++) {
+            var s = arr[i];
+            html += '<tr>' +
+                    '<td>' + s.id + '</td>' +
+                    '<td>' + escapeHtml(s.name) + '</td>' +
+                    '<td>' + escapeHtml(s['class']) + '</td>' +
+                    '<td>' + s.score + '</td>' +
+                    '<td>' + s.skills.join('、') + '</td>' +
+                    '<td><span class="tag' + (s.passed ? '' : ' off') + '">' + (s.passed ? '通过' : '未通过') + '</span></td>' +
+                    '</tr>';
+        }
+        html += '</tbody></table>';
+    }
+    document.getElementById('tableBox').innerHTML = html;
+
+    // 4. 输出说明
+    clearOut('outTable');
+    log('outTable', 'JSON.parse(接口字符串) → 共 ' + JSON.parse(studentsJSON).length + ' 条；当前筛选后 ' + arr.length + ' 条', 'info');
+    log('outTable', '渲染步骤：parse() → filter()/sort() → 拼接 HTML → innerHTML 插入', 'ok');
+}
+
+/* 首屏自动渲染一次表格 */
+renderTable();
+</script>
+</body>
+</html>

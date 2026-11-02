@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17-3 商品详情 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f0f4f8; color: #2c3e50; line-height: 1.7;
+    padding: 30px 20px 50px;
+  }
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .topbar h1 { font-size: 24px; letter-spacing: 1px; }
+  .topbar h1 span { color: #8e44ad; }
+  .back {
+    display: inline-block; background: #fff; color: #8e44ad; text-decoration: none;
+    border: 1px solid #dcc6ea; border-radius: 6px; padding: 7px 14px; font-size: 13px;
+  }
+  .back:hover { background: #f4eefa; }
+  .api-box {
+    margin-left: auto; padding: 7px 14px; background: #fff; border: 1px dashed #8e44ad;
+    border-radius: 20px; font-family: "Consolas", monospace; font-size: 12px; color: #8e44ad; word-break: break-all;
+  }
+
+  .btn {
+    background: #8e44ad; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: background .15s;
+  }
+  .btn:hover { background: #7d3c98; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.gray { background: #7f8c8d; }
+  .btn.gray:hover { background: #5d6d7e; }
+
+  .status { padding: 13px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; display: none; }
+  .status.show { display: block; }
+  .status.loading { background: #f4eefa; color: #8e44ad; }
+  .status.error { background: #fdecea; color: #c0392b; }
+  .status.error .btn { margin-left: 10px; }
+  .dot {
+    display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%;
+    background: #8e44ad; vertical-align: middle; animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:.25;transform:scale(.8)} 50%{opacity:1;transform:scale(1.15)} }
+
+  /* 详情主体 */
+  .detail { background: #fff; border-radius: 14px; padding: 26px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: none; }
+  .detail.show { display: block; }
+  .detail-top { display: flex; gap: 28px; flex-wrap: wrap; }
+
+  .gallery { width: 340px; flex-shrink: 0; }
+  .main-pic {
+    background: #fafbfc; border-radius: 10px; height: 300px;
+    display: flex; align-items: center; justify-content: center; padding: 16px; overflow: hidden;
+  }
+  .main-pic img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .thumbs { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .thumbs img {
+    width: 60px; height: 60px; object-fit: contain; background: #fafbfc;
+    border: 2px solid #eee; border-radius: 8px; padding: 4px; cursor: pointer; transition: border-color .15s;
+  }
+  .thumbs img:hover, .thumbs img.active { border-color: #8e44ad; }
+
+  .info { flex: 1; min-width: 280px; }
+  .cate {
+    display: inline-block; font-size: 12px; color: #8e44ad; background: #f4eefa;
+    padding: 2px 10px; border-radius: 10px; margin-bottom: 10px;
+  }
+  .info h2 { font-size: 22px; line-height: 1.45; margin-bottom: 8px; }
+  .brand { font-size: 13px; color: #7f8c8d; margin-bottom: 14px; }
+  .price-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+  .price { color: #c0392b; font-size: 28px; font-weight: 700; }
+  .price small { font-size: 15px; font-weight: 400; }
+  .old-price { color: #95a5a6; text-decoration: line-through; font-size: 14px; }
+  .off-tag { background: #c0392b; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+  .rate-row { font-size: 14px; margin-bottom: 14px; }
+  .rate-row .stars { color: #f39c12; font-size: 16px; margin-right: 6px; }
+  .rate-row .num { color: #7f8c8d; font-size: 13px; }
+  .desc { font-size: 14px; color: #555; line-height: 1.9; margin-bottom: 16px; }
+
+  .spec { border-top: 1px dashed #e1e8ed; padding-top: 14px; margin-bottom: 16px; }
+  .spec ul { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 20px; }
+  .spec li { font-size: 13px; color: #555; }
+  .spec li b { color: #2c3e50; font-weight: 600; margin-right: 6px; }
+
+  .reviews { border-top: 1px dashed #e1e8ed; padding-top: 14px; }
+  .reviews h3 { font-size: 15px; color: #8e44ad; margin-bottom: 10px; }
+  .review {
+    background: #fafbfc; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 13px;
+  }
+  .review .head { display: flex; justify-content: space-between; color: #7f8c8d; font-size: 12px; margin-bottom: 4px; }
+  .review .head .stars { color: #f39c12; }
+  .review .txt { color: #444; line-height: 1.7; }
+
+  .raw {
+    background: #2c3e50; color: #ecf0f1; font-family: "Consolas", monospace; font-size: 12px;
+    padding: 14px 16px; border-radius: 8px; white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+    margin-top: 16px; max-height: 320px; overflow: auto;
+  }
+  .raw .k { color: #5dade2; } .raw .s { color: #2ecc71; }
+  .raw .n { color: #f1c40f; } .raw .b { color: #bb8fce; } .raw .p { color: #7f8c8d; }
+
+  .nav { display: flex; gap: 10px; margin-top: 18px; }
+
+  .code-card {
+    background: #fff; border-radius: 12px; padding: 22px 26px; margin-top: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .code-card h2 { font-size: 18px; color: #8e44ad; border-left: 4px solid #8e44ad; padding-left: 12px; margin-bottom: 12px; }
+  .code-card pre {
+    background: #2c3e50; color: #ecf0f1; font-family: "Consolas",monospace; font-size: 13px;
+    padding: 16px 18px; border-radius: 8px; overflow-x: auto; line-height: 1.7;
+  }
+  .kw { color: #e74c3c; font-weight: bold; } .str { color: #2ecc71; } .cm { color: #7f8c8d; } .fn { color: #3498db; }
+  .tips { font-size: 13px; color: #666; margin-top: 10px; }
+  .tips b { color: #8e44ad; }
+
+  footer { text-align: center; color: #95a5a6; font-size: 13px; margin-top: 26px; }
+  footer span { color: #8e44ad; }
+
+  @media (max-width: 720px) {
+    .gallery { width: 100%; }
+    .api-box { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="topbar">
+    <h1><span>17-3</span> 商品详情</h1>
+    <a class="back" href="17-3.html">← 返回列表</a>
+    <span class="api-box" id="apiBox">GET https://dummyjson.com/products/1</span>
+  </div>
+
+  <div class="status" id="statusBox"></div>
+
+  <div class="detail" id="detail"></div>
+
+  <div class="nav" id="navBox" style="display:none">
+    <button class="btn gray" onclick="gotoId(currentId - 1)">← 上一个 (ID-1)</button>
+    <button class="btn" onclick="gotoId(currentId + 1)">下一个 (ID+1) →</button>
+  </div>
+
+  <div class="code-card">
+    <h2>核心代码：从地址栏取 id，再请求单条数据</h2>
+<pre><span class="cm">// 1. 读取列表页传过来的 id：17-3-detail.html?id=5</span>
+<span class="kw">var</span> params = <span class="kw">new</span> <span class="fn">URLSearchParams</span>(location.search);
+<span class="kw">var</span> id = params.<span class="fn">get</span>(<span class="str">'id'</span>) || <span class="num">1</span>;      <span class="cm">// 没传 id 时默认取 1</span>
+
+<span class="cm">// 2. 拼接详情接口地址并请求</span>
+<span class="kw">var</span> res  = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://dummyjson.com/products/'</span> + id);
+<span class="kw">var</span> data = <span class="kw">await</span> res.<span class="fn">json</span>();       <span class="cm">// 3. 直接得到"单个商品对象"（不是数组）</span>
+
+<span class="cm">// 4. 用对象属性填充页面</span>
+document.<span class="fn">getElementById</span>(<span class="str">'title'</span>).textContent = data.title;
+document.<span class="fn">getElementById</span>(<span class="str">'price'</span>).textContent = data.price;</pre>
+    <p class="tips">
+      <b>要点：</b>① 列表页用 <code>&lt;a href="?id=xx"&gt;</code> 传参，详情页用 <code>URLSearchParams(location.search)</code> 解析；
+      ② 详情接口返回的是<b>单个对象</b>，可直接 <code>data.title</code> 取值，无需遍历；
+      ③ 图片组 <code>data.images</code> 是数组，可做缩略图切换。
+    </p>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 17-3 商品详情 · 数据源 dummyjson.com</footer>
+</div>
+
+<script>
+/* ================= 元素与状态 ================= */
+var API = 'https://dummyjson.com/products/';
+var detailBox = document.getElementById('detail');
+var statusBox = document.getElementById('statusBox');
+var navBox    = document.getElementById('navBox');
+var apiBox    = document.getElementById('apiBox');
+var currentId = 1;
+
+var IMG_PLACEHOLDER = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect width='200' height='200' fill='%23eeeeee'/%3E%3Ctext x='100' y='106' font-size='16' font-family='sans-serif' text-anchor='middle' fill='%23999999'%3ENo Image%3C/text%3E%3C/svg%3E";
+
+/* ================= 工具 ================= */
+function escapeHtml(s) {
+    return String(s === undefined || s === null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function showStatus(type, html) { statusBox.className = 'status show ' + type; statusBox.innerHTML = html; }
+function hideStatus() { statusBox.className = 'status'; statusBox.innerHTML = ''; }
+function stars(rate) {
+    var n = Math.round(Number(rate) || 0), s = '';
+    for (var i = 1; i <= 5; i++) s += (i <= n) ? '★' : '☆';
+    return s;
+}
+function imgTag(src, alt, cls) {
+    return '<img src="' + escapeHtml(src) + '" alt="' + escapeHtml(alt) + '"' +
+           (cls ? ' class="' + cls + '"' : '') + ' onerror="this.onerror=null;this.src=IMG_PLACEHOLDER">';
+}
+
+/* JSON 语法高亮，用于展示接口返回的原始数据 */
+function highlightJSON(str) {
+    var s = escapeHtml(str).replace(/&quot;/g, '"');
+    var tokens = [];
+    s = s.replace(/"(?:\\.|[^"\\])*"/g, function (m) { tokens.push(m); return '\u0000' + (tokens.length - 1) + '\u0000'; });
+    s = s.replace(/\b(true|false|null)\b/g, '<span class="b">$1</span>');
+    s = s.replace(/(-?\d+\.?\d*)/g, '<span class="n">$1</span>');
+    s = s.replace(/([{}\[\],:])/g, '<span class="p">$1</span>');
+    s = s.replace(/\u0000(\d+)\u0000/g, function (_, i) { return '<span class="s">' + tokens[+i] + '</span>'; });
+    s = s.replace(/<span class="s">("[^"]*")<\/span>(\s*<span class="p">:<\/span>)?/g, function (m, key, colon) {
+        return '<span class="' + (colon ? 'k' : 's') + '">' + key + '</span>' + (colon || '');
+    });
+    return s;
+}
+
+/* ================= 请求详情 ================= */
+async function loadDetail(id) {
+    currentId = id;
+    apiBox.textContent = 'GET ' + API + id;
+    detailBox.classList.remove('show');
+    navBox.style.display = 'none';
+    showStatus('loading', '<span class="dot"></span>正在请求 ' + API + id + ' ...');
+
+    try {
+        var res = await fetch(API + id, { cache: 'no-store' });
+        if (!res.ok) throw new Error('服务器返回 HTTP ' + res.status + '（可能没有 ID 为 ' + id + ' 的商品）');
+
+        var p = await res.json();
+        if (!p || (!p.id && !p.title)) throw new Error('接口未返回有效的商品数据');
+
+        hideStatus();
+        renderDetail(p);
+    } catch (err) {
+        showStatus('error', '❌ 请求失败：' + escapeHtml(err.message) +
+            '<br><span style="font-size:12px">请检查网络；若用 file:// 打开页面，请改用本地服务器访问。</span>' +
+            '<button class="btn" onclick="loadDetail(currentId)">重试</button>' +
+            ' <a class="btn gray" style="display:inline-block;line-height:31px;text-decoration:none" href="17-3.html">返回列表</a>');
+    } finally {
+        navBox.style.display = 'flex';
+    }
+}
+
+/* ================= 渲染详情 ================= */
+function renderDetail(p) {
+    var images = (p.images && p.images.length) ? p.images : [p.thumbnail || p.image || IMG_PLACEHOLDER];
+    var main = p.thumbnail || images[0] || IMG_PLACEHOLDER;
+
+    var off = Number(p.discountPercentage) || 0;
+    var price = Number(p.price) || 0;
+    var finalPrice = off > 0 ? (price * (1 - off / 100)).toFixed(2) : price.toFixed(2);
+
+    // 规格参数（字段存在才显示）
+    var specs = [
+        ['商品 ID', p.id], ['品牌', p.brand], ['分类', p.category], ['货号 SKU', p.sku],
+        ['库存', p.stock !== undefined ? p.stock + ' 件' : ''],
+        ['重量', p.weight !== undefined ? p.weight + ' g' : ''],
+        ['保修', p.warrantyInformation], ['发货', p.shippingInformation],
+        ['供货状态', p.availabilityStatus], ['起订量', p.minimumOrderQuantity],
+        ['退换政策', p.returnPolicy]
+    ];
+    var specHtml = '';
+    for (var i = 0; i < specs.length; i++) {
+        if (specs[i][1] === undefined || specs[i][1] === null || specs[i][1] === '') continue;
+        specHtml += '<li><b>' + specs[i][0] + '：</b>' + escapeHtml(specs[i][1]) + '</li>';
+    }
+
+    // 评价列表
+    var reviews = p.reviews || [];
+    var reviewHtml = '';
+    if (reviews.length === 0) {
+        reviewHtml = '<div class="review">该商品暂无评价</div>';
+    } else {
+        for (var j = 0; j < reviews.length; j++) {
+            var r = reviews[j];
+            reviewHtml += '<div class="review">' +
+                '<div class="head"><span>' + escapeHtml(r.reviewerName || '匿名用户') +
+                ' · ' + escapeHtml(r.date ? String(r.date).slice(0, 10) : '') + '</span>' +
+                '<span class="stars">' + stars(r.rating) + '</span></div>' +
+                '<div class="txt">' + escapeHtml(r.comment) + '</div></div>';
+        }
+    }
+
+    detailBox.innerHTML =
+        '<div class="detail-top">' +
+            '<div class="gallery">' +
+                '<div class="main-pic">' + imgTag(main, p.title) + '</div>' +
+                '<div class="thumbs">' + images.map(function (src, idx) {
+                    return imgTag(src, p.title, idx === 0 ? 'active' : '');
+                }).join('') + '</div>' +
+            '</div>' +
+            '<div class="info">' +
+                '<span class="cate">' + escapeHtml(p.category) + '</span>' +
+                '<h2>' + escapeHtml(p.title) + '</h2>' +
+                '<div class="brand">品牌：' + escapeHtml(p.brand || '未标注') + '</div>' +
+                '<div class="price-row">' +
+                    '<span class="price"><small>$</small>' + finalPrice + '</span>' +
+                    (off > 0 ? '<span class="old-price">$' + price.toFixed(2) + '</span>' +
+                               '<span class="off-tag">省 ' + Math.round(off) + '%</span>' : '') +
+                '</div>' +
+                '<div class="rate-row">' +
+                    '<span class="stars">' + stars(p.rating) + '</span>' +
+                    '<span class="num">' + (Number(p.rating) || 0).toFixed(1) + ' 分' +
+                    (p.rating && p.rating.count ? ' · ' + p.rating.count + ' 条评价' : '') + '</span>' +
+                '</div>' +
+                '<div class="desc">' + escapeHtml(p.description) + '</div>' +
+                '<div class="spec"><ul>' + specHtml + '</ul></div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="reviews"><h3>用户评价（' + reviews.length + '）</h3>' + reviewHtml + '</div>' +
+        '<div style="font-size:12px;color:#95a5a6;margin-top:16px">接口返回的原始 JSON：</div>' +
+        '<div class="raw">' + highlightJSON(JSON.stringify(p, null, 2)) + '</div>';
+
+    detailBox.classList.add('show');
+
+    // 缩略图点击切换主图
+    var thumbs = detailBox.querySelectorAll('.thumbs img');
+    var mainImg = detailBox.querySelector('.main-pic img');
+    for (var k = 0; k < thumbs.length; k++) {
+        thumbs[k].addEventListener('click', function () {
+            for (var m = 0; m < thumbs.length; m++) thumbs[m].classList.remove('active');
+            this.classList.add('active');
+            mainImg.src = this.src;
+        });
+    }
+}
+
+/* ================= 页面跳转 ================= */
+function gotoId(id) {
+    if (id < 1) id = 1;
+    // 用 history 更新地址栏，方便复制 / 刷新后仍是同一个 id
+    history.pushState(null, '', '?id=' + id);
+    loadDetail(id);
+}
+
+/* ================= 入口：解析地址栏 id ================= */
+(function init() {
+    var params = new URLSearchParams(location.search);
+    var id = parseInt(params.get('id'), 10);
+    if (!id || isNaN(id)) id = 1;      // 没传 id 或非法时默认 1
+    loadDetail(id);
+})();
+
+/* 浏览器前进/后退时同步刷新 */
+window.addEventListener('popstate', function () {
+    var id = parseInt(new URLSearchParams(location.search).get('id'), 10);
+    loadDetail(isNaN(id) ? 1 : id);
+});
+</script>
+</body>
+</html>

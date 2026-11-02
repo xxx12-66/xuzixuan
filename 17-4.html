@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17-4 接口调试工具 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f0f4f8; color: #2c3e50; line-height: 1.7; padding: 24px 20px 50px;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 22px; }
+  header h1 { font-size: 28px; letter-spacing: 2px; }
+  header h1 span { color: #8e44ad; }
+  header .sub { color: #7f8c8d; font-size: 14px; }
+
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: #fff; border-radius: 12px; padding: 20px 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .panel h2 {
+    font-size: 16px; color: #8e44ad; border-left: 4px solid #8e44ad;
+    padding-left: 10px; margin-bottom: 14px;
+  }
+
+  /* ===== 请求区 ===== */
+  .req-line { display: flex; gap: 10px; margin-bottom: 12px; }
+  select, input[type="text"], textarea {
+    border: 1px solid #ccd5db; border-radius: 6px; padding: 8px 10px;
+    font-size: 13px; font-family: inherit; color: #2c3e50; background: #fff;
+  }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: #8e44ad; }
+  #methodSel { width: 110px; font-weight: 600; }
+  #urlInput { flex: 1; font-family: "Consolas", monospace; }
+
+  textarea {
+    width: 100%; font-family: "Consolas", monospace; font-size: 12.5px;
+    line-height: 1.6; resize: vertical;
+  }
+  .field-label {
+    font-size: 12px; color: #7f8c8d; margin: 12px 0 5px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .field-label .hint { color: #95a5a6; font-size: 11px; }
+
+  .btn {
+    background: #8e44ad; color: #fff; border: none; border-radius: 6px;
+    padding: 9px 16px; font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: background .15s, opacity .15s;
+  }
+  .btn:hover { background: #7d3c98; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.gray { background: #7f8c8d; }
+  .btn.gray:hover { background: #5d6d7e; }
+  .btn.green { background: #27ae60; }
+  .btn.green:hover { background: #219a52; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  /* 快捷示例 */
+  .samples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip {
+    font-size: 12px; padding: 5px 11px; border-radius: 14px; cursor: pointer;
+    border: 1px solid #dcc6ea; background: #faf7fd; color: #8e44ad;
+  }
+  .chip:hover { background: #f4eefa; }
+  .chip b { font-weight: 700; }
+
+  /* ===== 响应区 ===== */
+  .resp-bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px; border-radius: 8px; background: #fafbfc;
+    border: 1px solid #e1e8ed; margin-bottom: 12px; font-size: 13px;
+  }
+  .badge-status {
+    padding: 3px 11px; border-radius: 5px; color: #fff; font-weight: 700; font-size: 13px;
+    background: #95a5a6;
+  }
+  .badge-status.ok   { background: #27ae60; }
+  .badge-status.warn { background: #e67e22; }
+  .badge-status.err  { background: #c0392b; }
+  .meta-item { color: #666; }
+  .meta-item b { color: #2c3e50; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tab {
+    font-size: 12.5px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    border: 1px solid #e1e8ed; background: #fff; color: #666;
+  }
+  .tab.active { background: #8e44ad; color: #fff; border-color: #8e44ad; }
+
+  .resp-body {
+    background: #2c3e50; color: #ecf0f1; border-radius: 8px; padding: 14px 16px;
+    font-family: "Consolas", monospace; font-size: 12.5px; line-height: 1.65;
+    min-height: 260px; max-height: 460px; overflow: auto; white-space: pre-wrap; word-break: break-all;
+  }
+  .resp-body .k { color: #5dade2; } .resp-body .s { color: #2ecc71; }
+  .resp-body .n { color: #f1c40f; } .resp-body .b { color: #bb8fce; } .resp-body .p { color: #7f8c8d; }
+  .resp-body .txt { color: #ecf0f1; }
+  .placeholder { color: #7f8c8d; text-align: center; padding: 100px 0; font-size: 13px; white-space: normal; }
+
+  .err-box {
+    display: none; background: #fdecea; color: #c0392b; border-radius: 8px;
+    padding: 12px 14px; font-size: 13px; margin-bottom: 12px; line-height: 1.7;
+  }
+  .err-box.show { display: block; }
+  .err-box b { display: block; margin-bottom: 4px; }
+
+  /* 历史记录 */
+  .history { margin-top: 12px; font-size: 12px; }
+  .history .item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    border-radius: 6px; cursor: pointer; color: #555;
+  }
+  .history .item:hover { background: #f4eefa; }
+  .history .m {
+    font-weight: 700; font-size: 11px; padding: 1px 6px; border-radius: 4px; color: #fff; background: #8e44ad;
+    flex-shrink: 0;
+  }
+  .history .m.get { background: #2980b9; }
+  .history .m.post { background: #27ae60; }
+  .history .m.put { background: #e67e22; }
+  .history .m.delete { background: #c0392b; }
+  .history .u { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Consolas, monospace; }
+
+  .code-card {
+    background: #fff; border-radius: 12px; padding: 22px 26px; margin-top: 22px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .code-card h2 { font-size: 18px; color: #8e44ad; border-left: 4px solid #8e44ad; padding-left: 12px; margin-bottom: 12px; }
+  .code-card pre {
+    background: #2c3e50; color: #ecf0f1; font-family: "Consolas",monospace; font-size: 13px;
+    padding: 16px 18px; border-radius: 8px; overflow-x: auto; line-height: 1.7;
+  }
+  .kw { color: #e74c3c; font-weight: bold; } .str { color: #2ecc71; } .cm { color: #7f8c8d; } .fn { color: #3498db; }
+  .tips { font-size: 13px; color: #666; margin-top: 10px; }
+  .tips b { color: #8e44ad; }
+  .tips code { background: #f0f0f4; padding: 1px 6px; border-radius: 3px; font-family: Consolas, monospace; }
+
+  footer { text-align: center; color: #95a5a6; font-size: 13px; margin-top: 26px; }
+  footer span { color: #8e44ad; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>17-4</span> · 接口调试工具（fetch 版）</h1>
+    <p class="sub">支持 GET / POST / PUT / PATCH / DELETE，展示状态码、耗时、响应头、返回数据与错误信息</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- ============ 左：请求区 ============ -->
+    <div class="panel">
+      <h2>请求</h2>
+
+      <div class="samples" id="samples">
+        <span class="chip" data-url="https://jsonplaceholder.typicode.com/posts" data-method="GET"><b>GET</b> /posts</span>
+        <span class="chip" data-url="https://jsonplaceholder.typicode.com/posts/1" data-method="GET"><b>GET</b> /posts/1</span>
+        <span class="chip" data-url="https://jsonplaceholder.typicode.com/posts" data-method="POST"><b>POST</b> /posts</span>
+        <span class="chip" data-url="https://jsonplaceholder.typicode.com/posts/1" data-method="PUT"><b>PUT</b> /posts/1</span>
+        <span class="chip" data-url="https://jsonplaceholder.typicode.com/posts/1" data-method="DELETE"><b>DELETE</b> /posts/1</span>
+        <span class="chip" data-url="https://dummyjson.com/products/1" data-method="GET"><b>GET</b> 商品详情</span>
+        <span class="chip" data-url="https://dummyjson.com/products/add" data-method="POST"><b>POST</b> 新增商品</span>
+        <span class="chip" data-url="https://www.baidu.com" data-method="GET"><b>GET</b> 非 JSON（演示解析失败）</span>
+        <span class="chip" data-url="https://jsonplaceholder.typicode.com/posts/99999" data-method="GET"><b>GET</b> 404 错误演示</span>
+      </div>
+
+      <div class="req-line">
+        <select id="methodSel">
+          <option value="GET">GET</option>
+          <option value="POST">POST</option>
+          <option value="PUT">PUT</option>
+          <option value="PATCH">PATCH</option>
+          <option value="DELETE">DELETE</option>
+        </select>
+        <input type="text" id="urlInput" value="https://jsonplaceholder.typicode.com/posts" placeholder="输入接口地址，如 https://...">
+      </div>
+
+      <div class="field-label">
+        <span>请求头 Headers（JSON 格式）</span>
+        <span class="hint">POST/PUT 建议保留 Content-Type</span>
+      </div>
+      <textarea id="headersInput" rows="3">{
+  "Content-Type": "application/json"
+}</textarea>
+
+      <div class="field-label">
+        <span>请求体 Body（JSON 格式，GET/DELETE 会忽略）</span>
+        <span class="hint" id="bodyHint">按当前方法可发送</span>
+      </div>
+      <textarea id="bodyInput" rows="8">{
+  "title": "徐梓轩的接口测试",
+  "body": "这是用 fetch 发送的 POST 请求体",
+  "userId": 1
+}</textarea>
+
+      <div class="btn-row">
+        <button class="btn green" id="sendBtn" onclick="sendRequest()">▶ 发送请求</button>
+        <button class="btn gray" onclick="abortRequest()">■ 取消</button>
+        <button class="btn gray" onclick="clearAll()">清空</button>
+      </div>
+
+      <div class="field-label"><span>请求历史（点击可重新填充）</span></div>
+      <div class="history" id="history"><div class="item" style="cursor:default;color:#95a5a6">暂无记录</div></div>
+    </div>
+
+    <!-- ============ 右：响应区 ============ -->
+    <div class="panel">
+      <h2>响应</h2>
+
+      <div class="err-box" id="errBox"></div>
+
+      <div class="resp-bar" id="respBar">
+        <span class="badge-status" id="statusBadge">未发送</span>
+        <span class="meta-item">耗时 <b id="timeText">—</b></span>
+        <span class="meta-item">大小 <b id="sizeText">—</b></span>
+        <span class="meta-item">类型 <b id="typeText">—</b></span>
+      </div>
+
+      <div class="tabs">
+        <span class="tab active" data-view="pretty">美化</span>
+        <span class="tab" data-view="raw">原始</span>
+        <span class="tab" data-view="headers">响应头</span>
+      </div>
+
+      <div class="resp-body" id="respBody">
+        <div class="placeholder">点击左侧「发送请求」查看结果</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 代码说明 -->
+  <div class="code-card">
+    <h2>核心代码：一个通用的 fetch 请求函数</h2>
+<pre><span class="kw">async function</span> <span class="fn">request</span>(method, url, headers, body) {
+    <span class="kw">var</span> options = { method: method, headers: headers };
+    <span class="kw">if</span> (method !== <span class="str">'GET'</span> &amp;&amp; method !== <span class="str">'DELETE'</span> &amp;&amp; body) {
+        options.body = JSON.<span class="fn">stringify</span>(body);   <span class="cm">// 对象 → JSON 字符串</span>
+    }
+
+    <span class="kw">var</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(url, options);
+    <span class="kw">var</span> text = <span class="kw">await</span> res.<span class="fn">text</span>();          <span class="cm">// 先拿纯文本，避免非 JSON 直接报错</span>
+
+    <span class="kw">try</span> {
+        <span class="kw">var</span> data = JSON.<span class="fn">parse</span>(text);       <span class="cm">// 再尝试解析成对象</span>
+        <span class="fn">show</span>(res.status, data);
+    } <span class="kw">catch</span> (e) {
+        <span class="fn">show</span>(res.status, text);          <span class="cm">// 解析失败就按文本展示</span>
+    }
+}</pre>
+    <p class="tips">
+      <b>要点：</b>① <code>fetch(url, {method, headers, body})</code> 的第二个参数就是请求配置，GET/DELETE 不能带 body；
+      ② body 必须是字符串，对象要先 <code>JSON.stringify()</code>；
+      ③ <b>HTTP 404/500 不会触发 catch</b>，必须用 <code>res.ok</code> 或 <code>res.status</code> 判断；
+      ④ 只有<b>网络失败 / 跨域被拒 / 请求超时</b>才会进入 catch（本页用 <code>AbortController</code> 实现 15 秒超时）。
+    </p>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 17-4 接口调试工具 · 课堂练习</footer>
+</div>
+
+<script>
+/* ================= 元素 ================= */
+var methodSel  = document.getElementById('methodSel');
+var urlInput   = document.getElementById('urlInput');
+var headersInput = document.getElementById('headersInput');
+var bodyInput  = document.getElementById('bodyInput');
+var bodyHint   = document.getElementById('bodyHint');
+var sendBtn    = document.getElementById('sendBtn');
+var errBox     = document.getElementById('errBox');
+var respBody   = document.getElementById('respBody');
+var statusBadge= document.getElementById('statusBadge');
+var timeText   = document.getElementById('timeText');
+var sizeText   = document.getElementById('sizeText');
+var typeText   = document.getElementById('typeText');
+var historyBox = document.getElementById('history');
+
+var controller = null;      // 用于取消请求
+var lastText = '';          // 最近一次响应的原始文本
+var lastHeaders = '';       // 最近一次响应头
+var currentView = 'pretty'; // 当前展示的视图
+var historyList = [];       // 请求历史
+
+/* ================= 工具 ================= */
+function escapeHtml(s) {
+    return String(s === undefined || s === null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function showError(title, detail) {
+    errBox.className = 'err-box show';
+    errBox.innerHTML = '<b>❌ ' + escapeHtml(title) + '</b>' + escapeHtml(detail);
+}
+function hideError() { errBox.className = 'err-box'; errBox.innerHTML = ''; }
+
+/* 解析 JSON 字符串，失败返回 {ok:false, msg} */
+function tryParseJSON(text, label) {
+    if (!text || !text.trim()) return { ok: true, value: null };
+    try {
+        return { ok: true, value: JSON.parse(text) };
+    } catch (e) {
+        return { ok: false, msg: label + ' 不是合法 JSON：' + e.message };
+    }
+}
+
+/* JSON 语法高亮 */
+function highlightJSON(str) {
+    var s = escapeHtml(str).replace(/&quot;/g, '"');
+    var tokens = [];
+    s = s.replace(/"(?:\\.|[^"\\])*"/g, function (m) { tokens.push(m); return '\u0000' + (tokens.length - 1) + '\u0000'; });
+    s = s.replace(/\b(true|false|null)\b/g, '<span class="b">$1</span>');
+    s = s.replace(/(-?\d+\.?\d*)/g, '<span class="n">$1</span>');
+    s = s.replace(/([{}\[\],:])/g, '<span class="p">$1</span>');
+    s = s.replace(/\u0000(\d+)\u0000/g, function (_, i) { return '<span class="s">' + tokens[+i] + '</span>'; });
+    s = s.replace(/<span class="s">("[^"]*")<\/span>(\s*<span class="p">:<\/span>)?/g, function (m, key, colon) {
+        return '<span class="' + (colon ? 'k' : 's') + '">' + key + '</span>' + (colon || '');
+    });
+    return s;
+}
+
+function setBadge(text, cls) {
+    statusBadge.textContent = text;
+    statusBadge.className = 'badge-status ' + cls;
+}
+
+/* ================= 发送请求 ================= */
+async function sendRequest() {
+    var method = methodSel.value;
+    var url = urlInput.value.trim();
+
+    hideError();
+
+    // 1. 基本校验
+    if (!url) { showError('地址不能为空', '请在上方输入接口地址，例如 https://jsonplaceholder.typicode.com/posts'); return; }
+    if (!/^https?:\/\//i.test(url)) { showError('地址格式不正确', '接口地址必须以 http:// 或 https:// 开头'); return; }
+
+    // 2. 解析请求头
+    var headers = null;
+    var hRes = tryParseJSON(headersInput.value, '请求头 Headers');
+    if (!hRes.ok) { showError('请求头解析失败', hRes.msg + '（不需要请求头时可填 {}）'); return; }
+    headers = hRes.value || {};
+
+    // 3. 解析请求体（POST/PUT/PATCH 才需要）
+    var bodyObj = null;
+    var needBody = (method !== 'GET' && method !== 'DELETE');
+    if (needBody) {
+        var bRes = tryParseJSON(bodyInput.value, '请求体 Body');
+        if (!bRes.ok) { showError('请求体解析失败', bRes.msg + '；请检查双引号、末尾逗号'); return; }
+        bodyObj = bRes.value;
+    }
+
+    // 4. 组装 fetch 配置
+    var options = { method: method, headers: headers };
+    if (needBody && bodyObj !== null) options.body = JSON.stringify(bodyObj);
+
+    // 5. 超时控制（15 秒）
+    controller = new AbortController();
+    options.signal = controller.signal;
+    var timer = setTimeout(function () { controller.abort(); }, 15000);
+
+    sendBtn.disabled = true;
+    setBadge('请求中...', '');
+    respBody.innerHTML = '<div class="placeholder">请求中，请稍候…</div>';
+    timeText.textContent = '—'; sizeText.textContent = '—'; typeText.textContent = '—';
+
+    var start = performance.now();
+
+    try {
+        var res = await fetch(url, options);
+        var text = await res.text();
+        var cost = Math.round(performance.now() - start);
+
+        lastText = text;
+        // 收集响应头
+        var hs = [];
+        res.headers.forEach(function (v, k) { hs.push(k + ': ' + v); });
+        lastHeaders = hs.join('\n') || '（无响应头信息，可能是跨域限制）';
+
+        // 状态码着色
+        var cls = res.ok ? 'ok' : (res.status >= 400 && res.status < 500 ? 'warn' : 'err');
+        setBadge(res.status + ' ' + res.statusText, cls);
+        timeText.textContent = cost + ' ms';
+        sizeText.textContent = (text.length / 1024).toFixed(2) + ' KB';
+
+        // 尝试解析 JSON
+        var parsed = tryParseJSON(text, '');
+        typeText.textContent = parsed.ok ? 'JSON' : (res.headers.get('content-type') || '文本');
+        if (!res.ok) {
+            showError('接口返回 ' + res.status + ' ' + res.statusText, '请求已到达服务器，但业务状态不成功（fetch 不会自动报错，需手动判断 res.ok / res.status）');
+        }
+        renderBody(parsed.ok ? parsed.value : text, parsed.ok);
+        addHistory(method, url, res.status, cls);
+    } catch (err) {
+        // 网络失败 / 跨域 / 超时
+        var cost = Math.round(performance.now() - start);
+        var reason = (err.name === 'AbortError')
+            ? '请求超时（超过 15 秒未响应）或已被手动取消'
+            : 'Failed to fetch：网络不通、域名不存在、跨域被拒绝（CORS），或页面以 file:// 打开';
+        setBadge('请求失败', 'err');
+        timeText.textContent = cost + ' ms';
+        sizeText.textContent = '—';
+        typeText.textContent = '—';
+        lastText = '';
+        lastHeaders = '';
+        showError('请求未成功：' + (err.name === 'AbortError' ? 'AbortError' : err.message), reason);
+        respBody.innerHTML = '<div class="placeholder" style="color:#c0392b">请求失败，未获取到响应数据</div>';
+        addHistory(method, url, '失败', 'err');
+    } finally {
+        clearTimeout(timer);
+        controller = null;
+        sendBtn.disabled = false;
+    }
+}
+
+function abortRequest() {
+    if (controller) { controller.abort(); controller = null; }
+}
+
+/* ================= 渲染响应 ================= */
+function renderBody(data, isJSON) {
+    if (currentView === 'headers') {
+        respBody.innerHTML = '<span class="txt">' + escapeHtml(lastHeaders || '（暂无）') + '</span>';
+        return;
+    }
+    if (currentView === 'raw') {
+        respBody.innerHTML = '<span class="txt">' + escapeHtml(lastText || '（空）') + '</span>';
+        return;
+    }
+    // 美化视图
+    if (isJSON) {
+        var pretty = (typeof data === 'string') ? data : JSON.stringify(data, null, 2);
+        respBody.innerHTML = highlightJSON(pretty);
+    } else {
+        respBody.innerHTML = '<span class="txt">' + escapeHtml(String(data || '（空响应）')) + '</span>';
+    }
+}
+
+/* ================= 视图切换 ================= */
+var tabs = document.querySelectorAll('.tab');
+for (var i = 0; i < tabs.length; i++) {
+    tabs[i].addEventListener('click', function () {
+        for (var j = 0; j < tabs.length; j++) tabs[j].classList.remove('active');
+        this.classList.add('active');
+        currentView = this.getAttribute('data-view');
+        if (!lastText && currentView !== 'headers') return;
+        var parsed = tryParseJSON(lastText, '');
+        renderBody(parsed.ok ? parsed.value : lastText, parsed.ok);
+    });
+}
+
+/* ================= 快捷示例 ================= */
+document.getElementById('samples').addEventListener('click', function (e) {
+    var chip = e.target.closest('.chip');
+    if (!chip) return;
+    methodSel.value = chip.getAttribute('data-method');
+    urlInput.value = chip.getAttribute('data-url');
+
+    // POST / PUT 时给出对应的示例请求体
+    var m = chip.getAttribute('data-method');
+    if (m === 'POST' && urlInput.value.indexOf('dummyjson') > -1) {
+        bodyInput.value = '{\n  "title": "测试商品",\n  "price": 99.9,\n  "category": "beauty"\n}';
+    } else if (m === 'POST' || m === 'PUT') {
+        bodyInput.value = '{\n  "id": 1,\n  "title": "徐梓轩的接口测试",\n  "body": "这是用 fetch 发送的请求体",\n  "userId": 1\n}';
+    }
+    updateBodyHint();
+});
+
+/* ================= 历史记录 ================= */
+function addHistory(method, url, status, cls) {
+    historyList.unshift({ method: method, url: url, status: status, cls: cls });
+    if (historyList.length > 8) historyList.pop();
+    renderHistory();
+}
+function renderHistory() {
+    if (historyList.length === 0) {
+        historyBox.innerHTML = '<div class="item" style="cursor:default;color:#95a5a6">暂无记录</div>';
+        return;
+    }
+    var html = '';
+    for (var i = 0; i < historyList.length; i++) {
+        var h = historyList[i];
+        html += '<div class="item" data-url="' + escapeHtml(h.url) + '" data-method="' + h.method + '">' +
+                '<span class="m ' + h.method.toLowerCase() + '">' + h.method + '</span>' +
+                '<span class="u">' + escapeHtml(h.url) + '</span>' +
+                '<span style="margin-left:auto;color:' + (h.cls === 'ok' ? '#27ae60' : '#c0392b') + '">' + h.status + '</span>' +
+                '</div>';
+    }
+    historyBox.innerHTML = html;
+}
+historyBox.addEventListener('click', function (e) {
+    var item = e.target.closest('.item');
+    if (!item || !item.getAttribute('data-url')) return;
+    methodSel.value = item.getAttribute('data-method');
+    urlInput.value = item.getAttribute('data-url');
+    updateBodyHint();
+});
+
+/* ================= 其它 ================= */
+function updateBodyHint() {
+    var m = methodSel.value;
+    bodyHint.textContent = (m === 'GET' || m === 'DELETE') ? '当前方法不发送请求体' : '按当前方法可发送';
+    bodyInput.style.opacity = (m === 'GET' || m === 'DELETE') ? '.55' : '1';
+}
+methodSel.addEventListener('change', updateBodyHint);
+
+function clearAll() {
+    hideError();
+    lastText = ''; lastHeaders = '';
+    respBody.innerHTML = '<div class="placeholder">点击左侧「发送请求」查看结果</div>';
+    setBadge('未发送', '');
+    timeText.textContent = '—'; sizeText.textContent = '—'; typeText.textContent = '—';
+}
+
+updateBodyHint();
+</script>
+</body>
+</html>

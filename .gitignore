@@ -3,6 +3,10 @@
 Thumbs.db
 .vscode/
 
+# 编辑器自动备份
+.workbuddy/
+.workbuddy
+
 # Node / Python
 node_modules/
 __pycache__/

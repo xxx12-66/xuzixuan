@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>17-3 商品列表 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #f0f4f8; color: #2c3e50; line-height: 1.7;
+    padding: 30px 20px 50px;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { font-size: 30px; letter-spacing: 2px; margin-bottom: 6px; }
+  header h1 span { color: #8e44ad; }
+  header .sub { color: #7f8c8d; font-size: 14px; }
+  .api-box {
+    display: inline-block; margin-top: 12px; padding: 8px 16px;
+    background: #fff; border: 1px dashed #8e44ad; border-radius: 20px;
+    font-family: "Consolas", monospace; font-size: 13px; color: #8e44ad; word-break: break-all;
+  }
+
+  /* 工具栏 */
+  .toolbar {
+    background: #fff; border-radius: 12px; padding: 14px 18px; margin-bottom: 18px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  }
+  .toolbar label { font-size: 13px; color: #666; }
+  .toolbar select, .toolbar input {
+    border: 1px solid #ccd5db; border-radius: 6px; padding: 7px 10px;
+    font-size: 13px; font-family: inherit; color: #2c3e50; background: #fff;
+  }
+  .toolbar input { width: 190px; }
+  .toolbar select:focus, .toolbar input:focus { outline: none; border-color: #8e44ad; }
+  .btn {
+    background: #8e44ad; color: #fff; border: none; border-radius: 6px;
+    padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: background .15s, opacity .15s;
+  }
+  .btn:hover { background: #7d3c98; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.gray { background: #7f8c8d; }
+  .btn.gray:hover { background: #5d6d7e; }
+  .spacer { flex: 1; }
+  .count { font-size: 13px; color: #7f8c8d; }
+
+  /* 状态条 */
+  .status { padding: 13px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; display: none; }
+  .status.show { display: block; }
+  .status.loading { background: #f4eefa; color: #8e44ad; }
+  .status.error { background: #fdecea; color: #c0392b; }
+  .status.error .btn { margin-left: 10px; }
+  .dot {
+    display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%;
+    background: #8e44ad; vertical-align: middle; animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:.25;transform:scale(.8)} 50%{opacity:1;transform:scale(1.15)} }
+
+  /* 商品网格 */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+  .card {
+    background: #fff; border-radius: 12px; overflow: hidden; text-decoration: none; color: inherit;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; flex-direction: column;
+    transition: transform .2s, box-shadow .2s;
+  }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 10px 24px rgba(142,68,173,.18); }
+  .thumb { height: 190px; background: #fafbfc; display: flex; align-items: center; justify-content: center; padding: 12px; position: relative; }
+  .thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .badge {
+    position: absolute; top: 10px; left: 10px; font-size: 11px; color: #fff;
+    background: rgba(142,68,173,.92); padding: 2px 9px; border-radius: 10px;
+  }
+  .badge.off { left: auto; right: 10px; background: #c0392b; }
+  .body { padding: 14px 16px 16px; display: flex; flex-direction: column; flex: 1; }
+  .brand { font-size: 12px; color: #95a5a6; margin-bottom: 4px; }
+  .title {
+    font-size: 14px; font-weight: 600; line-height: 1.5; height: 42px; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 10px;
+  }
+  .meta { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; }
+  .price { color: #c0392b; font-size: 19px; font-weight: 700; }
+  .price small { font-size: 12px; font-weight: 400; }
+  .price .old { color: #95a5a6; font-size: 12px; text-decoration: line-through; margin-left: 6px; font-weight: 400; }
+  .stars { font-size: 13px; color: #f39c12; }
+  .stars .num { color: #95a5a6; font-size: 12px; margin-left: 3px; }
+  .stock { font-size: 12px; color: #7f8c8d; margin-top: 6px; }
+
+  /* 骨架屏 */
+  .skeleton { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+  .sk-img, .sk-line {
+    background: linear-gradient(90deg,#eee 25%,#f5f5f5 37%,#eee 63%);
+    background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 6px;
+  }
+  .sk-img { height: 190px; border-radius: 0; }
+  .sk-box { padding: 14px 16px; }
+  .sk-line { height: 13px; margin-bottom: 9px; }
+  .sk-line.short { width: 55%; }
+  @keyframes shimmer { 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+
+  .empty {
+    grid-column: 1/-1; text-align: center; padding: 50px 20px; color: #95a5a6;
+    background: #fff; border-radius: 12px; font-size: 14px;
+  }
+
+  /* 分页 */
+  .pager {
+    margin-top: 22px; display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 13px; color: #666;
+  }
+  .pager .btn { min-width: 84px; }
+
+  .code-card {
+    background: #fff; border-radius: 12px; padding: 22px 26px; margin-top: 26px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .code-card h2 { font-size: 18px; color: #8e44ad; border-left: 4px solid #8e44ad; padding-left: 12px; margin-bottom: 12px; }
+  .code-card pre {
+    background: #2c3e50; color: #ecf0f1; font-family: "Consolas",monospace; font-size: 13px;
+    padding: 16px 18px; border-radius: 8px; overflow-x: auto; line-height: 1.7;
+  }
+  .kw { color: #e74c3c; font-weight: bold; } .str { color: #2ecc71; } .cm { color: #7f8c8d; } .fn { color: #3498db; }
+  .tips { font-size: 13px; color: #666; margin-top: 10px; }
+  .tips b { color: #8e44ad; }
+
+  footer { text-align: center; color: #95a5a6; font-size: 13px; margin-top: 28px; }
+  footer span { color: #8e44ad; }
+
+  @media (max-width: 640px) {
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar input, .toolbar select { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>17-3</span> · 商品列表页</h1>
+    <p class="sub">原生 fetch 请求接口渲染列表，点击任意商品跳转到 17-3-detail.html 查看详情</p>
+    <div class="api-box">GET https://dummyjson.com/products?limit=8</div>
+  </header>
+
+  <div class="toolbar">
+    <label>每页条数：</label>
+    <select id="limitSel">
+      <option value="4">4 条</option>
+      <option value="8" selected>8 条</option>
+      <option value="12">12 条</option>
+      <option value="20">20 条</option>
+    </select>
+
+    <label>关键字：</label>
+    <input type="text" id="kwInput" placeholder="按商品名筛选（本地过滤）">
+
+    <span class="spacer"></span>
+    <span class="count" id="countText">—</span>
+    <button class="btn" id="reloadBtn" onclick="loadList()">↻ 重新请求</button>
+  </div>
+
+  <div class="status" id="statusBox"></div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="pager">
+    <button class="btn gray" id="prevBtn" onclick="goPage(-1)">← 上一页</button>
+    <span id="pageText">第 1 页</span>
+    <button class="btn" id="nextBtn" onclick="goPage(1)">下一页 →</button>
+  </div>
+
+  <div class="code-card">
+    <h2>核心代码</h2>
+<pre><span class="cm">// 列表接口：limit 控制条数，skip 控制分页起点</span>
+<span class="kw">var</span> url = <span class="str">'https://dummyjson.com/products?limit=8'</span>;
+
+<span class="kw">async function</span> <span class="fn">loadList</span>() {
+    <span class="kw">var</span> res  = <span class="kw">await</span> <span class="fn">fetch</span>(url);
+    <span class="kw">var</span> data = <span class="kw">await</span> res.<span class="fn">json</span>();
+
+    <span class="cm">// 兼容两种返回：{products:[...]} 或直接 [...]</span>
+    <span class="kw">var</span> list = Array.<span class="fn">isArray</span>(data) ? data : data.products;
+
+    <span class="cm">// 遍历拼接 HTML：每个卡片用 a 标签跳详情，并把 id 放到地址栏</span>
+    list.<span class="fn">forEach</span>(<span class="kw">function</span> (p) {
+        html += <span class="str">'&lt;a href="17-3-detail.html?id='</span> + p.id + <span class="str">'"&gt;...&lt;/a&gt;'</span>;
+    });
+}</pre>
+    <p class="tips">
+      <b>要点：</b>① 分页靠 <code>?limit=8&amp;skip=8</code> 两个参数实现；② 卡片用 <code>&lt;a&gt;</code> 承载，
+      跳转时把 <code>id</code> 拼进 URL；③ 详情页用 <code>location.search</code> 取回这个 id 再请求单条数据。
+    </p>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 17-3 商品列表 · 数据源 dummyjson.com</footer>
+</div>
+
+<script>
+/* ================= 配置与元素 ================= */
+var API = 'https://dummyjson.com/products';
+var grid       = document.getElementById('grid');
+var statusBox  = document.getElementById('statusBox');
+var limitSel   = document.getElementById('limitSel');
+var kwInput    = document.getElementById('kwInput');
+var countText  = document.getElementById('countText');
+var pageText   = document.getElementById('pageText');
+var prevBtn    = document.getElementById('prevBtn');
+var nextBtn    = document.getElementById('nextBtn');
+var reloadBtn  = document.getElementById('reloadBtn');
+
+var skip = 0;        // 分页起点
+var total = 0;       // 接口返回的总条数
+var rawList = [];    // 当前页原始数据
+
+/* 图片加载失败时的占位图 */
+var IMG_PLACEHOLDER = "data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect width='140' height='140' fill='%23eeeeee'/%3E%3Ctext x='70' y='74' font-size='14' font-family='sans-serif' text-anchor='middle' fill='%23999999'%3ENo Image%3C/text%3E%3C/svg%3E";
+
+/* ================= 工具 ================= */
+function escapeHtml(s) {
+    return String(s === undefined || s === null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function showStatus(type, html) { statusBox.className = 'status show ' + type; statusBox.innerHTML = html; }
+function hideStatus() { statusBox.className = 'status'; statusBox.innerHTML = ''; }
+function stars(rate) {
+    var n = Math.round(Number(rate) || 0), s = '';
+    for (var i = 1; i <= 5; i++) s += (i <= n) ? '★' : '☆';
+    return s;
+}
+function getImg(p) { return p.thumbnail || (p.images && p.images[0]) || p.image || IMG_PLACEHOLDER; }
+
+function showSkeleton() {
+    var n = parseInt(limitSel.value, 10) || 8, html = '';
+    for (var i = 0; i < n; i++) {
+        html += '<div class="skeleton"><div class="sk-img"></div><div class="sk-box">' +
+                '<div class="sk-line"></div><div class="sk-line short"></div>' +
+                '<div class="sk-line" style="width:40%"></div></div></div>';
+    }
+    grid.innerHTML = html;
+}
+
+/* ================= 请求列表 ================= */
+async function loadList() {
+    var limit = parseInt(limitSel.value, 10) || 8;
+    var url = API + '?limit=' + limit + '&skip=' + skip;
+
+    showSkeleton();
+    showStatus('loading', '<span class="dot"></span>正在请求 ' + url + ' ...');
+    reloadBtn.disabled = true;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+
+    try {
+        var res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) throw new Error('服务器返回 HTTP ' + res.status);
+
+        var data = await res.json();
+        // 兼容：{products:[...],total,skip,limit} 或直接返回数组
+        rawList = Array.isArray(data) ? data : (data.products || data.data || []);
+        total = data.total || data.totalCount || rawList.length;
+
+        hideStatus();
+        renderList();
+    } catch (err) {
+        rawList = [];
+        grid.innerHTML = '';
+        showStatus('error', '❌ 请求失败：' + escapeHtml(err.message) +
+            '<br><span style="font-size:12px">请检查网络；若用 file:// 打开页面，请改用本地服务器访问。</span>' +
+            '<button class="btn" onclick="loadList()">重试</button>');
+        countText.textContent = '请求失败';
+        pageText.textContent = '—';
+    } finally {
+        reloadBtn.disabled = false;
+        updatePager();
+    }
+}
+
+/* ================= 渲染 ================= */
+function renderList() {
+    var kw = kwInput.value.trim().toLowerCase();
+    var list = rawList.filter(function (p) {
+        return !kw || String(p.title).toLowerCase().indexOf(kw) > -1;
+    });
+
+    if (list.length === 0) {
+        grid.innerHTML = '<div class="empty">没有符合条件的商品 🙂</div>';
+        countText.textContent = '共 0 件';
+        return;
+    }
+
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+        var p = list[i];
+        var off = Number(p.discountPercentage) || 0;
+        var discount = off > 0
+            ? ' <span class="old">$' + Number(p.price).toFixed(2) + '</span>'
+            : '';
+        var showPrice = off > 0 ? (Number(p.price) * (1 - off / 100)).toFixed(2) : Number(p.price).toFixed(2);
+
+        html += '<a class="card" href="17-3-detail.html?id=' + encodeURIComponent(p.id) + '">' +
+                    '<div class="thumb">' +
+                        '<span class="badge">' + escapeHtml(p.category) + '</span>' +
+                        (off > 0 ? '<span class="badge off">-' + Math.round(off) + '%</span>' : '') +
+                        '<img src="' + escapeHtml(getImg(p)) + '" alt="' + escapeHtml(p.title) + '" loading="lazy"' +
+                        ' onerror="this.onerror=null;this.src=IMG_PLACEHOLDER">' +
+                    '</div>' +
+                    '<div class="body">' +
+                        '<div class="brand">' + escapeHtml(p.brand || '未标注品牌') + '</div>' +
+                        '<div class="title">' + escapeHtml(p.title) + '</div>' +
+                        '<div class="meta">' +
+                            '<span class="price"><small>$</small>' + showPrice + discount + '</span>' +
+                            '<span class="stars">' + stars(p.rating) +
+                                '<span class="num">' + (Number(p.rating) || 0).toFixed(1) + '</span></span>' +
+                        '</div>' +
+                        '<div class="stock">库存 ' + (p.stock === undefined ? '—' : p.stock) + ' 件 · ID ' + p.id + '</div>' +
+                    '</div>' +
+                '</a>';
+    }
+    grid.innerHTML = html;
+
+    var start = skip + 1;
+    countText.textContent = '本页 ' + list.length + ' 件 / 总计 ' + total + ' 件';
+    pageText.textContent = '第 ' + (Math.floor(skip / (parseInt(limitSel.value, 10) || 8)) + 1) + ' 页（第 ' +
+        start + '-' + (skip + rawList.length) + ' 条）';
+}
+
+/* ================= 分页 ================= */
+function goPage(dir) {
+    var limit = parseInt(limitSel.value, 10) || 8;
+    skip = skip + dir * limit;
+    if (skip < 0) skip = 0;
+    if (total && skip >= total) skip = Math.max(0, Math.floor((total - 1) / limit) * limit);
+    loadList();
+}
+function updatePager() {
+    var limit = parseInt(limitSel.value, 10) || 8;
+    prevBtn.disabled = skip <= 0;
+    nextBtn.disabled = total > 0 && (skip + limit) >= total;
+}
+
+/* ================= 事件 ================= */
+limitSel.addEventListener('change', function () { skip = 0; updatePager(); loadList(); });
+kwInput.addEventListener('input', renderList);
+
+/* 首屏加载 */
+loadList();
+</script>
+</body>
+</html>
