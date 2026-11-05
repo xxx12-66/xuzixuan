@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-6 three.js 3D 图表：立体柱状图 &amp; 曲面图 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #0c0e16; color: #e8ecf6; line-height: 1.7;
+    padding: 26px 20px 46px; min-height: 100vh;
+    transition: background .3s, color .3s;
+  }
+  body.light { background: #eef1f7; color: #16203a; }
+  .container { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: 27px; letter-spacing: 2px; }
+  header h1 span { color: #6ee7ff; }
+  body.light header h1 span { color: #2563eb; }
+  header .sub { color: #7d8aa5; font-size: 13.5px; }
+  body.light header .sub { color: #6b7793; }
+
+  .tools {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 18px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  }
+  body.light .tools { background: #fff; border-color: #e2e8f4; box-shadow: 0 6px 20px rgba(24,32,64,.06); }
+  .btn {
+    background: linear-gradient(135deg, #6ee7ff, #a78bfa); color: #0a0c14;
+    border: none; border-radius: 8px; padding: 8px 15px; font-size: 12.5px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(110,231,255,.26); }
+  .btn.ghost {
+    background: transparent; color: #9fb0cc; font-weight: 400;
+    border: 1px solid rgba(255,255,255,.16);
+  }
+  .btn.ghost:hover { color: #fff; border-color: rgba(255,255,255,.34); box-shadow: none; }
+  body.light .btn.ghost { color: #4c5670; border-color: #cfd8e8; }
+  body.light .btn.ghost:hover { color: #16203a; border-color: #9aa8c4; }
+  .file-tag {
+    margin-left: auto; font-size: 11.5px; font-family: Consolas, monospace;
+    padding: 3px 10px; border-radius: 999px;
+    border: 1px dashed rgba(110,231,255,.35); color: #6ee7ff;
+  }
+  body.light .file-tag { color: #2563eb; border-color: rgba(37,99,235,.35); }
+
+  .chart-card {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px; padding: 20px 22px 14px; margin-bottom: 20px;
+  }
+  body.light .chart-card { background: #fff; border-color: #e2e8f4; box-shadow: 0 8px 26px rgba(24,32,64,.07); }
+
+  .card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card-head h2 { font-size: 17px; letter-spacing: .5px; }
+  .card-head .badge {
+    font-size: 11px; padding: 1px 9px; border-radius: 999px;
+    background: rgba(110,231,255,.12); color: #6ee7ff; border: 1px solid rgba(110,231,255,.3);
+  }
+  body.light .card-head .badge { background: #eef4ff; color: #2563eb; border-color: #c7dbff; }
+  .card-head .badge.pink { background: rgba(236,72,153,.12); color: #f472b6; border-color: rgba(236,72,153,.3); }
+  body.light .card-head .badge.pink { background: #fdf2f8; color: #db2777; border-color: #f9c9e2; }
+  .card-head .link { margin-left: auto; font-size: 11.5px; color: #6b7891; text-decoration: none; }
+  .card-head .link:hover { color: #6ee7ff; }
+  body.light .card-head .link:hover { color: #2563eb; }
+
+  .card-desc { font-size: 12.5px; color: #8b98b4; margin-bottom: 10px; }
+  body.light .card-desc { color: #6b7793; }
+  .card-desc code, .note code {
+    font-family: Consolas, monospace; font-size: 11.5px; color: #6ee7ff;
+    background: rgba(110,231,255,.09); padding: 1px 5px; border-radius: 4px;
+  }
+  body.light .card-desc code, body.light .note code { color: #2563eb; background: #eef4ff; }
+
+  /* 3D 画布容器 */
+  .stage3d {
+    position: relative; width: 100%; height: 460px;
+    border-radius: 12px; overflow: hidden;
+    background: radial-gradient(circle at 50% 30%, rgba(110,231,255,.06), transparent 62%);
+  }
+  body.light .stage3d { background: radial-gradient(circle at 50% 30%, rgba(37,99,235,.06), transparent 62%); }
+  .stage3d canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  .stage3d canvas:active { cursor: grabbing; }
+
+  .tip {
+    position: absolute; pointer-events: none; opacity: 0;
+    transform: translate(-50%, -140%);
+    padding: 6px 10px; border-radius: 8px; font-size: 12px; white-space: nowrap;
+    background: rgba(14,18,28,.95); color: #e8ecf6;
+    border: 1px solid rgba(110,231,255,.4);
+    transition: opacity .15s;
+    z-index: 3;
+  }
+  body.light .tip { background: rgba(255,255,255,.97); color: #16203a; border-color: rgba(37,99,235,.3); }
+
+  .hint-bar {
+    position: absolute; left: 12px; bottom: 10px;
+    font-size: 11px; color: #6b7891; pointer-events: none;
+  }
+
+  details.cfg { margin-top: 4px; border-top: 1px dashed rgba(255,255,255,.1); }
+  body.light details.cfg { border-color: #e2e8f4; }
+  details.cfg summary {
+    cursor: pointer; font-size: 12.5px; color: #9fb0cc; padding: 10px 0 6px;
+    list-style: none; user-select: none;
+  }
+  body.light details.cfg summary { color: #4c5670; }
+  details.cfg summary::-webkit-details-marker { display: none; }
+  details.cfg summary::before { content: '▸ '; color: #6ee7ff; }
+  details.cfg[open] summary::before { content: '▾ '; }
+  details.cfg pre {
+    background: #0b0e17; border: 1px solid rgba(255,255,255,.07); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; margin: 6px 0 10px;
+    font-family: Consolas, monospace; font-size: 12px; line-height: 1.75; color: #cfd8e8;
+  }
+  body.light details.cfg pre { background: #f7f9fd; border-color: #e2e8f4; color: #26324a; }
+  .kw { color: #ff7ab2; } .str { color: #7ee787; } .num { color: #ffd479; }
+  .cm { color: #5d6b85; } .fn { color: #6ee7ff; }
+  body.light .kw { color: #c2185b; } body.light .str { color: #0b7a45; }
+  body.light .num { color: #b45309; } body.light .cm { color: #8894ac; } body.light .fn { color: #2563eb; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+  .note {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  body.light .note { background: #fff; border-color: #e2e8f4; box-shadow: 0 6px 20px rgba(24,32,64,.06); }
+  .note h3 { font-size: 14px; color: #a78bfa; margin-bottom: 10px; }
+  body.light .note h3 { color: #7c3aed; }
+  .note li { font-size: 12.5px; color: #9aa6bf; line-height: 1.95; margin-left: 16px; }
+  body.light .note li { color: #4c5670; }
+
+  .err {
+    display: none; padding: 30px 20px; text-align: center; border-radius: 12px;
+    background: #fdecea; color: #c0392b; font-size: 14px;
+  }
+  .err.show { display: block; }
+
+  footer { text-align: center; color: #55617a; font-size: 12.5px; margin-top: 22px; }
+  body.light footer { color: #7b87a1; }
+  footer span { color: #6ee7ff; }
+  body.light footer span { color: #2563eb; }
+
+  @media (max-width: 640px) {
+    header h1 { font-size: 22px; }
+    .chart-card { padding: 16px 14px 10px; }
+    .stage3d { height: 340px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>18-6</span> · three.js 3D 图表</h1>
+    <p class="sub">图 1 立体柱状图（Bar3D）　|　图 2 三维曲面图（Surface）</p>
+  </header>
+
+  <div class="tools">
+    <button class="btn" id="themeBtn">☀️ 浅色模式</button>
+    <button class="btn ghost" id="rerenderBtn">↻ 重新渲染</button>
+    <button class="btn ghost" id="rotateBtn">⏸ 暂停自动旋转</button>
+    <span class="file-tag">&lt;script src="./cdn/three.min.js"&gt;</span>
+  </div>
+
+  <div class="err" id="errBox"></div>
+
+  <!-- ============ 图 1：立体柱状图 ============ -->
+  <div class="chart-card">
+    <div class="card-head">
+      <h2>图 1 · 立体柱状图</h2>
+      <span class="badge">Bar3D</span>
+      <a class="link" href="https://threejs.org/examples/" target="_blank" rel="noopener">three.js 示例 ↗</a>
+    </div>
+    <p class="card-desc">
+      用 <code>BoxGeometry</code> 生成单位立方体，再按数值 <code>scale.y</code> 拉伸成柱体；
+      柱顶数值用 <code>Sprite</code> + <code>CanvasTexture</code> 绘制。<b>拖拽旋转、滚轮缩放、悬停柱子</b>查看明细。
+    </p>
+    <div class="stage3d" id="barStage">
+      <canvas id="barCanvas"></canvas>
+      <div class="tip" id="barTip"></div>
+      <div class="hint-bar">拖拽旋转 · 滚轮缩放 · 悬停高亮</div>
+    </div>
+
+    <details class="cfg">
+      <summary>查看核心代码</summary>
+<pre><span class="cm">// 1. 场景三要素：scene / camera / renderer</span>
+<span class="kw">const</span> renderer = <span class="kw">new</span> THREE.<span class="fn">WebGLRenderer</span>({ canvas, antialias: <span class="kw">true</span>, alpha: <span class="kw">true</span> });
+<span class="kw">const</span> scene = <span class="kw">new</span> THREE.<span class="fn">Scene</span>();
+<span class="kw">const</span> camera = <span class="kw">new</span> THREE.<span class="fn">PerspectiveCamera</span>(<span class="num">42</span>, w / h, <span class="num">0.1</span>, <span class="num">400</span>);
+
+<span class="cm">// 2. 每根柱子：单位立方体 + scale.y 拉伸</span>
+days.<span class="fn">forEach</span>((d, i) <span class="kw">=&gt;</span> {
+  <span class="kw">const</span> h = values[i] / <span class="num">60</span>;
+  <span class="kw">const</span> mesh = <span class="kw">new</span> THREE.<span class="fn">Mesh</span>(
+    <span class="kw">new</span> THREE.<span class="fn">BoxGeometry</span>(<span class="num">0.72</span>, <span class="num">1</span>, <span class="num">0.72</span>),
+    <span class="kw">new</span> THREE.<span class="fn">MeshStandardMaterial</span>({ color, roughness: <span class="num">0.35</span>, metalness: <span class="num">0.45</span> })
+  );
+  mesh.scale.y = h;
+  mesh.position.<span class="fn">set</span>((i - <span class="num">3</span>) * <span class="num">1.28</span>, h / <span class="num">2</span>, <span class="num">0</span>);
+  mesh.userData = { label: d, value: values[i] };
+  scene.<span class="fn">add</span>(mesh);
+});
+
+<span class="cm">// 3. 轨道相机：球坐标手写，不依赖 OrbitControls</span>
+<span class="kw">function</span> <span class="fn">updateCamera</span>() {
+  <span class="kw">const</span> r = orbit.dist;
+  camera.position.<span class="fn">set</span>(
+    r * Math.<span class="fn">cos</span>(orbit.el) * Math.<span class="fn">sin</span>(orbit.az),
+    r * Math.<span class="fn">sin</span>(orbit.el),
+    r * Math.<span class="fn">cos</span>(orbit.el) * Math.<span class="fn">cos</span>(orbit.az)
+  );
+  camera.<span class="fn">lookAt</span>(orbit.target);
+}
+
+<span class="cm">// 4. 拾取：Raycaster + 归一化设备坐标</span>
+<span class="kw">const</span> ndc = <span class="kw">new</span> THREE.<span class="fn">Vector2</span>(
+  (e.offsetX / w) * <span class="num">2</span> - <span class="num">1</span>,
+  -(e.offsetY / h) * <span class="num">2</span> + <span class="num">1</span>
+);
+raycaster.<span class="fn">setFromCamera</span>(ndc, camera);
+<span class="kw">const</span> hit = raycaster.<span class="fn">intersectObjects</span>(bars)[<span class="num">0</span>];</pre>
+    </details>
+  </div>
+
+  <!-- ============ 图 2：三维曲面图 ============ -->
+  <div class="chart-card">
+    <div class="card-head">
+      <h2>图 2 · 三维曲面图</h2>
+      <span class="badge pink">Surface</span>
+      <a class="link" href="https://threejs.org/examples/" target="_blank" rel="noopener">three.js 示例 ↗</a>
+    </div>
+    <p class="card-desc">
+      把 <code>PlaneGeometry</code> 的每个顶点按高度函数抬升成起伏曲面，用 <b>顶点色</b>映射高度，
+      再叠一层 <code>WireframeGeometry</code> 网格线。<b>悬停曲面</b>可读取交点坐标与高度。
+    </p>
+    <div class="stage3d" id="surfStage">
+      <canvas id="surfCanvas"></canvas>
+      <div class="tip" id="surfTip"></div>
+      <div class="hint-bar">拖拽旋转 · 滚轮缩放 · 悬停取点</div>
+    </div>
+
+    <details class="cfg">
+      <summary>查看核心代码</summary>
+<pre><span class="cm">// 1. 平面网格：48×48 分段，够密才能看出起伏</span>
+<span class="kw">const</span> geo = <span class="kw">new</span> THREE.<span class="fn">PlaneGeometry</span>(<span class="num">11</span>, <span class="num">11</span>, <span class="num">48</span>, <span class="num">48</span>);
+geo.<span class="fn">rotateX</span>(-Math.PI / <span class="num">2</span>);          <span class="cm">// 从 XY 平面转到 XZ 平面（水平）</span>
+
+<span class="cm">// 2. 逐顶点抬高 + 按高度着色</span>
+<span class="kw">const</span> pos = geo.attributes.position;
+<span class="kw">const</span> colors = [];
+<span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; pos.count; i++) {
+  <span class="kw">const</span> x = pos.<span class="fn">getX</span>(i), z = pos.<span class="fn">getZ</span>(i);
+  <span class="kw">const</span> y = <span class="fn">heightAt</span>(x, z);            <span class="cm">// 高斯凸包 + 正弦波纹</span>
+  pos.<span class="fn">setY</span>(i, y);
+
+  <span class="kw">const</span> c = <span class="kw">new</span> THREE.<span class="fn">Color</span>().<span class="fn">setHSL</span>(<span class="num">0.58</span> - y * <span class="num">0.045</span>, <span class="num">0.75</span>, <span class="num">0.55</span>);
+  colors.<span class="fn">push</span>(c.r, c.g, c.b);
+}
+geo.<span class="fn">setAttribute</span>(<span class="str">'color'</span>, <span class="kw">new</span> THREE.<span class="fn">Float32BufferAttribute</span>(colors, <span class="num">3</span>));
+geo.<span class="fn">computeVertexNormals</span>();             <span class="cm">// 重新算法线，光照才正确</span>
+
+<span class="cm">// 3. 曲面 + 网格线叠加</span>
+<span class="kw">const</span> mesh = <span class="kw">new</span> THREE.<span class="fn">Mesh</span>(geo, <span class="kw">new</span> THREE.<span class="fn">MeshStandardMaterial</span>({
+  vertexColors: <span class="kw">true</span>, roughness: <span class="num">0.55</span>, metalness: <span class="num">0.15</span>, side: THREE.<span class="fn">DoubleSide</span>
+}));
+<span class="kw">const</span> wire = <span class="kw">new</span> THREE.<span class="fn">LineSegments</span>(
+  <span class="kw">new</span> THREE.<span class="fn">WireframeGeometry</span>(geo),
+  <span class="kw">new</span> THREE.<span class="fn">LineBasicMaterial</span>({ color, transparent: <span class="kw">true</span>, opacity: <span class="num">0.16</span> })
+);</pre>
+    </details>
+  </div>
+
+  <div class="grid2">
+    <div class="note">
+      <h3>图 1 要点</h3>
+      <ul>
+        <li>three.js 的最小组合：<code>Scene</code> + <code>PerspectiveCamera</code> + <code>WebGLRenderer</code></li>
+        <li>柱高不用重新建几何体，改 <code>mesh.scale.y</code> 并把 <code>position.y</code> 设成高度的一半</li>
+        <li><code>MeshStandardMaterial</code> 需要光照才显色，别忘了 <code>AmbientLight</code> / <code>DirectionalLight</code></li>
+        <li>文字用 <code>Sprite</code> 始终朝向相机，比 3D 文字省性能</li>
+        <li>相机绕原点旋转只需球坐标 <code>(az, el, dist)</code> 三个量，比引入控制器更轻</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>图 2 要点</h3>
+      <ul>
+        <li>顶点位移后必须 <code>computeVertexNormals()</code>，否则高光和水面一样平</li>
+        <li><code>PlaneGeometry</code> 默认在 XY 平面，<code>rotateX(-90°)</code> 才是水平地面</li>
+        <li>顶点色要求材质开启 <code>vertexColors: true</code>，并写入 <code>'color'</code> 属性</li>
+        <li>网格线单独用 <code>WireframeGeometry</code>，可与实体叠加而不遮挡</li>
+        <li>渲染循环用 <code>requestAnimationFrame</code>，尺寸变化时同步 <code>aspect</code> 与 <code>setSize</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 18-6 three.js 三维图表 · 《高级网页设计》课堂练习</footer>
+</div>
+
+<script src="./cdn/three.min.js"></script>
+<script>
+(function () {
+    var errBox = document.getElementById('errBox');
+    var themeBtn = document.getElementById('themeBtn');
+    var rerenderBtn = document.getElementById('rerenderBtn');
+    var rotateBtn = document.getElementById('rotateBtn');
+
+    if (typeof THREE === 'undefined') {
+        errBox.className = 'err show';
+        errBox.innerHTML = '❌ 未能加载 <code>./cdn/three.min.js</code><br>请确认 cdn 目录下的 three.min.js 是否存在。';
+        return;
+    }
+
+    var isDark = true;
+    var autoRotate = true;
+
+    /* ================== 数据 ================== */
+    var days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    var values = [226, 182, 196, 243, 292, 331, 308];
+
+    /* ================== 配色 ================== */
+    function pal(dark) {
+        return dark
+            ? { grid1: 0x2a3550, grid2: 0x1d2436, base: 0x161d2c, text: '#e8ecf6', sub: '#8b98b4',
+                wire: 0x9fd8ff, axis: 0x7c8aa8 }
+            : { grid1: 0x9db3cf, grid2: 0xcbd8e9, base: 0xc6d4e7, text: '#16203a', sub: '#5c6b85',
+                wire: 0x2f6fd0, axis: 0x8b98b4 };
+    }
+
+    /* ================== 文字贴图 ================== */
+    function makeLabel(text, color, size) {
+        var c = document.createElement('canvas');
+        c.width = 160; c.height = 80;
+        var ctx = c.getContext('2d');
+        ctx.font = 'bold 40px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 80, 40);
+        var tex = new THREE.CanvasTexture(c);
+        tex.minFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
+        var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+        var s = size || 1;
+        sp.scale.set(1.9 * s, 0.95 * s, 1);
+        return sp;
+    }
+
+    /* ================== 场景工厂 ================== */
+    function Stage(canvas, tipEl, host) {
+        var self = this;
+        this.canvas = canvas;
+        this.tip = tipEl;
+        this.host = host;
+        this.renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        if (THREE.sRGBEncoding) this.renderer.outputEncoding = THREE.sRGBEncoding;
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 500);
+        this.orbit = { az: 0.62, el: 0.5, dist: 18, target: new THREE.Vector3(0, 2.2, 0) };
+        this.raycaster = new THREE.Raycaster();
+        this.ndc = new THREE.Vector2(-2, -2);
+        this.pointer = { x: 0, y: 0, inside: false };
+        this.pickables = [];
+        this.onHover = null;
+
+        var dragging = false, lx = 0, ly = 0;
+
+        canvas.addEventListener('pointerdown', function (e) {
+            dragging = true; lx = e.clientX; ly = e.clientY;
+            canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+        });
+        canvas.addEventListener('pointerup', function () { dragging = false; });
+        canvas.addEventListener('pointerleave', function () {
+            dragging = false;
+            self.pointer.inside = false;
+            self.tip.style.opacity = 0;
+        });
+        canvas.addEventListener('pointermove', function (e) {
+            var r = canvas.getBoundingClientRect();
+            self.pointer.x = e.clientX - r.left;
+            self.pointer.y = e.clientY - r.top;
+            self.pointer.inside = true;
+            self.ndc.x = (self.pointer.x / r.width) * 2 - 1;
+            self.ndc.y = -(self.pointer.y / r.height) * 2 + 1;
+            if (dragging) {
+                self.orbit.az -= (e.clientX - lx) * 0.008;
+                self.orbit.el = Math.max(0.09, Math.min(1.45, self.orbit.el + (e.clientY - ly) * 0.006));
+                lx = e.clientX; ly = e.clientY;
+            }
+        });
+        canvas.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            self.orbit.dist = Math.max(8, Math.min(42, self.orbit.dist * (1 + e.deltaY * 0.0012)));
+        }, { passive: false });
+
+        /* 提示框跟随鼠标 */
+        this.showTip = function (html) {
+            this.tip.innerHTML = html;
+            this.tip.style.left = this.pointer.x + 'px';
+            this.tip.style.top = this.pointer.y + 'px';
+            this.tip.style.opacity = 1;
+        };
+        this.hideTip = function () { this.tip.style.opacity = 0; };
+    }
+
+    Stage.prototype.resize = function () {
+        var w = this.host.clientWidth || 600;
+        var h = this.host.clientHeight || 400;
+        this.renderer.setSize(w, h, false);
+        this.camera.aspect = w / h;
+        this.camera.updateProjectionMatrix();
+    };
+
+    Stage.prototype.updateCamera = function () {
+        var o = this.orbit;
+        this.camera.position.set(
+            o.dist * Math.cos(o.el) * Math.sin(o.az),
+            o.dist * Math.sin(o.el),
+            o.dist * Math.cos(o.el) * Math.cos(o.az)
+        );
+        this.camera.lookAt(o.target);
+    };
+
+    Stage.prototype.frame = function (dt) {
+        if (autoRotate && !this.frozen) this.orbit.az += dt * 0.12;
+        this.updateCamera();
+        if (this.onHover) this.onHover();
+        this.renderer.render(this.scene, this.camera);
+    };
+
+    Stage.prototype.clear = function () {
+        var self = this;
+        this.scene.traverse(function (o) {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) {
+                var mats = Array.isArray(o.material) ? o.material : [o.material];
+                mats.forEach(function (m) {
+                    if (m.map) m.map.dispose();
+                    m.dispose();
+                });
+            }
+        });
+        while (this.scene.children.length) this.scene.remove(this.scene.children[0]);
+        this.pickables = [];
+        this.onHover = null;
+    };
+
+    /* ================== 通用光照 ================== */
+    function addLights(scene, dark) {
+        scene.add(new THREE.AmbientLight(0xffffff, dark ? 0.62 : 0.78));
+        var hemi = new THREE.HemisphereLight(dark ? 0x8fd8ff : 0xffffff, dark ? 0x101828 : 0xdfe8f6, 0.55);
+        scene.add(hemi);
+        var dir = new THREE.DirectionalLight(0xffffff, dark ? 1.05 : 0.85);
+        dir.position.set(9, 15, 11);
+        scene.add(dir);
+        var fill = new THREE.DirectionalLight(dark ? 0x6ee7ff : 0x9db8e8, 0.4);
+        fill.position.set(-10, 6, -8);
+        scene.add(fill);
+    }
+
+    /* ================== 图 1：立体柱状图 ================== */
+    var barStage = new Stage(
+        document.getElementById('barCanvas'),
+        document.getElementById('barTip'),
+        document.getElementById('barStage')
+    );
+    var hoverBar = -1, activeBar = -1;
+
+    function buildBar() {
+        var p = pal(isDark);
+        barStage.clear();
+        addLights(barStage.scene, isDark);
+
+        var group = new THREE.Group();
+        barStage.scene.add(group);
+
+        /* 底座与网格 */
+        var base = new THREE.Mesh(
+            new THREE.BoxGeometry(12.4, 0.18, 3.2),
+            new THREE.MeshStandardMaterial({ color: p.base, roughness: 0.9, metalness: 0.1 })
+        );
+        base.position.y = -0.09;
+        barStage.scene.add(base);
+
+        var grid = new THREE.GridHelper(18, 18, p.grid1, p.grid2);
+        grid.position.y = 0;
+        grid.material.transparent = true;
+        grid.material.opacity = isDark ? 0.55 : 0.8;
+        barStage.scene.add(grid);
+
+        days.forEach(function (d, i) {
+            var h = values[i] / 62;
+            var color = new THREE.Color().setHSL(0.56 - i * 0.035, 0.72, isDark ? 0.56 : 0.52);
+
+            var mat = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.32,
+                metalness: 0.5,
+                emissive: color.clone().multiplyScalar(isDark ? 0.24 : 0.1)
+            });
+            var mesh = new THREE.Mesh(new THREE.BoxGeometry(0.62, 1, 0.62), mat);
+            mesh.scale.y = h;
+            mesh.position.set((i - 3) * 1.62, h / 2, 0);
+            mesh.userData = { index: i, label: d, value: values[i], baseColor: color, height: h };
+            group.add(mesh);
+            barStage.pickables.push(mesh);
+
+            /* 柱顶数值：奇偶错开高度，避免透视下相邻标签重叠 */
+            var lab = makeLabel(String(values[i]), isDark ? '#e8ecf6' : '#16203a', 0.7);
+            lab.position.set(mesh.position.x, h + (i % 2 ? 1.0 : 0.62), 0);
+            group.add(lab);
+
+            /* 底部星期 */
+            var axisLabel = makeLabel(d, p.sub, 0.66);
+            axisLabel.position.set(mesh.position.x, -0.5, 1.85);
+            group.add(axisLabel);
+        });
+
+        barStage.orbit.target.set(0, 2.2, 0);
+        barStage.orbit.az = 0.4;
+        barStage.orbit.el = 0.42;
+        barStage.orbit.dist = 17;
+
+        barStage.onHover = function () {
+            barStage.raycaster.setFromCamera(barStage.ndc, barStage.camera);
+            var hit = barStage.raycaster.intersectObjects(barStage.pickables)[0];
+            var idx = hit && barStage.pointer.inside ? hit.object.userData.index : -1;
+
+            if (idx !== hoverBar) {
+                hoverBar = idx;
+                barStage.pickables.forEach(function (m) {
+                    var on = m.userData.index === idx || m.userData.index === activeBar;
+                    m.material.emissiveIntensity = on ? 2.2 : 1;
+                    m.scale.x = on ? 1.14 : 1;
+                    m.scale.z = on ? 1.14 : 1;
+                });
+            }
+            if (idx >= 0) {
+                var u = barStage.pickables[idx].userData;
+                barStage.showTip('<b>' + u.label + '</b> · ' + u.value + ' 单');
+            } else if (barStage.pointer.inside === false) {
+                barStage.hideTip();
+            } else {
+                barStage.hideTip();
+            }
+        };
+
+        barStage.resize();
+    }
+
+    /* 点击选中柱子 */
+    barStage.canvas.addEventListener('click', function () {
+        activeBar = hoverBar;
+    });
+
+    /* ================== 图 2：三维曲面 ================== */
+    var surfStage = new Stage(
+        document.getElementById('surfCanvas'),
+        document.getElementById('surfTip'),
+        document.getElementById('surfStage')
+    );
+    var marker = null;
+
+    /* 两个高斯凸包 + 一层波纹，模拟「价格 × 促销强度 → 转化率」 */
+    function heightAt(x, z) {
+        var a = 2.4 * Math.exp(-((x - 1.8) * (x - 1.8) + (z + 1.2) * (z + 1.2)) / 7);
+        var b = 1.7 * Math.exp(-((x + 2.6) * (x + 2.6) + (z - 2.2) * (z - 2.2)) / 5.5);
+        var w = 0.42 * Math.sin(x * 0.95) * Math.cos(z * 0.85);
+        return a + b + w + 0.9;
+    }
+
+    function buildSurface() {
+        var p = pal(isDark);
+        surfStage.clear();
+        addLights(surfStage.scene, isDark);
+
+        var geo = new THREE.PlaneGeometry(11, 11, 56, 56);
+        geo.rotateX(-Math.PI / 2);
+
+        var pos = geo.attributes.position;
+        var colors = [];
+        var yMin = Infinity, yMax = -Infinity;
+        var i;
+
+        for (i = 0; i < pos.count; i++) {
+            var y = heightAt(pos.getX(i), pos.getZ(i));
+            pos.setY(i, y);
+            if (y < yMin) yMin = y;
+            if (y > yMax) yMax = y;
+        }
+        for (i = 0; i < pos.count; i++) {
+            var t = (pos.getY(i) - yMin) / (yMax - yMin);
+            var c = new THREE.Color().setHSL(0.6 - t * 0.42, 0.78, isDark ? 0.3 + t * 0.28 : 0.42 + t * 0.2);
+            colors.push(c.r, c.g, c.b);
+        }
+        geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        geo.computeVertexNormals();
+
+        var mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            roughness: 0.55,
+            metalness: 0.22,
+            side: THREE.DoubleSide,
+            flatShading: false
+        }));
+        mesh.position.y = 0;
+        surfStage.scene.add(mesh);
+        surfStage.pickables.push(mesh);
+        surfStage.surface = mesh;
+
+        var wire = new THREE.LineSegments(
+            new THREE.WireframeGeometry(geo),
+            new THREE.LineBasicMaterial({
+                color: p.wire, transparent: true, opacity: isDark ? 0.16 : 0.22
+            })
+        );
+        surfStage.scene.add(wire);
+
+        /* 地面网格 */
+        var grid = new THREE.GridHelper(14, 14, p.grid1, p.grid2);
+        grid.position.y = -0.02;
+        grid.material.transparent = true;
+        grid.material.opacity = 0.45;
+        surfStage.scene.add(grid);
+
+        /* 悬停标记球 */
+        marker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.16, 16, 16),
+            new THREE.MeshBasicMaterial({ color: isDark ? 0xffd479 : 0xd97706 })
+        );
+        marker.visible = false;
+        surfStage.scene.add(marker);
+
+        surfStage.orbit.target.set(0, 1.8, 0);
+        surfStage.orbit.dist = 20;
+
+        surfStage.onHover = function () {
+            if (!surfStage.pointer.inside) { surfStage.hideTip(); marker.visible = false; return; }
+            surfStage.raycaster.setFromCamera(surfStage.ndc, surfStage.camera);
+            var hit = surfStage.raycaster.intersectObject(mesh)[0];
+            if (hit) {
+                marker.visible = true;
+                marker.position.copy(hit.point);
+                marker.position.y += 0.08;
+                surfStage.showTip(
+                    'x: ' + hit.point.x.toFixed(2) +
+                    '　z: ' + hit.point.z.toFixed(2) +
+                    '<br>高度: ' + hit.point.y.toFixed(2)
+                );
+            } else {
+                marker.visible = false;
+                surfStage.hideTip();
+            }
+        };
+
+        surfStage.resize();
+    }
+
+    /* ================== 主循环 ================== */
+    var last = performance.now();
+    function tick(now) {
+        var dt = Math.min((now - last) / 1000, 0.05);
+        last = now;
+        if (barStage) barStage.frame(dt);
+        if (surfStage) surfStage.frame(dt);
+        requestAnimationFrame(tick);
+    }
+
+    /* ================== 渲染 ================== */
+    function renderAll() {
+        hoverBar = -1;
+        activeBar = -1;
+        buildBar();
+        buildSurface();
+        requestAnimationFrame(function () {
+            barStage.resize();
+            surfStage.resize();
+        });
+    }
+
+    window.addEventListener('resize', function () {
+        if (barStage) barStage.resize();
+        if (surfStage) surfStage.resize();
+    });
+
+    themeBtn.addEventListener('click', function () {
+        isDark = !isDark;
+        document.body.classList.toggle('light', !isDark);
+        themeBtn.textContent = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
+        renderAll();
+    });
+
+    rerenderBtn.addEventListener('click', renderAll);
+
+    rotateBtn.addEventListener('click', function () {
+        autoRotate = !autoRotate;
+        rotateBtn.textContent = autoRotate ? '⏸ 暂停自动旋转' : '▶ 开启自动旋转';
+    });
+
+    renderAll();
+    requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

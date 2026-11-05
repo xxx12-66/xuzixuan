@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-5 Mermaid 智能客服系统：流程图 &amp; ER 图 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #0c0e16; color: #e8ecf6; line-height: 1.7;
+    padding: 26px 20px 46px; min-height: 100vh;
+    transition: background .3s, color .3s;
+  }
+  body.light { background: #eef1f7; color: #16203a; }
+  .container { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: 27px; letter-spacing: 2px; }
+  header h1 span { color: #6ee7ff; }
+  body.light header h1 span { color: #2563eb; }
+  header .sub { color: #7d8aa5; font-size: 13.5px; }
+  body.light header .sub { color: #6b7793; }
+
+  /* 工具条 */
+  .tools {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 18px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  }
+  body.light .tools { background: #fff; border-color: #e2e8f4; box-shadow: 0 6px 20px rgba(24,32,64,.06); }
+  .btn {
+    background: linear-gradient(135deg, #6ee7ff, #a78bfa); color: #0a0c14;
+    border: none; border-radius: 8px; padding: 8px 15px; font-size: 12.5px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(110,231,255,.26); }
+  .btn.ghost {
+    background: transparent; color: #9fb0cc; font-weight: 400;
+    border: 1px solid rgba(255,255,255,.16);
+  }
+  .btn.ghost:hover { color: #fff; border-color: rgba(255,255,255,.34); box-shadow: none; }
+  body.light .btn.ghost { color: #4c5670; border-color: #cfd8e8; }
+  body.light .btn.ghost:hover { color: #16203a; border-color: #9aa8c4; }
+  .file-tag {
+    margin-left: auto; font-size: 11.5px; font-family: Consolas, monospace;
+    padding: 3px 10px; border-radius: 999px;
+    border: 1px dashed rgba(110,231,255,.35); color: #6ee7ff;
+  }
+  body.light .file-tag { color: #2563eb; border-color: rgba(37,99,235,.35); }
+
+  /* 图表卡片 */
+  .chart-card {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px; padding: 20px 22px 14px; margin-bottom: 20px;
+  }
+  body.light .chart-card { background: #fff; border-color: #e2e8f4; box-shadow: 0 8px 26px rgba(24,32,64,.07); }
+
+  .card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card-head h2 { font-size: 17px; letter-spacing: .5px; }
+  .card-head .badge {
+    font-size: 11px; padding: 1px 9px; border-radius: 999px;
+    background: rgba(110,231,255,.12); color: #6ee7ff; border: 1px solid rgba(110,231,255,.3);
+  }
+  body.light .card-head .badge { background: #eef4ff; color: #2563eb; border-color: #c7dbff; }
+  .card-head .badge.green { background: rgba(16,185,129,.12); color: #34d399; border-color: rgba(16,185,129,.3); }
+  body.light .card-head .badge.green { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+  .card-head .link { margin-left: auto; font-size: 11.5px; color: #6b7891; text-decoration: none; cursor: pointer; }
+  .card-head .link:hover { color: #6ee7ff; }
+  body.light .card-head .link:hover { color: #2563eb; }
+
+  .card-desc { font-size: 12.5px; color: #8b98b4; margin-bottom: 10px; }
+  body.light .card-desc { color: #6b7793; }
+  .card-desc code, .note code {
+    font-family: Consolas, monospace; font-size: 11.5px; color: #6ee7ff;
+    background: rgba(110,231,255,.09); padding: 1px 5px; border-radius: 4px;
+  }
+  body.light .card-desc code, body.light .note code { color: #2563eb; background: #eef4ff; }
+
+  /* mermaid 容器 */
+  .dgm {
+    display: flex; justify-content: center; align-items: center;
+    padding: 6px 0 16px; overflow-x: auto; min-height: 200px;
+  }
+  .dgm svg { max-width: 100%; height: auto; }
+  .dgm .hint { color: #6b7891; font-size: 12.5px; }
+
+  /* 配置代码折叠 */
+  details.cfg { margin-top: 4px; border-top: 1px dashed rgba(255,255,255,.1); }
+  body.light details.cfg { border-color: #e2e8f4; }
+  details.cfg summary {
+    cursor: pointer; font-size: 12.5px; color: #9fb0cc; padding: 10px 0 6px;
+    list-style: none; user-select: none;
+  }
+  body.light details.cfg summary { color: #4c5670; }
+  details.cfg summary::-webkit-details-marker { display: none; }
+  details.cfg summary::before { content: '▸ '; color: #6ee7ff; }
+  details.cfg[open] summary::before { content: '▾ '; }
+  details.cfg pre {
+    background: #0b0e17; border: 1px solid rgba(255,255,255,.07); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; margin: 6px 0 10px;
+    font-family: Consolas, monospace; font-size: 12px; line-height: 1.75; color: #cfd8e8;
+  }
+  body.light details.cfg pre { background: #f7f9fd; border-color: #e2e8f4; color: #26324a; }
+  .kw { color: #ff7ab2; } .str { color: #7ee787; } .num { color: #ffd479; }
+  .cm { color: #5d6b85; } .fn { color: #6ee7ff; }
+  body.light .kw { color: #c2185b; } body.light .str { color: #0b7a45; }
+  body.light .num { color: #b45309; } body.light .cm { color: #8894ac; } body.light .fn { color: #2563eb; }
+
+  /* 说明区 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+  .note {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  body.light .note { background: #fff; border-color: #e2e8f4; box-shadow: 0 6px 20px rgba(24,32,64,.06); }
+  .note h3 { font-size: 14px; color: #a78bfa; margin-bottom: 10px; }
+  body.light .note h3 { color: #7c3aed; }
+  .note li { font-size: 12.5px; color: #9aa6bf; line-height: 1.95; margin-left: 16px; }
+  body.light .note li { color: #4c5670; }
+
+  .err {
+    display: none; padding: 30px 20px; text-align: center; border-radius: 12px;
+    background: #fdecea; color: #c0392b; font-size: 14px;
+  }
+  .err.show { display: block; }
+
+  footer { text-align: center; color: #55617a; font-size: 12.5px; margin-top: 22px; }
+  body.light footer { color: #7b87a1; }
+  footer span { color: #6ee7ff; }
+  body.light footer span { color: #2563eb; }
+
+  @media (max-width: 640px) {
+    header h1 { font-size: 22px; }
+    .chart-card { padding: 16px 14px 10px; }
+    .dgm { min-height: 280px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>18-5</span> · Mermaid 智能客服系统</h1>
+    <p class="sub">图 1 业务流程（flowchart）　|　图 2 数据模型（erDiagram）</p>
+  </header>
+
+  <div class="tools">
+    <button class="btn" id="themeBtn">☀️ 浅色模式</button>
+    <button class="btn ghost" id="rerenderBtn">↻ 重新渲染</button>
+    <button class="btn ghost" id="dlAllBtn">⬇ 下载全部 SVG</button>
+    <span class="file-tag">&lt;script src="./cdn/mermaid.min.js"&gt;</span>
+  </div>
+
+  <div class="err" id="errBox"></div>
+
+  <!-- ============ 图 1：智能客服业务流程 ============ -->
+  <div class="chart-card">
+    <div class="card-head">
+      <h2>图 1 · 智能客服业务流程</h2>
+      <span class="badge">flowchart TD</span>
+      <a class="link" data-dl="flow">下载 SVG ↓</a>
+    </div>
+    <p class="card-desc">
+      从用户接入到人工兜底的完整链路：<b>意图识别</b> → <b>知识库检索（RAG）</b> → <b>生成回答</b>，
+      置信度或召回不足时自动创建工单转人工。菱形为判断节点，圆柱为落库节点。
+    </p>
+    <div class="dgm" id="flowBox"><span class="hint">正在渲染流程图…</span></div>
+
+    <details class="cfg">
+      <summary>查看 mermaid 源码</summary>
+<pre><span class="kw">flowchart</span> TD
+  U([用户发起会话]) --&gt; C{识别接入渠道}
+  C --&gt;|App / 微信 / 电话| NLU[加载用户画像 + 意图识别]
+  NLU --&gt; CONF{置信度 ≥ 0.78 ?}
+  CONF --&gt;|否| ASK[澄清追问 / 给出候选意图]
+  ASK --&gt; NLU
+  CONF --&gt;|是| RAG[知识库语义检索 RAG]
+  RAG --&gt; HIT{召回结果达标 ?}
+  HIT --&gt;|否| T[创建工单 · 转人工坐席]
+  HIT --&gt;|是| ANS[生成回答 + 引用来源]
+  ANS --&gt; FB{用户反馈}
+  FB --&gt;|未解决| T
+  FB --&gt;|已解决| DONE([结束会话并归档])
+  T --&gt; DONE
+  DONE --&gt; DB[(会话日志入数据湖)]
+
+  <span class="cm">%% 样式：classDef 批量定义节点外观（浅色主题会换一套浅底配色）</span>
+  <span class="kw">classDef</span> judge fill:#2a2440,stroke:#a78bfa,color:#e8ecf6
+  <span class="kw">classDef</span> human fill:#3a2030,stroke:#f472b6,color:#e8ecf6
+  <span class="kw">class</span> CONF,HIT,FB judge
+  <span class="kw">class</span> T human</pre>
+    </details>
+  </div>
+
+  <!-- ============ 图 2：数据模型 ER 图 ============ -->
+  <div class="chart-card">
+    <div class="card-head">
+      <h2>图 2 · 智能客服数据模型 ER 图</h2>
+      <span class="badge green">erDiagram</span>
+      <a class="link" data-dl="er">下载 SVG ↓</a>
+    </div>
+    <p class="card-desc">
+      六张核心表：客户、会话、消息、知识条目、工单、坐席。连线两端为基数符号，
+      <code>||--o{</code> 表示「一对多」，<code>||--o|</code> 表示「一对一（可选）」。
+    </p>
+    <div class="dgm" id="erBox"><span class="hint">正在渲染 ER 图…</span></div>
+
+    <details class="cfg">
+      <summary>查看 mermaid 源码</summary>
+<pre><span class="kw">erDiagram</span>
+  CUSTOMER ||--o{ SESSION : <span class="str">"发起"</span>
+  SESSION  ||--o{ MESSAGE : <span class="str">"包含"</span>
+  SESSION  ||--o| TICKET  : <span class="str">"转人工时生成"</span>
+  AGENT    ||--o{ TICKET  : <span class="str">"受理"</span>
+  TICKET   ||--o{ MESSAGE : <span class="str">"记录"</span>
+  KNOWLEDGE_ITEM ||--o{ MESSAGE : <span class="str">"被引用"</span>
+  AGENT    ||--o{ SESSION : <span class="str">"接管"</span>
+
+  CUSTOMER {
+    bigint   id           PK <span class="str">"客户 ID"</span>
+    varchar  nickname        <span class="str">"昵称"</span>
+    varchar  channel         <span class="str">"来源渠道"</span>
+    datetime created_at      <span class="str">"注册时间"</span>
+  }
+  SESSION {
+    bigint   id           PK
+    bigint   customer_id  FK
+    varchar  intent          <span class="str">"主意图"</span>
+    tinyint  resolved        <span class="str">"是否已解决"</span>
+    datetime started_at
+  }
+  MESSAGE {
+    bigint   id           PK
+    bigint   session_id   FK
+    varchar  role            <span class="str">"user / assistant / agent"</span>
+    text     content
+    decimal  confidence      <span class="str">"置信度"</span>
+    bigint   knowledge_id FK
+  }
+  KNOWLEDGE_ITEM {
+    bigint   id           PK
+    varchar  title           <span class="str">"知识标题"</span>
+    text     answer          <span class="str">"标准答案"</span>
+    varchar  embedding_model <span class="str">"向量模型"</span>
+    datetime updated_at
+  }
+  TICKET {
+    bigint   id           PK
+    bigint   session_id   FK
+    bigint   agent_id     FK
+    varchar  status          <span class="str">"待处理 / 处理中 / 已关闭"</span>
+    datetime created_at
+  }
+  AGENT {
+    bigint   id           PK
+    varchar  name            <span class="str">"坐席姓名"</span>
+    varchar  skill_group     <span class="str">"技能组"</span>
+    tinyint  online          <span class="str">"在线状态"</span>
+  }</pre>
+    </details>
+  </div>
+
+  <div class="grid2">
+    <div class="note">
+      <h3>图 1 要点</h3>
+      <ul>
+        <li>首行 <code>flowchart TD</code> 定方向：TD 自上而下，LR 左右布局</li>
+        <li>节点形状写在括号里：<code>[矩形]</code>、<code>{菱形}</code>、<code>([圆角])</code>、<code>[(圆柱)]</code></li>
+        <li>连线文字用 <code>--&gt;|文字|</code>，箭头方向由 <code>--&gt;</code> / <code>---</code> 决定</li>
+        <li><code>classDef</code> 定义样式类，<code>class</code> 批量套用，比逐节点 <code>style</code> 更易维护</li>
+        <li>节点 ID 用英文短名（NLU / RAG），显示文字写在括号里，便于后续改文案</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>图 2 要点</h3>
+      <ul>
+        <li><code>erDiagram</code> 先写关系行，再写实体字段块，顺序可任意</li>
+        <li>基数符号：<code>||</code> 恰好一个、<code>o|</code> 零或一个、<code>o{</code> 零或多</li>
+        <li>字段格式为 <code>类型 名称 键 "注释"</code>，<code>PK</code> / <code>FK</code> 会加下划线标记</li>
+        <li>类型必须是单个单词（<code>varchar</code>、<code>bigint</code>），不能写 <code>varchar(64)</code></li>
+        <li>中文说明必须用双引号包裹，否则解析报错</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 18-5 Mermaid 图表 · 《高级网页设计》课堂练习</footer>
+</div>
+
+<script src="./cdn/mermaid.min.js"></script>
+<script>
+(function () {
+    var errBox = document.getElementById('errBox');
+    var themeBtn = document.getElementById('themeBtn');
+    var rerenderBtn = document.getElementById('rerenderBtn');
+    var dlAllBtn = document.getElementById('dlAllBtn');
+    var flowBox = document.getElementById('flowBox');
+    var erBox = document.getElementById('erBox');
+
+    if (typeof mermaid === 'undefined') {
+        errBox.className = 'err show';
+        errBox.innerHTML = '❌ 未能加载 <code>./cdn/mermaid.min.js</code><br>请确认 cdn 目录下的 mermaid.min.js 是否存在。';
+        return;
+    }
+
+    var isDark = true;
+    var seq = 0;
+
+    /* ================== 图表源码 ================== */
+    var FLOW_BODY = [
+        'flowchart TD',
+        '  U([用户发起会话]) --> C{识别接入渠道}',
+        '  C -->|App / 微信 / 电话| NLU[加载用户画像 + 意图识别]',
+        '  NLU --> CONF{置信度 ≥ 0.78 ?}',
+        '  CONF -->|否| ASK[澄清追问 / 给出候选意图]',
+        '  ASK --> NLU',
+        '  CONF -->|是| RAG[知识库语义检索 RAG]',
+        '  RAG --> HIT{召回结果达标 ?}',
+        '  HIT -->|否| T[创建工单 · 转人工坐席]',
+        '  HIT -->|是| ANS[生成回答 + 引用来源]',
+        '  ANS --> FB{用户反馈}',
+        '  FB -->|未解决| T',
+        '  FB -->|已解决| DONE([结束会话并归档])',
+        '  T --> DONE',
+        '  DONE --> DB[(会话日志入数据湖)]'
+    ].join('\n');
+
+    /* classDef 写死的颜色不会跟随主题，这里按深浅色各拼一套 */
+    function flowCode(dark) {
+        var style = dark
+            ? ['  classDef judge fill:#2a2440,stroke:#a78bfa,color:#e8ecf6',
+               '  classDef human fill:#3a2030,stroke:#f472b6,color:#e8ecf6']
+            : ['  classDef judge fill:#ece7ff,stroke:#7c3aed,color:#16203a',
+               '  classDef human fill:#fdeaf4,stroke:#db2777,color:#16203a'];
+        return FLOW_BODY + '\n\n' + style.concat([
+            '  class CONF,HIT,FB judge',
+            '  class T human'
+        ]).join('\n');
+    }
+
+    var ER = [
+        'erDiagram',
+        '  CUSTOMER ||--o{ SESSION : "发起"',
+        '  SESSION  ||--o{ MESSAGE : "包含"',
+        '  SESSION  ||--o| TICKET  : "转人工时生成"',
+        '  AGENT    ||--o{ TICKET  : "受理"',
+        '  TICKET   ||--o{ MESSAGE : "记录"',
+        '  KNOWLEDGE_ITEM ||--o{ MESSAGE : "被引用"',
+        '  AGENT    ||--o{ SESSION : "接管"',
+        '',
+        '  CUSTOMER {',
+        '    bigint   id           PK "客户 ID"',
+        '    varchar  nickname        "昵称"',
+        '    varchar  channel         "来源渠道"',
+        '    datetime created_at      "注册时间"',
+        '  }',
+        '  SESSION {',
+        '    bigint   id           PK',
+        '    bigint   customer_id  FK',
+        '    varchar  intent          "主意图"',
+        '    tinyint  resolved        "是否已解决"',
+        '    datetime started_at',
+        '  }',
+        '  MESSAGE {',
+        '    bigint   id           PK',
+        '    bigint   session_id   FK',
+        '    varchar  role            "user / assistant / agent"',
+        '    text     content',
+        '    decimal  confidence      "置信度"',
+        '    bigint   knowledge_id FK',
+        '  }',
+        '  KNOWLEDGE_ITEM {',
+        '    bigint   id           PK',
+        '    varchar  title           "知识标题"',
+        '    text     answer          "标准答案"',
+        '    varchar  embedding_model "向量模型"',
+        '    datetime updated_at',
+        '  }',
+        '  TICKET {',
+        '    bigint   id           PK',
+        '    bigint   session_id   FK',
+        '    bigint   agent_id     FK',
+        '    varchar  status          "待处理 / 处理中 / 已关闭"',
+        '    datetime created_at',
+        '  }',
+        '  AGENT {',
+        '    bigint   id           PK',
+        '    varchar  name            "坐席姓名"',
+        '    varchar  skill_group     "技能组"',
+        '    tinyint  online          "在线状态"',
+        '  }'
+    ].join('\n');
+
+    /* ================== 主题 ================== */
+    function themeVars(dark) {
+        return dark
+            ? {
+                darkMode: true,
+                background: 'transparent',
+                fontFamily: '"Microsoft YaHei", "PingFang SC", sans-serif',
+                fontSize: '12.5px',
+                primaryColor: '#1a2133',
+                primaryTextColor: '#e8ecf6',
+                primaryBorderColor: 'rgba(110,231,255,.45)',
+                secondaryColor: '#232c42',
+                tertiaryColor: '#141a29',
+                mainBkg: '#1a2133',
+                nodeBorder: 'rgba(110,231,255,.35)',
+                lineColor: 'rgba(150,170,210,.55)',
+                textColor: '#c9d3e6',
+                titleColor: '#e8ecf6',
+                clusterBkg: 'rgba(255,255,255,.03)',
+                clusterBorder: 'rgba(255,255,255,.12)',
+                edgeLabelBackground: '#0f131f',
+                attributeBackgroundColorOdd: '#1a2133',
+                attributeBackgroundColorEven: '#151b2b'
+            }
+            : {
+                darkMode: false,
+                background: 'transparent',
+                fontFamily: '"Microsoft YaHei", "PingFang SC", sans-serif',
+                fontSize: '12.5px',
+                primaryColor: '#eef4ff',
+                primaryTextColor: '#16203a',
+                primaryBorderColor: '#b9cdf3',
+                secondaryColor: '#f1f5fb',
+                tertiaryColor: '#ffffff',
+                mainBkg: '#f7f9fd',
+                nodeBorder: '#c7d7f0',
+                lineColor: 'rgba(90,110,150,.55)',
+                textColor: '#26324a',
+                titleColor: '#16203a',
+                clusterBkg: '#ffffff',
+                clusterBorder: '#dbe2ef',
+                edgeLabelBackground: '#ffffff',
+                attributeBackgroundColorOdd: '#f7f9fd',
+                attributeBackgroundColorEven: '#eef3fa'
+            };
+    }
+
+    /* ================== 渲染 ================== */
+    function tidy(svgEl) {
+        if (!svgEl) return;
+        svgEl.removeAttribute('height');
+        svgEl.style.maxWidth = '100%';
+        svgEl.style.height = 'auto';
+    }
+
+    function renderInto(box, code, tag) {
+        var id = 'mmd-' + tag + '-' + (++seq);
+        return mermaid.render(id, code).then(function (res) {
+            box.innerHTML = res.svg;
+            tidy(box.querySelector('svg'));
+            if (res.bindFunctions) res.bindFunctions(box);
+        });
+    }
+
+    function initMermaid() {
+        var vars = themeVars(isDark);
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            themeVariables: vars,
+            securityLevel: 'strict',
+            flowchart: {
+                curve: 'basis',
+                useMaxWidth: false,   // 保持自然尺寸，避免窄图被拉伸放大
+                htmlLabels: false,
+                padding: 12,
+                nodeSpacing: 34,
+                rankSpacing: 40
+            },
+            er: {
+                useMaxWidth: false,
+                minEntityWidth: 130,
+                minEntityHeight: 56,
+                entityPadding: 14
+            }
+        });
+    }
+
+    var rendering = false;
+
+    function renderAll() {
+        if (rendering) return;
+        rendering = true;
+        flowBox.innerHTML = '<span class="hint">正在渲染流程图…</span>';
+        erBox.innerHTML = '<span class="hint">正在渲染 ER 图…</span>';
+
+        initMermaid();
+        renderInto(flowBox, flowCode(isDark), 'flow')
+            .then(function () { return renderInto(erBox, ER, 'er'); })
+            .catch(function (e) {
+                errBox.className = 'err show';
+                errBox.textContent = '❌ Mermaid 渲染失败：' + (e && e.message ? e.message : e);
+                console.error(e);
+            })
+            .then(function () { rendering = false; });
+    }
+
+    /* ================== 导出 SVG ================== */
+    function svgOf(box) {
+        var svg = box.querySelector('svg');
+        if (!svg) return null;
+        var clone = svg.cloneNode(true);
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+        var bg = isDark ? '#0c0e16' : '#ffffff';
+        var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('width', '100%');
+        rect.setAttribute('height', '100%');
+        rect.setAttribute('fill', bg);
+        clone.insertBefore(rect, clone.firstChild);
+        return new XMLSerializer().serializeToString(clone);
+    }
+
+    function download(box, name) {
+        var data = svgOf(box);
+        if (!data) return;
+        var blob = new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + data], {
+            type: 'image/svg+xml;charset=utf-8'
+        });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    }
+
+    /* ================== 事件 ================== */
+    themeBtn.addEventListener('click', function () {
+        isDark = !isDark;
+        document.body.classList.toggle('light', !isDark);
+        themeBtn.textContent = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
+        renderAll();
+    });
+
+    rerenderBtn.addEventListener('click', renderAll);
+
+    dlAllBtn.addEventListener('click', function () {
+        download(flowBox, '18-5-flow.svg');
+        download(erBox, '18-5-er.svg');
+    });
+
+    document.querySelectorAll('.card-head .link[data-dl]').forEach(function (a) {
+        a.addEventListener('click', function () {
+            var tag = a.getAttribute('data-dl');
+            download(tag === 'flow' ? flowBox : erBox, '18-5-' + tag + '.svg');
+        });
+    });
+
+    renderAll();
+})();
+</script>
+</body>
+</html>

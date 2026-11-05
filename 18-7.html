@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-7 智能客服数据大屏 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #04070f; color: #cfe3f5;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    overflow: hidden;
+  }
+  /* 背景：两处冷光 + 细网格 */
+  body::before {
+    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(900px 520px at 50% -6%, rgba(30,110,180,.28), transparent 70%),
+      radial-gradient(760px 420px at 92% 104%, rgba(120,60,200,.18), transparent 72%),
+      radial-gradient(700px 400px at 4% 100%, rgba(20,150,170,.14), transparent 72%),
+      repeating-linear-gradient(0deg, rgba(110,231,255,.028) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, rgba(110,231,255,.028) 0 1px, transparent 1px 44px);
+  }
+  .screen {
+    position: relative; z-index: 1; height: 100vh;
+    display: flex; flex-direction: column;
+    padding: 10px 14px 14px; gap: 10px;
+  }
+
+  /* ================= 顶栏 ================= */
+  .topbar {
+    position: relative; flex: 0 0 auto; height: 62px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .topbar h1 {
+    font-size: 26px; font-weight: 800; letter-spacing: 7px;
+    background: linear-gradient(180deg, #f2fcff 12%, #6ee7ff 62%, #2f8fd0 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 14px rgba(110,231,255,.45));
+  }
+  .topbar .line {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(110,231,255,.6), transparent);
+  }
+  .topbar .side {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 12px; color: #7fa8c6; font-family: Consolas, monospace;
+  }
+  .topbar .side.left { left: 2px; display: flex; align-items: center; gap: 10px; }
+  .topbar .side.right { right: 2px; text-align: right; line-height: 1.5; }
+  .topbar .side b { color: #9fe8ff; font-weight: 600; }
+  .fs-btn {
+    background: rgba(110,231,255,.08); border: 1px solid rgba(110,231,255,.32);
+    color: #9fe8ff; font-size: 11px; padding: 3px 10px; border-radius: 4px;
+    cursor: pointer; font-family: inherit;
+  }
+  .fs-btn:hover { background: rgba(110,231,255,.18); }
+
+  /* ================= 三列布局 ================= */
+  .grid {
+    flex: 1 1 auto; min-height: 0;
+    display: grid; grid-template-columns: 1fr 1.85fr 1fr; gap: 12px;
+  }
+  .col {
+    display: grid; grid-template-rows: 1fr 1fr; gap: 12px;
+    min-height: 0; min-width: 0;
+  }
+  .col.center { grid-template-rows: 1.62fr 1fr; }
+
+  /* ================= 面板 ================= */
+  .panel {
+    position: relative; min-height: 0; min-width: 0; overflow: hidden;
+    display: flex; flex-direction: column;
+    border: 1px solid rgba(110,231,255,.16); border-radius: 6px;
+    background: linear-gradient(180deg, rgba(10,24,44,.92), rgba(6,14,26,.86));
+    box-shadow: inset 0 0 30px rgba(32,120,180,.13);
+  }
+  .panel::before {
+    content: ''; position: absolute; inset: 0 auto auto 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(110,231,255,.75), transparent);
+    pointer-events: none;
+  }
+  /* 四角装饰 */
+  .panel::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(110,231,255,.85), rgba(110,231,255,.85)) left top / 12px 1px no-repeat,
+      linear-gradient(180deg, rgba(110,231,255,.85), rgba(110,231,255,.85)) left top / 1px 12px no-repeat,
+      linear-gradient(90deg, rgba(110,231,255,.85), rgba(110,231,255,.85)) right bottom / 12px 1px no-repeat,
+      linear-gradient(180deg, rgba(110,231,255,.85), rgba(110,231,255,.85)) right bottom / 1px 12px no-repeat;
+    opacity: .75;
+  }
+  .panel-head {
+    flex: 0 0 auto; height: 34px; display: flex; align-items: center;
+    padding: 0 12px; gap: 8px;
+  }
+  .panel-head h3 {
+    font-size: 13px; font-weight: 600; letter-spacing: 1.2px; color: #bfe6f8;
+    display: flex; align-items: center;
+  }
+  .panel-head h3::before {
+    content: ''; width: 3px; height: 12px; margin-right: 7px; border-radius: 2px;
+    background: #6ee7ff; box-shadow: 0 0 9px #6ee7ff;
+  }
+  .panel-head .unit { margin-left: auto; font-size: 11px; color: #5f7f9c; }
+  .chart { flex: 1 1 auto; min-height: 0; }
+
+  /* 窄屏：改为单列纵向滚动 */
+  @media (max-width: 1180px) {
+    body { overflow: auto; }
+    .screen { height: auto; }
+    .grid { grid-template-columns: 1fr; }
+    .col, .col.center { grid-template-rows: none; grid-auto-rows: 330px; }
+    .topbar h1 { font-size: 19px; letter-spacing: 3px; }
+    .topbar .side.right { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="screen">
+
+  <header class="topbar">
+    <div class="side left">
+      <button class="fs-btn" id="fsBtn">⛶ 全屏</button>
+      <span>本地 cdn/echarts.min.js · cdn/china-geo.js</span>
+    </div>
+    <h1>智能客服运营数据中心</h1>
+    <div class="side right">
+      <div id="dateText">—</div>
+      <div><b id="timeText">--:--:--</b></div>
+    </div>
+    <div class="line"></div>
+  </header>
+
+  <main class="grid">
+    <!-- 左列 -->
+    <section class="col">
+      <div class="panel">
+        <div class="panel-head"><h3>渠道来源占比</h3><span class="unit">万次</span></div>
+        <div class="chart" id="c-channel"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>24 小时咨询量</h3><span class="unit">次/时</span></div>
+        <div class="chart" id="c-hour"></div>
+      </div>
+    </section>
+
+    <!-- 中列 -->
+    <section class="col center">
+      <div class="panel">
+        <div class="panel-head"><h3>全国服务请求分布</h3><span class="unit">单位：次 / 日</span></div>
+        <div class="chart" id="c-map"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>实时会话趋势</h3><span class="unit">实线：在线会话　虚线：排队中</span></div>
+        <div class="chart" id="c-live"></div>
+      </div>
+    </section>
+
+    <!-- 右列 -->
+    <section class="col">
+      <div class="panel">
+        <div class="panel-head"><h3>用户意图 TOP 5</h3><span class="unit">占比</span></div>
+        <div class="chart" id="c-intent"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>服务满意度</h3><span class="unit">满分 100</span></div>
+        <div class="chart" id="c-gauge"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="./cdn/echarts.min.js"></script>
+<script src="./cdn/china-geo.js"></script>
+<script>
+(function () {
+    if (typeof echarts === 'undefined') {
+        document.body.innerHTML = '<div style="padding:60px;text-align:center;color:#f88">' +
+            '❌ 未能加载 ./cdn/echarts.min.js</div>';
+        return;
+    }
+
+    /* ================== 通用配色 ================== */
+    var C = {
+        cyan: '#6ee7ff', blue: '#4b8cff', purple: '#a78bfa',
+        pink: '#f472b6', green: '#34d399', amber: '#fbbf24',
+        text: '#c9d3e6', sub: '#8ba7c2', axis: 'rgba(110,231,255,.18)',
+        split: 'rgba(110,231,255,.09)', tipBg: 'rgba(8,18,32,.95)'
+    };
+
+    function tipBase() {
+        return {
+            backgroundColor: C.tipBg,
+            borderColor: 'rgba(110,231,255,.35)',
+            borderWidth: 1,
+            textStyle: { color: C.text, fontSize: 12 },
+            extraCssText: 'box-shadow:0 6px 22px rgba(0,0,0,.5);border-radius:6px;'
+        };
+    }
+
+    function axisCommon() {
+        return {
+            axisLine: { lineStyle: { color: C.axis } },
+            axisTick: { show: false },
+            axisLabel: { color: C.sub, fontSize: 11 },
+            splitLine: { lineStyle: { color: C.split, type: 'dashed' } }
+        };
+    }
+
+    /* ================== 1. 渠道占比 ================== */
+    var channelChart = echarts.init(document.getElementById('c-channel'));
+    channelChart.setOption({
+        color: [C.cyan, C.blue, C.purple, C.pink, C.amber],
+        tooltip: Object.assign({ trigger: 'item', formatter: '{b}<br/>{c} 万次（{d}%）' }, tipBase()),
+        legend: {
+            bottom: 4, left: 'center', itemWidth: 8, itemHeight: 8, itemGap: 12,
+            textStyle: { color: C.sub, fontSize: 11 }
+        },
+        series: [{
+            type: 'pie',
+            radius: ['46%', '66%'],
+            center: ['50%', '44%'],
+            avoidLabelOverlap: true,
+            itemStyle: { borderColor: '#08111f', borderWidth: 2, borderRadius: 3 },
+            label: {
+                show: true, color: C.text, fontSize: 10.5, lineHeight: 13,
+                formatter: '{b}\n{d}%'
+            },
+            labelLine: { length: 6, length2: 8, lineStyle: { color: 'rgba(110,231,255,.35)' } },
+            data: [
+                { value: 42.6, name: 'App' },
+                { value: 26.1, name: '微信' },
+                { value: 17.8, name: '网页' },
+                { value: 8.4, name: '电话' },
+                { value: 5.1, name: '其他' }
+            ]
+        }]
+    });
+
+    /* ================== 2. 24 小时咨询量 ================== */
+    var hours = [];
+    for (var h = 0; h < 24; h++) hours.push(h + ':00');
+
+    var hourValues = [
+        120, 86, 62, 48, 45, 68, 190, 420, 760, 980, 1120, 1080,
+        860, 940, 1180, 1260, 1140, 980, 1050, 1240, 1380, 1160, 720, 380
+    ];
+
+    var hourChart = echarts.init(document.getElementById('c-hour'));
+    hourChart.setOption({
+        tooltip: Object.assign({
+            trigger: 'axis',
+            axisPointer: { type: 'line', lineStyle: { color: 'rgba(110,231,255,.45)' } },
+            formatter: function (ps) {
+                var p = ps[0];
+                return p.axisValue + '<br/>咨询量：<b>' + p.data + '</b> 次';
+            }
+        }, tipBase()),
+        grid: { left: 8, right: 14, top: 22, bottom: 20, containLabel: true },
+        xAxis: Object.assign({
+            type: 'category', data: hours, boundaryGap: false,
+            axisLabel: { color: C.sub, fontSize: 10, interval: 3 }
+        }, { axisLine: { lineStyle: { color: C.axis } }, axisTick: { show: false } }),
+        yAxis: Object.assign({ type: 'value' }, axisCommon(), {
+            axisLine: { show: false }, splitLine: { lineStyle: { color: C.split, type: 'dashed' } }
+        }),
+        series: [{
+            type: 'line', smooth: true, symbol: 'none', data: hourValues,
+            lineStyle: { width: 2, color: C.cyan, shadowColor: 'rgba(110,231,255,.5)', shadowBlur: 10 },
+            areaStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(110,231,255,.42)' },
+                    { offset: 1, color: 'rgba(110,231,255,0)' }
+                ])
+            }
+        }]
+    });
+
+    /* ================== 3. 全国分布地图 ================== */
+    var mapChart = echarts.init(document.getElementById('c-map'));
+    var provinces = [];
+
+    if (window.CHINA_GEO) {
+        echarts.registerMap('china', window.CHINA_GEO);
+        /* 用省名做散列，保证每次刷新分布稳定又各有高低 */
+        provinces = (window.CHINA_GEO.features || []).map(function (f) {
+            var name = f.properties.name || '';
+            var seed = 0;
+            for (var i = 0; i < name.length; i++) seed = (seed * 31 + name.charCodeAt(i)) % 9973;
+            var boost = /广东|江苏|浙江|北京|上海|山东|河南|四川/.test(name) ? 420 : 0;
+            return {
+                name: name,
+                value: Math.round(140 + (seed % 620) + boost + Math.random() * 60)
+            };
+        });
+    }
+
+    var cityPoints = [
+        { name: '北京', value: [116.40, 39.90, 1280] },
+        { name: '上海', value: [121.47, 31.23, 1160] },
+        { name: '广州', value: [113.28, 23.13, 980] },
+        { name: '深圳', value: [114.09, 22.55, 1020] },
+        { name: '杭州', value: [120.15, 30.29, 860] },
+        { name: '成都', value: [104.07, 30.66, 780] },
+        { name: '武汉', value: [114.30, 30.58, 640] },
+        { name: '西安', value: [108.95, 34.26, 520] }
+    ];
+
+    var base = [116.40, 39.90];
+    var flightLines = cityPoints.slice(1).map(function (c) {
+        return { coords: [base, [c.value[0], c.value[1]]] };
+    });
+
+    mapChart.setOption({
+        tooltip: Object.assign({
+            trigger: 'item',
+            formatter: function (p) {
+                if (p.seriesType === 'effectScatter') {
+                    return p.name + '<br/>实时会话：<b>' + p.value[2] + '</b> 路';
+                }
+                if (p.seriesType === 'lines') return '数据同步链路';
+                var v = p.value;
+                if (typeof v !== 'number') {
+                    for (var i = 0; i < provinces.length; i++) {
+                        if (provinces[i].name === p.name) { v = provinces[i].value; break; }
+                    }
+                }
+                return p.name + '<br/>服务请求：<b>' + (typeof v === 'number' ? v : '—') + '</b> 次';
+            }
+        }, tipBase()),
+        visualMap: {
+            type: 'continuous', min: 100, max: 1400, seriesIndex: 0,
+            left: 14, bottom: 18, itemWidth: 10, itemHeight: 92,
+            text: ['高', '低'], textStyle: { color: C.sub, fontSize: 10 },
+            inRange: { color: ['#08263c', '#0d4767', '#127196', '#22b4cc', '#6ee7ff'] },
+            outOfRange: { color: '#082031' }
+        },
+        geo: {
+            map: 'china', roam: false, zoom: 1.3,
+            layoutCenter: ['49%', '50%'], layoutSize: '100%',
+            itemStyle: {
+                areaColor: '#0b2c44',
+                borderColor: 'rgba(110,231,255,.42)',
+                borderWidth: 1,
+                shadowColor: 'rgba(60,170,230,.55)',
+                shadowBlur: 14,
+                shadowOffsetY: 8
+            },
+            emphasis: {
+                label: { show: true, color: '#ffffff', fontSize: 11 },
+                itemStyle: { areaColor: '#1a7ca8' }
+            },
+            select: { itemStyle: { areaColor: '#1a7ca8' } }
+        },
+        series: [
+            {
+                name: '服务请求', type: 'map', geoIndex: 0, data: provinces
+            },
+            {
+                name: '重点城市', type: 'effectScatter', coordinateSystem: 'geo',
+                geoIndex: 0, data: cityPoints, zlevel: 2,
+                symbolSize: function (v) { return Math.max(6, v[2] / 110); },
+                rippleEffect: { brushType: 'stroke', scale: 3.4, period: 4 },
+                itemStyle: { color: '#ffd479', shadowBlur: 12, shadowColor: '#ffd479' },
+                label: {
+                    show: true, position: 'right', formatter: '{b}',
+                    color: '#ffe9b8', fontSize: 10
+                }
+            },
+            {
+                name: '数据流转', type: 'lines', coordinateSystem: 'geo', geoIndex: 0,
+                zlevel: 2, effect: { show: true, period: 3.6, trailLength: 0.22, symbol: 'circle', symbolSize: 3 },
+                lineStyle: { color: '#6ee7ff', width: 1, opacity: 0.4, curveness: 0.22 },
+                data: flightLines
+            }
+        ]
+    });
+
+    /* 省份轮播高亮 */
+    var mapIdx = -1;
+    setInterval(function () {
+        if (!provinces.length) return;
+        mapChart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+        mapIdx = (mapIdx + 1) % provinces.length;
+        mapChart.dispatchAction({ type: 'highlight', seriesIndex: 0, dataIndex: mapIdx });
+    }, 3200);
+
+    /* ================== 4. 实时会话趋势 ================== */
+    var liveLabels = [];
+    var liveData = [];
+    var now = Date.now();
+
+    for (var k = 23; k >= 0; k--) {
+        var t = new Date(now - k * 2000);
+        liveLabels.push(('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + ':' + ('0' + t.getSeconds()).slice(-2));
+        liveData.push(Math.round(120 + Math.random() * 90 + Math.sin(k / 3) * 26));
+    }
+
+    var liveChart = echarts.init(document.getElementById('c-live'));
+    liveChart.setOption({
+        tooltip: Object.assign({ trigger: 'axis', formatter: '{b}<br/>在线会话：<b>{c}</b>' }, tipBase()),
+        grid: { left: 12, right: 18, top: 18, bottom: 14, containLabel: true },
+        xAxis: Object.assign({
+            type: 'category', data: liveLabels, boundaryGap: false,
+            axisLabel: { show: false }
+        }, { axisLine: { lineStyle: { color: C.axis } }, axisTick: { show: false } }),
+        yAxis: Object.assign({ type: 'value', max: 260 }, axisCommon(), {
+            axisLine: { show: false }
+        }),
+        series: [
+            {
+                type: 'line', smooth: true, symbol: 'none', data: liveData,
+                lineStyle: { width: 2, color: C.purple, shadowColor: 'rgba(167,139,250,.55)', shadowBlur: 12 },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(167,139,250,.4)' },
+                        { offset: 1, color: 'rgba(167,139,250,0)' }
+                    ])
+                }
+            },
+            {
+                type: 'line', smooth: true, symbol: 'none', data: liveData.map(function (v) { return v + 42; }),
+                lineStyle: { width: 1.4, color: C.green, opacity: 0.75, type: 'dashed' }
+            }
+        ]
+    });
+
+    setInterval(function () {
+        var t = new Date();
+        var lab = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + ':' + ('0' + t.getSeconds()).slice(-2);
+        liveLabels.push(lab);
+        liveLabels.shift();
+        liveData.push(Math.round(120 + Math.random() * 90 + Math.sin(Date.now() / 9000) * 26));
+        liveData.shift();
+        liveChart.setOption({
+            xAxis: { data: liveLabels },
+            series: [
+                { data: liveData },
+                { data: liveData.map(function (v) { return v + 42; }) }
+            ]
+        });
+    }, 2000);
+
+    /* ================== 5. 意图 TOP5 ================== */
+    var intentChart = echarts.init(document.getElementById('c-intent'));
+    intentChart.setOption({
+        tooltip: Object.assign({ trigger: 'axis', axisPointer: { type: 'shadow' }, formatter: '{b}<br/>占比：<b>{c}%</b>' }, tipBase()),
+        grid: { left: 8, right: 34, top: 12, bottom: 8, containLabel: true },
+        xAxis: Object.assign({ type: 'value', max: 40 }, axisCommon(), { axisLine: { show: false } }),
+        yAxis: Object.assign({
+            type: 'category',
+            data: ['投诉建议', '账户问题', '优惠咨询', '物流查询', '退换货'],
+            axisLabel: { color: C.text, fontSize: 11.5 }
+        }, { axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } }),
+        series: [{
+            type: 'bar',
+            data: [9.6, 15.2, 19.4, 24.8, 31.0],
+            barWidth: 12,
+            itemStyle: {
+                borderRadius: [0, 6, 6, 0],
+                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                    { offset: 0, color: 'rgba(110,231,255,.25)' },
+                    { offset: 1, color: '#6ee7ff' }
+                ])
+            },
+            label: {
+                show: true, position: 'right', formatter: '{c}%',
+                color: C.cyan, fontSize: 11, fontWeight: 600
+            }
+        }]
+    });
+
+    /* ================== 6. 满意度仪表盘 ================== */
+    var score = 96.4;
+    var gaugeChart = echarts.init(document.getElementById('c-gauge'));
+    gaugeChart.setOption({
+        series: [{
+            type: 'gauge',
+            startAngle: 210, endAngle: -30,
+            min: 0, max: 100, splitNumber: 5,
+            radius: '86%', center: ['50%', '58%'],
+            progress: {
+                show: true, width: 9, roundCap: true,
+                itemStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                        { offset: 0, color: '#34d399' },
+                        { offset: 0.6, color: '#6ee7ff' },
+                        { offset: 1, color: '#a78bfa' }
+                    ]),
+                    shadowColor: 'rgba(110,231,255,.6)', shadowBlur: 12
+                }
+            },
+            axisLine: { lineStyle: { width: 9, color: [[1, 'rgba(110,231,255,.12)']] } },
+            pointer: { width: 3, length: '58%', itemStyle: { color: C.cyan } },
+            axisTick: { distance: -14, length: 4, lineStyle: { color: 'rgba(110,231,255,.35)', width: 1 } },
+            splitLine: { distance: -16, length: 8, lineStyle: { color: 'rgba(110,231,255,.5)', width: 1.5 } },
+            axisLabel: { distance: 12, color: C.sub, fontSize: 9.5 },
+            anchor: { show: true, size: 8, itemStyle: { color: C.cyan, borderColor: '#0b1a2c', borderWidth: 2 } },
+            title: { offsetCenter: [0, '88%'], color: C.sub, fontSize: 11 },
+            detail: {
+                offsetCenter: [0, '52%'],
+                formatter: '{value}',
+                color: '#eafaff', fontSize: 26, fontWeight: 700
+            },
+            data: [{ value: score, name: '满意度评分' }]
+        }]
+    });
+
+    /* ================== 时钟 ================== */
+    function pad(n) { return ('0' + n).slice(-2); }
+    function tickClock() {
+        var d = new Date();
+        var week = ['日', '一', '二', '三', '四', '五', '六'][d.getDay()];
+        document.getElementById('dateText').textContent =
+            d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' 星期' + week;
+        document.getElementById('timeText').textContent =
+            pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+    tickClock();
+    setInterval(tickClock, 1000);
+
+    /* ================== 自适应 ================== */
+    var charts = [channelChart, hourChart, mapChart, liveChart, intentChart, gaugeChart];
+    window.addEventListener('resize', function () {
+        charts.forEach(function (c) { c.resize(); });
+    });
+
+    document.getElementById('fsBtn').addEventListener('click', function () {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        }
+    });
+})();
+</script>
+</body>
+</html>
