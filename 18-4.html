@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-4 ECharts 图表：渐变柱状图 & 抖动散点图 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #0c0e16; color: #e8ecf6; line-height: 1.7;
+    padding: 26px 20px 46px; min-height: 100vh;
+    transition: background .3s, color .3s;
+  }
+  body.light { background: #eef1f7; color: #16203a; }
+  .container { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: 27px; letter-spacing: 2px; }
+  header h1 span { color: #6ee7ff; }
+  body.light header h1 span { color: #2563eb; }
+  header .sub { color: #7d8aa5; font-size: 13.5px; }
+  body.light header .sub { color: #6b7793; }
+
+  /* 工具条 */
+  .tools {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 18px; padding: 12px 16px; border-radius: 12px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  }
+  body.light .tools { background: #fff; border-color: #e2e8f4; box-shadow: 0 6px 20px rgba(24,32,64,.06); }
+  .btn {
+    background: linear-gradient(135deg, #6ee7ff, #a78bfa); color: #0a0c14;
+    border: none; border-radius: 8px; padding: 8px 15px; font-size: 12.5px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(110,231,255,.26); }
+  .btn.ghost {
+    background: transparent; color: #9fb0cc; font-weight: 400;
+    border: 1px solid rgba(255,255,255,.16);
+  }
+  .btn.ghost:hover { color: #fff; border-color: rgba(255,255,255,.34); box-shadow: none; }
+  body.light .btn.ghost { color: #4c5670; border-color: #cfd8e8; }
+  body.light .btn.ghost:hover { color: #16203a; border-color: #9aa8c4; }
+  .file-tag {
+    margin-left: auto; font-size: 11.5px; font-family: Consolas, monospace;
+    padding: 3px 10px; border-radius: 999px;
+    border: 1px dashed rgba(110,231,255,.35); color: #6ee7ff;
+  }
+  body.light .file-tag { color: #2563eb; border-color: rgba(37,99,235,.35); }
+
+  /* 图表卡片 */
+  .chart-card {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px; padding: 20px 22px 14px; margin-bottom: 20px;
+  }
+  body.light .chart-card { background: #fff; border-color: #e2e8f4; box-shadow: 0 8px 26px rgba(24,32,64,.07); }
+
+  .card-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .card-head h2 { font-size: 17px; letter-spacing: .5px; }
+  .card-head .badge {
+    font-size: 11px; padding: 1px 9px; border-radius: 999px;
+    background: rgba(110,231,255,.12); color: #6ee7ff; border: 1px solid rgba(110,231,255,.3);
+  }
+  body.light .card-head .badge { background: #eef4ff; color: #2563eb; border-color: #c7dbff; }
+  .card-head .badge.pink { background: rgba(236,72,153,.12); color: #f472b6; border-color: rgba(236,72,153,.3); }
+  body.light .card-head .badge.pink { background: #fdf2f8; color: #db2777; border-color: #f9c9e2; }
+  .card-head .badge.green { background: rgba(16,185,129,.12); color: #34d399; border-color: rgba(16,185,129,.3); }
+  body.light .card-head .badge.green { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+  .card-head .link { margin-left: auto; font-size: 11.5px; color: #6b7891; text-decoration: none; }
+  .card-head .link:hover { color: #6ee7ff; }
+  body.light .card-head .link:hover { color: #2563eb; }
+
+  .card-desc { font-size: 12.5px; color: #8b98b4; margin-bottom: 10px; }
+  body.light .card-desc { color: #6b7793; }
+  .card-desc code, .note code {
+    font-family: Consolas, monospace; font-size: 11.5px; color: #6ee7ff;
+    background: rgba(110,231,255,.09); padding: 1px 5px; border-radius: 4px;
+  }
+  body.light .card-desc code, body.light .note code { color: #2563eb; background: #eef4ff; }
+
+  .chart { width: 100%; height: 470px; }
+
+  /* 配置代码折叠 */
+  details.cfg { margin-top: 4px; border-top: 1px dashed rgba(255,255,255,.1); }
+  body.light details.cfg { border-color: #e2e8f4; }
+  details.cfg summary {
+    cursor: pointer; font-size: 12.5px; color: #9fb0cc; padding: 10px 0 6px;
+    list-style: none; user-select: none;
+  }
+  body.light details.cfg summary { color: #4c5670; }
+  details.cfg summary::-webkit-details-marker { display: none; }
+  details.cfg summary::before { content: '▸ '; color: #6ee7ff; }
+  details.cfg[open] summary::before { content: '▾ '; }
+  details.cfg pre {
+    background: #0b0e17; border: 1px solid rgba(255,255,255,.07); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; margin: 6px 0 10px;
+    font-family: Consolas, monospace; font-size: 12px; line-height: 1.75; color: #cfd8e8;
+  }
+  body.light details.cfg pre { background: #f7f9fd; border-color: #e2e8f4; color: #26324a; }
+  .kw { color: #ff7ab2; } .str { color: #7ee787; } .num { color: #ffd479; }
+  .cm { color: #5d6b85; } .fn { color: #6ee7ff; }
+  body.light .kw { color: #c2185b; } body.light .str { color: #0b7a45; }
+  body.light .num { color: #b45309; } body.light .cm { color: #8894ac; } body.light .fn { color: #2563eb; }
+
+  /* 说明区 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+  .note {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  body.light .note { background: #fff; border-color: #e2e8f4; box-shadow: 0 6px 20px rgba(24,32,64,.06); }
+  .note h3 { font-size: 14px; color: #a78bfa; margin-bottom: 10px; }
+  body.light .note h3 { color: #7c3aed; }
+  .note li { font-size: 12.5px; color: #9aa6bf; line-height: 1.95; margin-left: 16px; }
+  body.light .note li { color: #4c5670; }
+
+  .err {
+    display: none; padding: 40px 20px; text-align: center; border-radius: 12px;
+    background: #fdecea; color: #c0392b; font-size: 14px;
+  }
+  .err.show { display: block; }
+
+  footer { text-align: center; color: #55617a; font-size: 12.5px; margin-top: 22px; }
+  body.light footer { color: #7b87a1; }
+  footer span { color: #6ee7ff; }
+  body.light footer span { color: #2563eb; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>18-4</span> · ECharts 数据可视化</h1>
+    <p class="sub">图 1 渐变色 · 阴影 · 点击缩放（bar-gradient）　|　图 2 抖动散点图（scatter-jitter）</p>
+  </header>
+
+  <div class="tools">
+    <button class="btn" id="themeBtn">☀️ 浅色模式</button>
+    <button class="btn ghost" id="rerenderBtn">↻ 重新渲染</button>
+    <button class="btn ghost" id="resetZoom">↺ 重置缩放</button>
+    <span class="file-tag">&lt;script src="./cdn/echarts.min.js"&gt;</span>
+  </div>
+
+  <div class="err" id="errBox"></div>
+
+  <!-- ============ 图 1：渐变柱状图 ============ -->
+  <div class="chart-card">
+    <div class="card-head">
+      <h2>图 1 · 渐变色 阴影 点击缩放</h2>
+      <span class="badge">bar-gradient</span>
+      <a class="link" href="https://echarts.apache.org/examples/zh/editor.html?c=bar-gradient" target="_blank" rel="noopener">官方示例 ↗</a>
+    </div>
+    <p class="card-desc">
+      类目为单个汉字；柱子用 <code>LinearGradient</code> 竖向渐变 + <code>shadow</code> 阴影 + 顶部圆角，
+      配合 <code>showBackground</code> 的灰底槽道。<b>点击任意柱子</b>可放大该区间，点击空白处恢复。
+    </p>
+    <div class="chart" id="chartBar"></div>
+
+    <details class="cfg">
+      <summary>查看 option 配置</summary>
+<pre><span class="kw">const</span> option = {
+  title: {
+    text: <span class="str">'特性示例：渐变色 阴影 点击缩放'</span>,
+    subtext: <span class="str">'Feature Sample: Gradient Color, Shadow, Click Zoom'</span>,
+    left: <span class="str">'center'</span>
+  },
+  tooltip: { trigger: <span class="str">'axis'</span>, axisPointer: { type: <span class="str">'shadow'</span> } },
+  grid: { left: <span class="num">55</span>, right: <span class="num">28</span>, top: <span class="num">82</span>, bottom: <span class="num">36</span> },
+  xAxis: {
+    type: <span class="str">'category'</span>, data: chars,        <span class="cm">// 每个汉字一个类目</span>
+    axisLabel: { interval: <span class="num">0</span> },
+    axisTick: { alignWithLabel: <span class="kw">true</span> }
+  },
+  yAxis: { type: <span class="str">'value'</span>, min: <span class="num">0</span>, max: <span class="num">500</span> },
+  dataZoom: [{ type: <span class="str">'inside'</span>, start: <span class="num">0</span>, end: <span class="num">100</span> }],
+  series: [{
+    type: <span class="str">'bar'</span>,
+    data: values,
+    showBackground: <span class="kw">true</span>,                 <span class="cm">// 灰底槽道</span>
+    backgroundStyle: { color: <span class="str">'rgba(0,0,0,.035)'</span>, borderRadius: <span class="num">2</span> },
+    itemStyle: {
+      borderRadius: [<span class="num">5</span>, <span class="num">5</span>, <span class="num">0</span>, <span class="num">0</span>],
+      color: <span class="kw">new</span> echarts.graphic.<span class="fn">LinearGradient</span>(<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, [
+        { offset: <span class="num">0</span>, color: <span class="str">'#7cc4ff'</span> },
+        { offset: <span class="num">1</span>, color: <span class="str">'#2f7cf6'</span> }
+      ]),
+      shadowBlur: <span class="num">10</span>,
+      shadowColor: <span class="str">'rgba(47,124,246,.35)'</span>,
+      shadowOffsetY: <span class="num">4</span>
+    }
+  }]
+};
+
+<span class="cm">// 点击柱子 → 把 dataZoom 聚焦到该区间；点空白恢复</span>
+chart.on(<span class="str">'click'</span>, <span class="kw">function</span> (p) {
+  <span class="kw">const</span> n = chars.length, span = <span class="num">6</span>;
+  <span class="kw">const</span> s = Math.<span class="fn">max</span>(<span class="num">0</span>, p.dataIndex - <span class="num">2</span>);
+  chart.<span class="fn">dispatchAction</span>({ type: <span class="str">'dataZoom'</span>, start: s / n * <span class="num">100</span>, end: (s + span) / n * <span class="num">100</span> });
+});</pre>
+    </details>
+  </div>
+
+  <!-- ============ 图 2：抖动散点图 ============ -->
+  <div class="chart-card">
+    <div class="card-head">
+      <h2>图 2 · 抖动散点图</h2>
+      <span class="badge pink">scatter-jitter</span>
+      <a class="link" href="https://echarts.apache.org/examples/zh/editor.html?c=scatter-jitter" target="_blank" rel="noopener">官方示例 ↗</a>
+    </div>
+    <p class="card-desc">
+      每个类目（Mon ~ Sun）各有一簇样本，x 坐标在 <b>类目位置 1~7</b> 的基础上叠加随机抖动，
+      让同类目的点沿水平方向自然散开而不完全重叠。<b>悬停任意散点</b>可查看所属类目与数值。
+    </p>
+    <div class="chart" id="chartScatter"></div>
+
+    <details class="cfg">
+      <summary>查看 option 配置</summary>
+<pre><span class="cm">// 每个类目 i 生成一簇点：[类目位置(i+1) ± 抖动, 数值]</span>
+<span class="kw">const</span> JITTER = <span class="num">0.62</span>;                    <span class="cm">// 抖动幅度，1 = 一个类目宽度</span>
+<span class="kw">const</span> jitterData = days.<span class="fn">map</span>((d, i) <span class="kw">=&gt;</span>
+  <span class="fn">Array</span>.<span class="fn">from</span>({ length: PER_DAY }, () <span class="kw">=&gt;</span> [
+    i + <span class="num">1</span> + (Math.<span class="fn">random</span>() - <span class="num">0.5</span>) * JITTER,  <span class="cm">// x：1~7 为类目中心</span>
+    <span class="fn">randomY</span>()                                 <span class="cm">// y：0~10 的近似正态值</span>
+  ])
+);
+
+<span class="kw">const</span> option = {
+  tooltip: { trigger: <span class="str">'item'</span> },
+  grid: { left: <span class="num">48</span>, right: <span class="num">26</span>, top: <span class="num">84</span>, bottom: <span class="num">32</span> },
+  xAxis: {
+    type: <span class="str">'value'</span>, min: <span class="num">0</span>, max: <span class="num">8</span>, interval: <span class="num">1</span>,
+    <span class="cm">// 1~7 映射为星期名，0 与 8 留白给抖动</span>
+    axisLabel: { formatter: v <span class="kw">=&gt;</span> days[v - <span class="num">1</span>] || <span class="str">''</span> }
+  },
+  yAxis: { type: <span class="str">'value'</span>, min: <span class="num">0</span>, max: <span class="num">10</span>, interval: <span class="num">2</span> },
+  series: days.<span class="fn">map</span>((d, i) <span class="kw">=&gt;</span> ({
+    name: d,
+    type: <span class="str">'scatter'</span>,
+    symbolSize: <span class="num">7</span>,
+    data: jitterData[i],
+    itemStyle: { color: dayColors[i], opacity: <span class="num">0.7</span> },
+    emphasis: { scale: <span class="num">2</span> }
+  }))
+};</pre>
+    </details>
+  </div>
+
+  <div class="grid2">
+    <div class="note">
+      <h3>图 1 要点</h3>
+      <ul>
+        <li>渐变色用 <code>echarts.graphic.LinearGradient(0,0,0,1,...)</code>，纵向渐变即"上浅下深"</li>
+        <li><code>showBackground: true</code> 生成每根柱子后的灰色槽道，视觉更整齐</li>
+        <li>只让顶部两角圆：<code>borderRadius: [5,5,0,0]</code></li>
+        <li>阴影用 <code>shadowBlur / shadowColor / shadowOffsetY</code>，颜色取主色的低透明度</li>
+        <li>缩放：<code>dataZoom type:'inside'</code> + <code>dispatchAction</code> 实现"点击放大"</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>图 2 要点</h3>
+      <ul>
+        <li>抖动散点的核心：x 用 <code>类目位置 + 随机偏移</code>，把同值重叠的点摊开</li>
+        <li>类目位置从 <b>1</b> 起算（<code>i + 1</code>），与 axisLabel 的 <code>days[v-1]</code> 对应</li>
+        <li>x 轴用 <code>type:'value'</code> 才能接受小数坐标，类目名靠 <code>formatter</code> 还原</li>
+        <li>轴范围留出 <code>0</code> 与 <code>8</code> 两个空白刻度，避免首尾点被裁切</li>
+        <li>每个类目一个 series，颜色独立；<code>opacity</code> + <code>symbolSize</code> 控制密集区的可读性</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 18-4 ECharts 图表 · 《高级网页设计》课堂练习</footer>
+</div>
+
+<script src="./cdn/echarts.min.js"></script>
+<script>
+(function () {
+    var errBox = document.getElementById('errBox');
+    var themeBtn = document.getElementById('themeBtn');
+
+    if (typeof echarts === 'undefined') {
+        errBox.className = 'err show';
+        errBox.innerHTML = '❌ 未能加载 <code>./cdn/echarts.min.js</code><br>请确认 cdn 目录下的 echarts.min.js 是否存在。';
+        return;
+    }
+
+    var isDark = true;
+    var chartBar = null, chartScatter = null;
+    var zoomState = { start: 0, end: 100 };
+
+    /* ================== 主题色 ================== */
+    function palette(dark) {
+        return dark
+            ? { text: '#c9d3e6', sub: '#8b98b4', axis: 'rgba(255,255,255,.14)',
+                split: 'rgba(255,255,255,.1)', tipBg: 'rgba(14,18,28,.95)',
+                tipBorder: 'rgba(110,231,255,.4)', tipText: '#e8ecf6',
+                bgSlot: 'rgba(255,255,255,.045)' }
+            : { text: '#26324a', sub: '#6b7793', axis: 'rgba(30,45,75,.16)',
+                split: 'rgba(30,45,75,.09)', tipBg: 'rgba(255,255,255,.97)',
+                tipBorder: 'rgba(37,99,235,.3)', tipText: '#16203a',
+                bgSlot: 'rgba(30,45,75,.045)' };
+    }
+
+    function gradV(c1, c2) {
+        return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: c1 }, { offset: 1, color: c2 }
+        ]);
+    }
+
+    /* ================== 图 1 数据：单个汉字作为类目 ================== */
+    var sentence = '点击柱子可以放大查看数据再点空白处恢复原状试试看';
+    var chars = sentence.split('');
+    var baseValues = [
+        226, 182, 196, 243, 292, 331, 308, 442, 121, 318,
+        92, 148, 212, 118, 132, 336, 198, 124, 214, 262,
+        176, 208, 288
+    ];
+    var values = chars.map(function (c, i) {
+        return baseValues[i % baseValues.length];
+    });
+
+    /* ================== 图 2 数据：抖动散点 ================== */
+    var days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    var dayColors = ['#5470c6', '#a5c93d', '#6b6f8f', '#f8995a', '#2bb8d8', '#fbc531', '#f16d9e'];
+    var PER_DAY = 140;          // 每个类目的样本数
+    var JITTER = 0.62;          // 抖动幅度（1 = 一个类目宽度）
+
+    /* 生成近似正态分布的 y 值，并混入少量离群点 */
+    function randomY() {
+        var g = (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;  // 约 -1 ~ 1
+        var v = 7.1 + g * 1.7;
+        if (Math.random() < 0.07) v = Math.random() * 2.4;   // 少量贴近底部的离群点
+        return Math.max(0, Math.min(10, +v.toFixed(2)));
+    }
+
+    /* 每个点：[类目位置（1~7）± 抖动, 数值] */
+    function buildJitterData() {
+        return days.map(function (d, i) {
+            var arr = [];
+            for (var k = 0; k < PER_DAY; k++) {
+                arr.push([
+                    +(i + 1 + (Math.random() - 0.5) * JITTER).toFixed(3),
+                    randomY()
+                ]);
+            }
+            return arr;
+        });
+    }
+
+    var jitterData = buildJitterData();
+
+    /* ================== 图 1 option ================== */
+    function barOption(dark) {
+        var p = palette(dark);
+
+        return {
+            backgroundColor: 'transparent',
+            textStyle: { fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif' },
+            title: {
+                text: '特性示例：渐变色 阴影 点击缩放',
+                subtext: 'Feature Sample: Gradient Color, Shadow, Click Zoom',
+                left: 'center',
+                top: 2,
+                textStyle: { color: p.text, fontSize: 15, fontWeight: 600 },
+                subtextStyle: { color: p.sub, fontSize: 11 }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                backgroundColor: p.tipBg,
+                borderColor: p.tipBorder,
+                textStyle: { color: p.tipText, fontSize: 12 }
+            },
+            grid: { left: 52, right: 26, top: 88, bottom: 34 },
+            xAxis: {
+                type: 'category',
+                data: chars,
+                axisLabel: {
+                    color: p.sub,
+                    fontSize: 12,
+                    interval: 0,
+                    margin: 10
+                },
+                axisTick: { alignWithLabel: true, lineStyle: { color: p.axis } },
+                axisLine: { lineStyle: { color: p.axis } }
+            },
+            yAxis: {
+                type: 'value',
+                min: 0,
+                max: 500,
+                axisLabel: { color: p.sub, fontSize: 11 },
+                axisLine: { show: false },
+                axisTick: { show: false },
+                splitLine: { lineStyle: { color: p.split } }
+            },
+            dataZoom: [{
+                type: 'inside',
+                start: zoomState.start,
+                end: zoomState.end,
+                zoomOnMouseWheel: true,
+                moveOnMouseMove: true
+            }],
+            series: [{
+                name: '数值',
+                type: 'bar',
+                data: values,
+                barWidth: '58%',
+                showBackground: true,
+                backgroundStyle: {
+                    color: p.bgSlot,
+                    borderRadius: 2
+                },
+                itemStyle: {
+                    borderRadius: [5, 5, 0, 0],
+                    color: gradV(dark ? '#7cc4ff' : '#8fc9ff', dark ? '#2f7cf6' : '#2f7cf6'),
+                    shadowBlur: 10,
+                    shadowColor: dark ? 'rgba(47,124,246,.45)' : 'rgba(47,124,246,.28)',
+                    shadowOffsetY: 4
+                },
+                emphasis: {
+                    itemStyle: { shadowBlur: 18, shadowColor: 'rgba(47,124,246,.65)' }
+                },
+                animationDelay: function (idx) { return idx * 26; }
+            }],
+            animationDuration: 800,
+            animationEasing: 'cubicOut'
+        };
+    }
+
+    /* ================== 图 2 option：抖动散点 ================== */
+    function scatterOption(dark) {
+        var p = palette(dark);
+
+        var series = days.map(function (d, i) {
+            return {
+                name: d,
+                type: 'scatter',
+                symbolSize: 7,
+                // 每个点：[类目位置 1~7 ± 随机抖动, 数值]
+                data: jitterData[i],
+                itemStyle: {
+                    color: dayColors[i],
+                    opacity: dark ? 0.7 : 0.55
+                },
+                emphasis: {
+                    scale: 2,
+                    itemStyle: { opacity: 1 }
+                },
+                animationDelay: function (idx) { return idx * 2; }
+            };
+        });
+
+        return {
+            backgroundColor: 'transparent',
+            textStyle: { fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif' },
+            title: {
+                text: 'Scatter with Jittering',
+                subtext: '抖动散点图：同类目的数据沿 x 轴随机散开，避免点完全重叠',
+                left: 'center',
+                top: 2,
+                textStyle: { color: p.text, fontSize: 15, fontWeight: 600 },
+                subtextStyle: { color: p.sub, fontSize: 11 }
+            },
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: p.tipBg,
+                borderColor: p.tipBorder,
+                textStyle: { color: p.tipText, fontSize: 12 },
+                formatter: function (params) {
+                    var idx = Math.round(params.value[0]) - 1;
+                    var d = days[idx] || params.seriesName;
+                    return '<b>' + d + '</b><br>数值：' + params.value[1];
+                }
+            },
+            grid: { left: 48, right: 26, top: 84, bottom: 32 },
+            xAxis: {
+                type: 'value',
+                min: 0,
+                max: 8,
+                interval: 1,
+                axisLabel: {
+                    color: p.sub,
+                    fontSize: 12,
+                    // 1~7 显示为星期名，0 与 8 留白（给抖动留出边距）
+                    formatter: function (v) { return days[v - 1] || ''; }
+                },
+                axisTick: { show: false },
+                axisLine: { lineStyle: { color: p.axis } },
+                splitLine: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                min: 0,
+                max: 10,
+                interval: 2,
+                axisLabel: { color: p.sub, fontSize: 11 },
+                axisLine: { show: false },
+                axisTick: { show: false },
+                splitLine: { lineStyle: { color: p.split } }
+            },
+            series: series,
+            animationDuration: 700,
+            animationEasing: 'cubicOut'
+        };
+    }
+
+    /* ================== 初始化 ================== */
+    var barEl = document.getElementById('chartBar');
+    var scatterEl = document.getElementById('chartScatter');
+
+    function render() {
+        var theme = isDark ? 'dark' : null;
+
+        if (chartBar) chartBar.dispose();
+        if (chartScatter) chartScatter.dispose();
+
+        chartBar = echarts.init(barEl, theme, { renderer: 'canvas' });
+        chartScatter = echarts.init(scatterEl, theme, { renderer: 'canvas' });
+
+        chartBar.setOption(barOption(isDark));
+        chartScatter.setOption(scatterOption(isDark));
+
+        bindBarEvents();
+    }
+
+    /* ================== 点击缩放交互 ================== */
+    function zoomTo(start, end) {
+        zoomState = { start: start, end: end };
+        chartBar.dispatchAction({
+            type: 'dataZoom',
+            dataZoomIndex: 0,
+            start: start,
+            end: end
+        });
+    }
+
+    function bindBarEvents() {
+        // 点击柱子：聚焦到该柱子附近 6 个类目
+        chartBar.on('click', function (params) {
+            if (params.componentType !== 'series') return;
+            var n = chars.length;
+            var span = 6;
+            var s = Math.max(0, params.dataIndex - 2);
+            var e = Math.min(n, s + span);
+            zoomTo(s / n * 100, e / n * 100);
+        });
+
+        // 点击空白处：恢复全部
+        chartBar.getZr().on('click', function (e) {
+            if (!e.target) zoomTo(0, 100);
+        });
+    }
+
+    /* ================== 工具条事件 ================== */
+    themeBtn.addEventListener('click', function () {
+        isDark = !isDark;
+        document.body.classList.toggle('light', !isDark);
+        themeBtn.textContent = isDark ? '☀️ 浅色模式' : '🌙 深色模式';
+        zoomState = { start: 0, end: 100 };
+        render();
+    });
+
+    document.getElementById('rerenderBtn').addEventListener('click', function () {
+        render();
+    });
+
+    document.getElementById('resetZoom').addEventListener('click', function () {
+        zoomTo(0, 100);
+    });
+
+    window.addEventListener('resize', function () {
+        if (chartBar) chartBar.resize();
+        if (chartScatter) chartScatter.resize();
+    });
+
+    render();
+})();
+</script>
+</body>
+</html>

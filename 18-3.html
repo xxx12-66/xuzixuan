@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-3 知识库智能客服系统架构（SVG）· 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #0c0e16; color: #e8ecf6; line-height: 1.7;
+    padding: 26px 20px 46px; min-height: 100vh;
+    transition: background .3s, color .3s;
+  }
+  body.light { background: #eef1f7; color: #16203a; }
+  .container { max-width: 1240px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 18px; }
+  header h1 { font-size: 27px; letter-spacing: 2px; }
+  header h1 span { color: #6ee7ff; }
+  body.light header h1 span { color: #2563eb; }
+  header .sub { color: #7d8aa5; font-size: 13.5px; }
+  body.light header .sub { color: #6b7793; }
+
+  /* 图容器 */
+  .stage {
+    border-radius: 16px; overflow: hidden; position: relative;
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    background: #0b0f1a;
+  }
+  body.light .stage { border-color: #dbe2ef; box-shadow: 0 14px 40px rgba(24,32,64,.12); background: #f7f9fd; }
+
+  /* 图例 / 提示框等页面样式见下方第二个 style */
+</style>
+
+<!-- ==========================================================================
+     SVG 专用样式：导出 SVG 时会把这一整段 CSS 内联进去，保证单独打开也能正常渲染
+     ========================================================================== -->
+<style id="diagramStyle">
+  svg.diagram {
+    --bg: #0b0f1a;
+    --band: rgba(255,255,255,.028);
+    --band-stroke: rgba(255,255,255,.075);
+    --node: #141a29;
+    --node-stroke: rgba(255,255,255,.13);
+    --text: #e8ecf6;
+    --text-2: #8b98b4;
+    --grid: rgba(255,255,255,.035);
+    --chip: rgba(255,255,255,.055);
+    --edge: rgba(150,170,210,.42);
+    --hover: #6ee7ff;
+    display: block; width: 100%; height: auto;
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  svg.diagram.light {
+    --bg: #f7f9fd;
+    --band: #ffffff;
+    --band-stroke: #e2e8f4;
+    --node: #ffffff;
+    --node-stroke: #d7dfee;
+    --text: #16203a;
+    --text-2: #6b7793;
+    --grid: #edf1f9;
+    --chip: #f1f5fb;
+    --edge: rgba(90,110,150,.42);
+    --hover: #4b6bfb;
+  }
+
+  .dgm-bg { fill: var(--bg); }
+  .grid-line { stroke: var(--grid); stroke-width: 1; }
+  .band { fill: var(--band); stroke: var(--band-stroke); stroke-width: 1; }
+  .layer-name { font-size: 13px; font-weight: 600; }
+  .layer-dot { }
+
+  .node { cursor: pointer; }
+  .node-bg { fill: var(--node); stroke: var(--node-stroke); stroke-width: 1.1; transition: stroke .18s, fill .18s; }
+  .node:hover .node-bg { stroke: var(--hover); }
+  .node.active .node-bg { stroke: var(--hover); stroke-width: 2.2; }
+  .node.dimmed { opacity: .34; }
+  .node-label { fill: var(--text); font-size: 13.5px; font-weight: 600; }
+  .node-sub { fill: var(--text-2); font-size: 11px; }
+  .node-star { fill: #fbbf24; font-size: 11px; font-weight: 700; }
+
+  .link { fill: none; stroke: var(--edge); stroke-width: 1.25; transition: stroke .18s, stroke-width .18s; }
+  .link.dashed { stroke-dasharray: 5 4; }
+  .link.active { stroke: var(--hover); stroke-width: 2; }
+  .link.dimmed { opacity: .16; }
+
+  .title { fill: var(--text); font-size: 22px; font-weight: 700; letter-spacing: 1px; }
+  .subtitle { fill: var(--text-2); font-size: 11.5px; letter-spacing: .6px; }
+  .legend-text { fill: var(--text-2); font-size: 11.5px; }
+  .caption { fill: var(--text-2); font-size: 11px; }
+  .split-text { fill: var(--text-2); font-size: 10.5px; letter-spacing: 1px; }
+  .split-line { stroke: var(--edge); stroke-width: 1; stroke-dasharray: 6 5; opacity: .55; }
+  .fb-line { fill: none; stroke: #f59e0b; stroke-width: 1.6; stroke-dasharray: 6 5; opacity: .8; }
+  .fb-text { fill: #f59e0b; font-size: 11px; font-weight: 600; }
+</style>
+
+<style>
+  /* 提示框 */
+  .tip {
+    position: fixed; z-index: 99; pointer-events: none;
+    max-width: 300px; padding: 10px 13px; border-radius: 10px;
+    background: rgba(12,16,26,.96); border: 1px solid rgba(110,231,255,.4);
+    box-shadow: 0 12px 30px rgba(0,0,0,.5);
+    font-size: 12.5px; color: #cfd8e8; line-height: 1.7;
+    opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s;
+  }
+  .tip.show { opacity: 1; transform: none; }
+  .tip b { color: #6ee7ff; display: block; font-size: 13px; margin-bottom: 2px; }
+  .tip i { color: #8b98b4; font-style: normal; font-size: 11.5px; display: block; }
+  .tip p { color: #b8c2d8; font-size: 12px; margin-top: 4px; }
+
+  /* 工具条 */
+  .tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .btn {
+    background: linear-gradient(135deg, #6ee7ff, #a78bfa); color: #0a0c14;
+    border: none; border-radius: 8px; padding: 8px 16px; font-size: 12.5px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(110,231,255,.26); }
+  .btn.ghost {
+    background: transparent; color: #9fb0cc; font-weight: 400;
+    border: 1px solid rgba(255,255,255,.16);
+  }
+  .btn.ghost:hover { color: #fff; border-color: rgba(255,255,255,.34); box-shadow: none; }
+  body.light .btn.ghost { color: #4c5670; border-color: #cfd8e8; }
+  body.light .btn.ghost:hover { color: #16203a; border-color: #9aa8c4; }
+  .hint { margin-left: auto; font-size: 12px; color: #6b7891; font-family: Consolas, monospace; }
+  .hint b { color: #6ee7ff; }
+  body.light .hint { color: #6b7793; }
+  body.light .hint b { color: #2563eb; }
+
+  /* 说明区 */
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
+  @media (max-width: 960px) { .grid3 { grid-template-columns: 1fr; } }
+  .card {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  body.light .card { background: #fff; border-color: #e2e8f4; box-shadow: 0 6px 20px rgba(24,32,64,.06); }
+  .card h3 { font-size: 14px; color: #a78bfa; margin-bottom: 10px; letter-spacing: .5px; }
+  body.light .card h3 { color: #7c3aed; }
+  .card li { font-size: 12.5px; color: #9aa6bf; line-height: 1.95; margin-left: 16px; }
+  body.light .card li { color: #4c5670; }
+  .card code {
+    font-family: Consolas, monospace; font-size: 12px; color: #6ee7ff;
+    background: rgba(110,231,255,.09); padding: 1px 5px; border-radius: 4px;
+  }
+  body.light .card code { color: #2563eb; background: #eef4ff; }
+  .card b { color: #e8ecf6; }
+  body.light .card b { color: #16203a; }
+
+  footer { text-align: center; color: #55617a; font-size: 12.5px; margin-top: 22px; }
+  body.light footer { color: #7b87a1; }
+  footer span { color: #6ee7ff; }
+  body.light footer span { color: #2563eb; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>18-3</span> · 知识库智能客服系统架构（SVG）</h1>
+    <p class="sub">研究方向：基于检索增强生成（RAG）的企业知识库智能客服 —— 离线知识构建 + 在线检索推理 + 评测闭环</p>
+  </header>
+
+  <div class="stage">
+    <svg id="archSvg" class="diagram" viewBox="0 0 1240 1140" width="1240" height="1140"
+         xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg>
+  </div>
+
+  <div class="tools">
+    <button class="btn" id="themeBtn">☀️ 浅色模式</button>
+    <button class="btn ghost" id="saveSvg">⬇ 下载 SVG</button>
+    <button class="btn ghost" id="savePng">⬇ 下载 PNG</button>
+    <button class="btn ghost" id="clearBtn">↺ 取消选中</button>
+    <span class="hint">悬停节点查看说明 · 点击节点高亮其链路 · ★ 为研究重点</span>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <h3>研究问题与研究点</h3>
+      <ul>
+        <li><b>知识时效与覆盖</b>：多源异构文档如何统一解析与增量更新（文档解析 / 语义分块）</li>
+        <li><b>检索精度</b>：稠密向量 + BM25 稀疏检索融合，Cross-Encoder 精排（★ 混合检索、Rerank）</li>
+        <li><b>幻觉抑制</b>：证据约束生成 + 段落级引用溯源，答案必须可追溯（★ 引用溯源）</li>
+        <li><b>领域适配</b>：通用 LLM 的 LoRA / SFT 领域微调与指令模板设计（★ LLM 底座）</li>
+        <li><b>可评测性</b>：构建中文客服问答基准，结合自动指标与人工双评（★ 评测基准）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>评测指标与实验设计</h3>
+      <ul>
+        <li><b>检索侧</b>：Recall@k、MRR、nDCG@10</li>
+        <li><b>生成侧</b>：Answer Accuracy、Faithfulness（忠实度）、Answer Relevancy（RAGAS）</li>
+        <li><b>系统侧</b>：首字延迟 P95、单位请求成本、转人工率</li>
+        <li><b>消融实验</b>：去重排 / 去混合检索 / 去引用 四种配置对比</li>
+        <li><b>鲁棒性</b>：噪声文档注入、对抗提问、无答案拒答率</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>SVG 绘制说明</h3>
+      <ul>
+        <li>整图用 <code>&lt;svg&gt;</code> 矢量绘制，缩放不失真，可直接插入论文</li>
+        <li>每个节点是一个 <code>&lt;g class="node"&gt;</code>，圆角矩形 <code>rect rx="10"</code></li>
+        <li>连线用 <code>path</code> 的三次贝塞尔，箭头由 <code>marker-end</code> 定义</li>
+        <li>主题色通过 CSS 变量 <code>var(--node)</code> 控制，深浅色一键切换</li>
+        <li>导出 SVG 时把内部 CSS 一并内联，保证单独打开也正常渲染</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 18-3 SVG 系统架构图 · 《高级网页设计》课堂练习</footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+(function () {
+    /* ======================================================================
+       1. 画布与数据结构
+       ====================================================================== */
+    var VW = 1240, VH = 1140;
+
+    var COLORS = {
+        src:   '#38bdf8',   // 数据来源
+        build: '#a855f7',   // 知识构建
+        store: '#22d3ee',   // 知识存储
+        retr:  '#ec4899',   // 检索增强
+        gen:   '#f59e0b',   // 生成决策
+        app:   '#10b981',   // 应用场景
+        sci:   '#94a3b8'    // 科研支撑
+    };
+    var LAYER_NAME = {
+        src: '数据来源层', build: '知识构建层', store: '知识存储层',
+        retr: '检索增强层', gen: '生成决策层', app: '应用场景层', sci: '科研支撑层'
+    };
+
+    var BANDS = [
+        { key: 'src',   y: 78,  h: 104 },
+        { key: 'build', y: 214, h: 124 },
+        { key: 'store', y: 372, h: 104 },
+        { key: 'retr',  y: 510, h: 124 },
+        { key: 'gen',   y: 668, h: 124 },
+        { key: 'app',   y: 826, h: 104 },
+        { key: 'sci',   y: 964, h: 116 }
+    ];
+
+    var NODES = [
+        /* 数据来源层 */
+        { id: 'doc',    layer: 'src', label: '企业文档库',      sub: 'PDF / Word / 扫描件' },
+        { id: 'faq',    layer: 'src', label: '产品手册 · FAQ',  sub: '结构化问答对' },
+        { id: 'ticket', layer: 'src', label: '历史工单',        sub: 'CRM 会话记录' },
+        { id: 'web',    layer: 'src', label: '帮助中心网页',    sub: 'HTML 全量爬取' },
+        { id: 'log',    layer: 'src', label: '线上对话日志',    sub: '真实会话采样' },
+        { id: 'label',  layer: 'src', label: '标注语料',        sub: '人工作答与难例' },
+
+        /* 知识构建层 */
+        { id: 'parse',  layer: 'build', label: '文档解析 / OCR', sub: '版面还原、表格抽取' },
+        { id: 'clean',  layer: 'build', label: '清洗与去噪',     sub: '去重 · 纠错 · 脱敏' },
+        { id: 'chunk',  layer: 'build', label: '语义分块',       sub: '标题感知 / 重叠窗口', star: '按语义边界切分，平衡上下文完整性与召回率' },
+        { id: 'meta',   layer: 'build', label: '元数据抽取',     sub: '标题 · 时间 · 权限' },
+        { id: 'embed',  layer: 'build', label: 'Embedding',      sub: 'bge-m3 / 领域微调' },
+        { id: 'index',  layer: 'build', label: '索引构建',       sub: '向量 + 倒排 + 图谱' },
+
+        /* 知识存储层 */
+        { id: 'vdb',    layer: 'store', label: '向量库 Milvus',  sub: 'HNSW / IVF-PQ' },
+        { id: 'es',     layer: 'store', label: '全文索引 ES',    sub: 'BM25 稀疏检索' },
+        { id: 'kg',     layer: 'store', label: '知识图谱 Neo4j', sub: '实体-关系三元组' },
+        { id: 'oss',    layer: 'store', label: '对象存储',       sub: '原文切片与图片' },
+        { id: 'cache',  layer: 'store', label: '缓存 Redis',     sub: '高频问答缓存' },
+
+        /* 检索增强层 */
+        { id: 'rewrite', layer: 'retr', label: '查询理解改写', sub: '指代消解 · 同义扩展' },
+        { id: 'intent',  layer: 'retr', label: '意图识别',     sub: '多分类 + 路由' },
+        { id: 'hybrid',  layer: 'retr', label: '混合检索',     sub: '稠密 + 稀疏加权融合', star: '研究重点：融合权重自适应学习，提升长尾问题召回' },
+        { id: 'rerank',  layer: 'retr', label: 'Rerank 重排',  sub: 'Cross-Encoder 精排', star: '研究重点：小样本领域重排器，兼顾精度与延迟' },
+        { id: 'context', layer: 'retr', label: '上下文组装',   sub: '去重 · 截断 · 排序' },
+        { id: 'cite',    layer: 'retr', label: '引用溯源',     sub: '段落级出处定位', star: '研究重点：答案与证据对齐，支撑可解释性' },
+
+        /* 生成决策层 */
+        { id: 'prompt',  layer: 'gen', label: 'Prompt 模板',   sub: '角色 · 约束 · few-shot' },
+        { id: 'llm',     layer: 'gen', label: 'LLM 底座',      sub: 'SFT / LoRA 领域微调', star: '研究重点：领域指令微调与知识注入的平衡' },
+        { id: 'rag',     layer: 'gen', label: 'RAG 生成',      sub: '证据约束的答案生成' },
+        { id: 'dialog',  layer: 'gen', label: '多轮对话管理',  sub: '状态跟踪 · 澄清追问' },
+        { id: 'agent',   layer: 'gen', label: '工具调用 Agent', sub: '工单 / 订单查询' },
+        { id: 'guard',   layer: 'gen', label: '安全与合规',    sub: '敏感词 · 越权过滤' },
+
+        /* 应用场景层 */
+        { id: 'bot',     layer: 'app', label: '智能客服机器人', sub: '7×24 自动应答' },
+        { id: 'assist',  layer: 'app', label: '坐席实时辅助',   sub: '话术与知识推荐' },
+        { id: 'triage',  layer: 'app', label: '工单自动分派',   sub: '意图 → 处理队列' },
+        { id: 'qa',      layer: 'app', label: '会话质检与摘要', sub: '合规抽检 · 自动小结' },
+        { id: 'feedback', layer: 'app', label: '知识反哺',      sub: '未命中问题回流' },
+
+        /* 科研支撑层 */
+        { id: 'dataset', layer: 'sci', label: '数据集与标注',   sub: '问答对 · 难例挖掘' },
+        { id: 'bench',   layer: 'sci', label: '评测基准',       sub: 'RAGAS + 人工双评', star: '研究重点：构建中文客服问答基准与评测协议' },
+        { id: 'ablate',  layer: 'sci', label: '消融实验',       sub: '模块贡献分析' },
+        { id: 'metric',  layer: 'sci', label: '指标看板',       sub: '准确率 / 幻觉率 / 时延' },
+        { id: 'paper',   layer: 'sci', label: '实验与论文管理', sub: '记录 · 复现 · 对比' }
+    ];
+
+    /* 连线：{ a, b, 样式 } */
+    var LINKS = [
+        /* 数据 → 构建 */
+        { a: 'doc', b: 'parse' }, { a: 'faq', b: 'parse' }, { a: 'web', b: 'parse' },
+        { a: 'ticket', b: 'clean' }, { a: 'log', b: 'clean' }, { a: 'label', b: 'meta' },
+        /* 构建内部流水线 */
+        { a: 'parse', b: 'clean' }, { a: 'clean', b: 'chunk' }, { a: 'chunk', b: 'meta' },
+        { a: 'meta', b: 'embed' }, { a: 'embed', b: 'index' },
+        /* 构建 → 存储 */
+        { a: 'embed', b: 'vdb' }, { a: 'index', b: 'es' }, { a: 'meta', b: 'kg' },
+        { a: 'chunk', b: 'oss' }, { a: 'index', b: 'cache' },
+        /* 存储 → 检索（虚线：读取） */
+        { a: 'vdb', b: 'hybrid', dashed: true }, { a: 'es', b: 'hybrid', dashed: true },
+        { a: 'kg', b: 'intent', dashed: true }, { a: 'cache', b: 'context', dashed: true },
+        /* 检索内部流水线 */
+        { a: 'rewrite', b: 'intent' }, { a: 'intent', b: 'hybrid' }, { a: 'hybrid', b: 'rerank' },
+        { a: 'rerank', b: 'context' }, { a: 'context', b: 'cite' },
+        /* 检索 → 生成 */
+        { a: 'context', b: 'rag' }, { a: 'cite', b: 'rag' }, { a: 'rewrite', b: 'prompt' },
+        /* 生成内部 */
+        { a: 'prompt', b: 'rag' }, { a: 'rag', b: 'llm' }, { a: 'llm', b: 'dialog' },
+        { a: 'llm', b: 'agent' }, { a: 'agent', b: 'guard' },
+        /* 生成 → 应用 */
+        { a: 'dialog', b: 'bot' }, { a: 'dialog', b: 'assist' }, { a: 'agent', b: 'triage' },
+        { a: 'rag', b: 'qa' }
+    ];
+
+    var NODE_MAP = {};
+    NODES.forEach(function (n) { NODE_MAP[n.id] = n; });
+
+    /* ======================================================================
+       2. 自动布局：每层节点等宽横向排布
+       ====================================================================== */
+    var X0 = 104, RIGHT = 1178, GAP = 16, PAD = 16;
+
+    BANDS.forEach(function (band) {
+        var items = NODES.filter(function (n) { return n.layer === band.key; });
+        var innerW = RIGHT - X0;
+        var w = (innerW - PAD * 2 - GAP * (items.length - 1)) / items.length;
+
+        items.forEach(function (n, i) {
+            n.w = w;
+            n.h = band.h - 48;
+            n.x = X0 + PAD + i * (w + GAP);
+            n.y = band.y + 26;
+        });
+    });
+
+    /* ======================================================================
+       3. 生成 SVG
+       ====================================================================== */
+    var svg = document.getElementById('archSvg');
+    var tip = document.getElementById('tip');
+    var light = false;
+
+    function esc(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function roundRectPath(x, y, w, h, r) {
+        return 'M' + (x + r) + ' ' + y +
+               'H' + (x + w - r) + 'A' + r + ' ' + r + ' 0 0 1 ' + (x + w) + ' ' + (y + r) +
+               'V' + (y + h - r) + 'A' + r + ' ' + r + ' 0 0 1 ' + (x + w - r) + ' ' + (y + h) +
+               'H' + (x + r) + 'A' + r + ' ' + r + ' 0 0 1 ' + x + ' ' + (y + h - r) +
+               'V' + (y + r) + 'A' + r + ' ' + r + ' 0 0 1 ' + (x + r) + ' ' + y + 'Z';
+    }
+
+    /* 箭头 marker：每层一个颜色 */
+    function buildDefs() {
+        var s = '<defs>';
+        Object.keys(COLORS).forEach(function (k) {
+            s += '<marker id="arr-' + k + '" viewBox="0 0 10 10" refX="9" refY="5" ' +
+                 'markerWidth="7" markerHeight="7" orient="auto-start-reverse">' +
+                 '<path d="M0 0 L10 5 L0 10 z" fill="' + COLORS[k] + '" opacity=".85"/></marker>';
+        });
+        s += '<marker id="arr-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" ' +
+             'orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#93a3c0" opacity=".8"/></marker>';
+        s += '</defs>';
+        return s;
+    }
+
+    function buildBackground() {
+        var s = '<rect class="dgm-bg" x="0" y="0" width="' + VW + '" height="' + VH + '"/>';
+        for (var x = 0; x <= VW; x += 40) {
+            s += '<line class="grid-line" x1="' + x + '" y1="0" x2="' + x + '" y2="' + VH + '"/>';
+        }
+        for (var y = 0; y <= VH; y += 40) {
+            s += '<line class="grid-line" x1="0" y1="' + y + '" x2="' + VW + '" y2="' + y + '"/>';
+        }
+        return s;
+    }
+
+    function buildTitle() {
+        return '<text class="title" x="80" y="44">知识库智能客服系统 · 技术架构与研究框架</text>' +
+               '<text class="subtitle" x="80" y="65">KNOWLEDGE-BASE INTELLIGENT CUSTOMER SERVICE  ·  RAG PIPELINE &amp; RESEARCH FRAMEWORK</text>' +
+               '<text class="caption" x="' + (VW - 80) + '" y="44" text-anchor="end">图 1 · 总体架构（SVG 矢量）</text>';
+    }
+
+    function buildBands() {
+        var s = '';
+        BANDS.forEach(function (b) {
+            var color = COLORS[b.key];
+            s += '<rect class="band" x="80" y="' + b.y + '" width="1110" height="' + b.h + '" rx="14"/>';
+            // 左侧色条
+            s += '<rect x="80" y="' + (b.y + 18) + '" width="3" height="' + (b.h - 36) + '" rx="1.5" fill="' + color + '" opacity=".85"/>';
+            // 层名（旋转 90°）
+            s += '<text class="layer-name" fill="' + color + '" x="' + (80 + 3 + 22) + '" y="' + (b.y + b.h / 2) + '" ' +
+                 'text-anchor="middle" transform="rotate(-90 ' + (80 + 3 + 22) + ' ' + (b.y + b.h / 2) + ')">' +
+                 esc(LAYER_NAME[b.key]) + '</text>';
+        });
+
+        // 离线 / 在线 分界线（存储层与检索层之间）
+        var sy = 493;
+        s += '<line class="split-line" x1="80" y1="' + sy + '" x2="1190" y2="' + sy + '"/>';
+        s += '<text class="split-text" x="1186" y="' + (sy - 6) + '" text-anchor="end">OFFLINE 知识构建 ▲　|　▼ ONLINE 检索推理</text>';
+        return s;
+    }
+
+    /* 连线几何：同层横向、跨层纵向贝塞尔 */
+    function linkPath(a, b) {
+        if (Math.abs((a.y + a.h / 2) - (b.y + b.h / 2)) < 20) {
+            var leftFirst = a.x < b.x;
+            var x1 = leftFirst ? a.x + a.w : a.x;
+            var x2 = leftFirst ? b.x : b.x + b.w;
+            var y = a.y + a.h / 2;
+            var dx = (x2 - x1) * 0.5;
+            return 'M' + x1 + ' ' + y + 'C' + (x1 + dx) + ' ' + y + ' ' + (x2 - dx) + ' ' + (b.y + b.h / 2) + ' ' + x2 + ' ' + (b.y + b.h / 2);
+        }
+        var down = b.y > a.y;
+        var p0 = down ? { x: a.x + a.w / 2, y: a.y + a.h } : { x: a.x + a.w / 2, y: a.y };
+        var p3 = down ? { x: b.x + b.w / 2, y: b.y } : { x: b.x + b.w / 2, y: b.y + b.h };
+        var dy = p3.y - p0.y;
+        return 'M' + p0.x + ' ' + p0.y +
+               'C' + p0.x + ' ' + (p0.y + dy * 0.45) + ' ' + p3.x + ' ' + (p3.y - dy * 0.45) + ' ' + p3.x + ' ' + p3.y;
+    }
+
+    function buildLinks() {
+        var s = '';
+        LINKS.forEach(function (l, i) {
+            var a = NODE_MAP[l.a], b = NODE_MAP[l.b];
+            if (!a || !b) return;
+            var colorKey = COLORS[b.layer] ? b.layer : 'src';
+            s += '<path class="link' + (l.dashed ? ' dashed' : '') + '" data-i="' + i + '" ' +
+                 'data-a="' + l.a + '" data-b="' + l.b + '" d="' + linkPath(a, b) + '" ' +
+                 'marker-end="url(#arr-' + (l.dashed ? 'gray' : colorKey) + ')"/>';
+        });
+        return s;
+    }
+
+    function buildNodes() {
+        var s = '';
+        NODES.forEach(function (n) {
+            var color = COLORS[n.layer];
+            var cx = n.x + n.w / 2;
+            var labelY = n.y + n.h * 0.42;
+            var subY = labelY + 18;
+
+            s += '<g class="node" data-id="' + n.id + '">';
+            s += '<rect class="node-bg" x="' + n.x + '" y="' + n.y + '" width="' + n.w + '" height="' + n.h + '" rx="10"/>';
+            // 左侧色标
+            s += '<rect x="' + (n.x + 1) + '" y="' + (n.y + 12) + '" width="3" height="' + (n.h - 24) + '" rx="1.5" fill="' + color + '" opacity=".9"/>';
+            s += '<text class="node-label" x="' + cx + '" y="' + labelY + '" text-anchor="middle">' + esc(n.label) + '</text>';
+            s += '<text class="node-sub" x="' + cx + '" y="' + subY + '" text-anchor="middle">' + esc(n.sub) + '</text>';
+            if (n.star) {
+                s += '<text class="node-star" x="' + (n.x + n.w - 10) + '" y="' + (n.y + 15) + '" text-anchor="end">★</text>';
+            }
+            s += '</g>';
+        });
+        return s;
+    }
+
+    /* 科研反馈闭环：右侧虚线大回环 */
+    function buildFeedbackLoop() {
+        var s = '';
+        var x = 1210, yBottom = 1000, yTop = 560;
+        s += '<path class="fb-line" d="M' + x + ' ' + yBottom + 'L' + x + ' ' + yTop + '" marker-end="url(#arr-gray)"/>';
+        s += '<text class="fb-text" x="' + (x - 6) + '" y="' + ((yTop + yBottom) / 2) + '" ' +
+             'transform="rotate(-90 ' + (x - 6) + ' ' + ((yTop + yBottom) / 2) + ')" text-anchor="middle">' +
+             '评测反馈 · 迭代优化</text>';
+        return s;
+    }
+
+    function buildLegend() {
+        var items = [
+            { c: COLORS.src,   t: '数据来源' },
+            { c: COLORS.build, t: '知识构建' },
+            { c: COLORS.store, t: '知识存储' },
+            { c: COLORS.retr,  t: '检索增强' },
+            { c: COLORS.gen,   t: '生成决策' },
+            { c: COLORS.app,   t: '应用场景' },
+            { c: COLORS.sci,   t: '科研支撑' }
+        ];
+        var s = '<g>';
+        var x = 80, y = 1108;
+        items.forEach(function (it) {
+            s += '<rect x="' + x + '" y="' + (y - 6) + '" width="9" height="9" rx="2" fill="' + it.c + '"/>';
+            s += '<text class="legend-text" x="' + (x + 14) + '" y="' + y + '">' + it.t + '</text>';
+            x += 14 + it.t.length * 12 + 16;
+        });
+        s += '<line class="link" x1="' + (x + 6) + '" y1="' + (y - 2) + '" x2="' + (x + 40) + '" y2="' + (y - 2) + '"/>';
+        s += '<text class="legend-text" x="' + (x + 46) + '" y="' + y + '">主流程</text>';
+        s += '<line class="link dashed" x1="' + (x + 92) + '" y1="' + (y - 2) + '" x2="' + (x + 126) + '" y2="' + (y - 2) + '"/>';
+        s += '<text class="legend-text" x="' + (x + 132) + '" y="' + y + '">读取 / 反馈</text>';
+        s += '<text class="node-star" x="' + (x + 218) + '" y="' + y + '">★</text>';
+        s += '<text class="legend-text" x="' + (x + 230) + '" y="' + y + '">研究重点</text>';
+        s += '</g>';
+        return s;
+    }
+
+    function render() {
+        svg.innerHTML =
+            buildDefs() +
+            buildBackground() +
+            buildTitle() +
+            buildBands() +
+            buildLinks() +
+            buildFeedbackLoop() +
+            buildNodes() +
+            buildLegend();
+    }
+
+    /* ======================================================================
+       4. 交互：悬停高亮 + 提示框 + 点击固定
+       ====================================================================== */
+    var pinned = null;
+
+    function setFocus(id) {
+        var nodes = svg.querySelectorAll('.node');
+        var links = svg.querySelectorAll('.link');
+
+        if (!id) {
+            nodes.forEach(function (n) { n.classList.remove('active', 'dimmed'); });
+            links.forEach(function (l) { l.classList.remove('active', 'dimmed'); });
+            return;
+        }
+
+        var related = {};
+        related[id] = true;
+        LINKS.forEach(function (l) {
+            if (l.a === id) related[l.b] = true;
+            if (l.b === id) related[l.a] = true;
+        });
+
+        nodes.forEach(function (n) {
+            var nid = n.getAttribute('data-id');
+            n.classList.toggle('active', nid === id);
+            n.classList.toggle('dimmed', !related[nid]);
+        });
+
+        links.forEach(function (l) {
+            var on = (l.getAttribute('data-a') === id || l.getAttribute('data-b') === id);
+            l.classList.toggle('active', on);
+            l.classList.toggle('dimmed', !on);
+        });
+    }
+
+    svg.addEventListener('mousemove', function (e) {
+        var g = e.target.closest ? e.target.closest('.node') : null;
+        var id = g ? g.getAttribute('data-id') : null;
+
+        if (id) {
+            var n = NODE_MAP[id];
+            var note = n.star || ('所属层：' + LAYER_NAME[n.layer]);
+            tip.innerHTML = '<b>' + esc(n.label) + '</b>' +
+                            '<i>' + esc(n.sub) + '</i>' +
+                            '<p>' + esc(note) + '</p>';
+            tip.classList.add('show');
+            tip.style.left = Math.min(e.clientX + 16, window.innerWidth - 320) + 'px';
+            tip.style.top = (e.clientY + 18) + 'px';
+            svg.style.cursor = 'pointer';
+            if (!pinned) setFocus(id);
+        } else {
+            tip.classList.remove('show');
+            svg.style.cursor = 'default';
+            if (!pinned) setFocus(null);
+        }
+    });
+
+    svg.addEventListener('mouseleave', function () {
+        tip.classList.remove('show');
+        if (!pinned) setFocus(null);
+    });
+
+    svg.addEventListener('click', function (e) {
+        var g = e.target.closest ? e.target.closest('.node') : null;
+        if (!g) return;
+        var id = g.getAttribute('data-id');
+        pinned = (pinned === id) ? null : id;
+        setFocus(pinned);
+    });
+
+    /* ======================================================================
+       5. 主题切换
+       ====================================================================== */
+    var themeBtn = document.getElementById('themeBtn');
+
+    themeBtn.addEventListener('click', function () {
+        light = !light;
+        svg.classList.toggle('light', light);
+        document.body.classList.toggle('light', light);
+        themeBtn.textContent = light ? '🌙 深色模式' : '☀️ 浅色模式';
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', function () {
+        pinned = null;
+        setFocus(null);
+    });
+
+    /* ======================================================================
+       6. 导出 SVG / PNG
+       ====================================================================== */
+    function getDiagramCSS() {
+        // 直接把 <style id="diagramStyle"> 的整段内容内联进导出的 SVG
+        var node = document.getElementById('diagramStyle');
+        return node ? node.textContent : '';
+    }
+
+    function serializeSVG() {
+        var clone = svg.cloneNode(true);
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+
+        var style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+        style.textContent = getDiagramCSS();
+        clone.insertBefore(style, clone.firstChild);
+
+        return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(clone);
+    }
+
+    function download(blob, name) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+    }
+
+    document.getElementById('saveSvg').addEventListener('click', function () {
+        var text = serializeSVG();
+        download(new Blob([text], { type: 'image/svg+xml;charset=utf-8' }), '知识库智能客服系统架构.svg');
+    });
+
+    document.getElementById('savePng').addEventListener('click', function () {
+        var text = serializeSVG();
+        var img = new Image();
+        var svgBlob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
+        var url = URL.createObjectURL(svgBlob);
+
+        img.onload = function () {
+            var s = 2;   // 2 倍分辨率
+            var c = document.createElement('canvas');
+            c.width = VW * s;
+            c.height = VH * s;
+            var g = c.getContext('2d');
+            g.fillStyle = light ? '#f7f9fd' : '#0b0f1a';
+            g.fillRect(0, 0, c.width, c.height);
+            g.drawImage(img, 0, 0, c.width, c.height);
+            c.toBlob(function (blob) {
+                download(blob, '知识库智能客服系统架构.png');
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        };
+        img.onerror = function () {
+            alert('PNG 导出失败，请改用「下载 SVG」');
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
+    });
+
+    /* ======================================================================
+       7. 启动
+       ====================================================================== */
+    render();
+})();
+</script>
+</body>
+</html>

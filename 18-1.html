@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-1 Canvas 文字震颤动画 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #0c0e16; color: #e8ecf6; line-height: 1.7;
+    padding: 26px 20px 46px; min-height: 100vh;
+  }
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 20px; }
+  header h1 { font-size: 27px; letter-spacing: 2px; }
+  header h1 span { color: #6ee7ff; }
+  header .sub { color: #7d8aa5; font-size: 13.5px; }
+
+  /* 画布舞台 */
+  .stage {
+    position: relative; border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+    background: #060810;
+  }
+  #glitchCanvas { display: block; width: 100%; height: 440px; cursor: crosshair; }
+  .hud {
+    position: absolute; left: 14px; top: 12px; display: flex; gap: 8px;
+    font-family: Consolas, monospace; font-size: 11.5px; color: #6b7891;
+    pointer-events: none;
+  }
+  .hud span {
+    background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09);
+    border-radius: 6px; padding: 2px 8px;
+  }
+  .hud b { color: #6ee7ff; font-weight: 600; }
+  .tip-hint {
+    position: absolute; right: 14px; bottom: 12px; font-size: 11.5px; color: #55617a;
+    font-family: Consolas, monospace; pointer-events: none;
+  }
+
+  /* 控制面板 */
+  .panel {
+    margin-top: 18px; background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  .panel h2 {
+    font-size: 15px; color: #6ee7ff; border-left: 3px solid #6ee7ff;
+    padding-left: 10px; margin-bottom: 14px; letter-spacing: .5px;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px 22px; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field > label { font-size: 12px; color: #8894ac; }
+  input[type="text"] {
+    background: #0b0e17; border: 1px solid rgba(255,255,255,.12); border-radius: 8px;
+    padding: 8px 12px; color: #e8ecf6; font-size: 13px; font-family: inherit; width: 220px;
+  }
+  input[type="text"]:focus, select:focus { outline: none; border-color: #6ee7ff; }
+  select {
+    background: #0b0e17; border: 1px solid rgba(255,255,255,.12); border-radius: 8px;
+    padding: 8px 10px; color: #e8ecf6; font-size: 13px; font-family: inherit;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 160px; height: 4px; border-radius: 4px;
+    background: linear-gradient(90deg, #6ee7ff, #a78bfa); outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%;
+    background: #fff; border: 2px solid #6ee7ff; cursor: pointer;
+    box-shadow: 0 0 12px rgba(110,231,255,.7);
+  }
+  .val { font-family: Consolas, monospace; font-size: 12px; color: #6ee7ff; }
+
+  .btn {
+    background: linear-gradient(135deg, #6ee7ff, #a78bfa); color: #0a0c14;
+    border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(110,231,255,.28); }
+  .btn.ghost {
+    background: transparent; color: #9fb0cc; font-weight: 400;
+    border: 1px solid rgba(255,255,255,.16);
+  }
+  .btn.ghost:hover { color: #fff; border-color: rgba(255,255,255,.34); box-shadow: none; }
+
+  /* 说明 + 代码 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; }
+  @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  .card h3 { font-size: 14px; color: #a78bfa; margin-bottom: 10px; letter-spacing: .5px; }
+  .card p, .card li { font-size: 12.5px; color: #9aa6bf; line-height: 1.9; }
+  .card ul { padding-left: 18px; }
+  .card code {
+    font-family: Consolas, monospace; font-size: 12px; color: #6ee7ff;
+    background: rgba(110,231,255,.09); padding: 1px 5px; border-radius: 4px;
+  }
+  pre.code {
+    background: #0b0e17; border: 1px solid rgba(255,255,255,.07); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-family: Consolas, monospace;
+    font-size: 12.5px; line-height: 1.75; color: #cfd8e8;
+  }
+  .kw { color: #ff7ab2; } .str { color: #7ee787; } .num { color: #ffd479; }
+  .cm { color: #5d6b85; } .fn { color: #6ee7ff; }
+
+  footer { text-align: center; color: #55617a; font-size: 12.5px; margin-top: 22px; }
+  footer span { color: #6ee7ff; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>18-1</span> · Canvas 文字震颤动画</h1>
+    <p class="sub">requestAnimationFrame 逐帧重绘 · 字符随机抖动 · 鼠标靠近增强 · 点击触发冲击波</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="glitchCanvas"></canvas>
+    <div class="hud">
+      <span>FPS <b id="fpsText">60</b></span>
+      <span>字符 <b id="charText">0</b></span>
+      <span>幅度 <b id="ampText">8</b>px</span>
+    </div>
+    <div class="tip-hint">移动鼠标 → 局部增强　|　点击画面 → 冲击波</div>
+  </div>
+
+  <!-- 控制面板 -->
+  <div class="panel">
+    <h2>动画参数</h2>
+    <div class="controls">
+      <div class="field">
+        <label>文字内容</label>
+        <input type="text" id="textInput" value="高级网页设计" maxlength="16">
+      </div>
+      <div class="field">
+        <label>震颤幅度 <span class="val" id="ampVal">8</span> px</label>
+        <input type="range" id="ampRange" min="0" max="30" value="8">
+      </div>
+      <div class="field">
+        <label>字号 <span class="val" id="sizeVal">76</span> px</label>
+        <input type="range" id="sizeRange" min="36" max="140" value="76">
+      </div>
+      <div class="field">
+        <label>配色</label>
+        <select id="themeSel">
+          <option value="cyber">赛博青紫</option>
+          <option value="fire">烈焰红橙</option>
+          <option value="matrix">矩阵绿</option>
+          <option value="ice">冰蓝白</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="toggleBtn">⏸ 暂停</button>
+          <button class="btn ghost" id="burstBtn">💥 震动一下</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>实现要点</h3>
+      <ul>
+        <li>用 <code>requestAnimationFrame</code> 每帧清屏并重绘，形成动画</li>
+        <li>把文字拆成单个字符逐个绘制，每帧给每个字一个<b>随机位移</b>，即"震颤"</li>
+        <li>用 <code>measureText</code> 计算每个字的宽度，实现整体水平居中</li>
+        <li>鼠标靠近时按距离衰减叠加振幅，局部抖动更强</li>
+        <li>点击产生随时间衰减的<b>冲击波</b>，所有字符向外炸开</li>
+        <li>红/青双色错位叠加（色差）让画面更像"故障艺术"</li>
+        <li>按 <code>devicePixelRatio</code> 缩放画布，保证高清屏不模糊</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>核心代码</h3>
+<pre class="code"><span class="cm">// 每帧：清屏 → 逐字绘制（带随机偏移）</span>
+<span class="kw">function</span> <span class="fn">draw</span>() {
+    ctx.<span class="fn">clearRect</span>(<span class="num">0</span>, <span class="num">0</span>, W, H);
+
+    <span class="cm">// 每个字符：整体居中 + 随机抖动</span>
+    chars.<span class="fn">forEach</span>(<span class="kw">function</span> (c) {
+        <span class="kw">var</span> dx = (<span class="fn">Math.random</span>() * <span class="num">2</span> - <span class="num">1</span>) * amp;
+        <span class="kw">var</span> dy = (<span class="fn">Math.random</span>() * <span class="num">2</span> - <span class="num">1</span>) * amp;
+        ctx.<span class="fn">fillText</span>(c.ch, c.x + dx, c.y + dy);
+    });
+
+    <span class="fn">requestAnimationFrame</span>(draw);   <span class="cm">// 递归下一帧</span>
+}</pre>
+    </div>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 18-1 Canvas 文字震颤 · 《高级网页设计》课堂练习</footer>
+</div>
+
+<script>
+(function () {
+    var canvas = document.getElementById('glitchCanvas');
+    var ctx = canvas.getContext('2d');
+
+    var fpsText = document.getElementById('fpsText');
+    var charText = document.getElementById('charText');
+    var ampText = document.getElementById('ampText');
+    var textInput = document.getElementById('textInput');
+    var ampRange = document.getElementById('ampRange');
+    var ampVal = document.getElementById('ampVal');
+    var sizeRange = document.getElementById('sizeRange');
+    var sizeVal = document.getElementById('sizeVal');
+    var themeSel = document.getElementById('themeSel');
+    var toggleBtn = document.getElementById('toggleBtn');
+    var burstBtn = document.getElementById('burstBtn');
+
+    /* ===== 配色方案 ===== */
+    var THEMES = {
+        cyber:  { main: ['#6ee7ff', '#a78bfa', '#ff7ab2'], glow: '#6ee7ff' },
+        fire:   { main: ['#ff8a3d', '#ff4d6d', '#ffd479'], glow: '#ff6b3d' },
+        matrix: { main: ['#7ee787', '#43d17a', '#c7f9cc'], glow: '#7ee787' },
+        ice:    { main: ['#dff6ff', '#8fd3ff', '#ffffff'], glow: '#a5e4ff' }
+    };
+
+    /* ===== 画布尺寸（含高清屏适配） ===== */
+    var W = 0, H = 0, DPR = 1;
+
+    function resize() {
+        var rect = canvas.getBoundingClientRect();
+        DPR = window.devicePixelRatio || 1;
+        W = rect.width;
+        H = rect.height;
+        canvas.width = Math.round(W * DPR);
+        canvas.height = Math.round(H * DPR);
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+        layout();
+    }
+
+    /* ===== 状态 ===== */
+    var chars = [];          // 每个字符：{ ch, x, y }
+    var amp = 8;             // 基础振幅
+    var fontSize = 76;
+    var theme = THEMES.cyber;
+    var paused = false;
+    var mouse = { x: -999, y: -999, active: false };
+    var burst = { x: 0, y: 0, power: 0 };   // 冲击波强度（逐帧衰减）
+    var stars = [];          // 背景粒子
+    var lastTime = 0, fps = 60, frames = 0, fpsTimer = 0;
+
+    /* ===== 计算每个字符的位置（整体水平居中） ===== */
+    function layout() {
+        chars = [];
+        var text = textInput.value || ' ';
+        ctx.font = '700 ' + fontSize + 'px "Microsoft YaHei", sans-serif';
+        ctx.textBaseline = 'middle';
+
+        // 先测量总宽度
+        var total = 0;
+        var widths = [];
+        for (var i = 0; i < text.length; i++) {
+            var w = ctx.measureText(text[i]).width;
+            widths.push(w);
+            total += w;
+        }
+
+        var startX = (W - total) / 2;
+        var baseY = H / 2;
+        var x = startX;
+        for (var j = 0; j < text.length; j++) {
+            chars.push({
+                ch: text[j],
+                x: x + widths[j] / 2,   // 字符中心点（textAlign = center）
+                y: baseY
+            });
+            x += widths[j];
+        }
+
+        // 背景星点
+        stars = [];
+        for (var k = 0; k < 90; k++) {
+            stars.push({
+                x: Math.random() * W,
+                y: Math.random() * H,
+                r: Math.random() * 1.6 + 0.3,
+                a: Math.random() * 0.5 + 0.15,
+                v: Math.random() * 0.25 + 0.05
+            });
+        }
+
+        charText.textContent = chars.length;
+    }
+
+    /* ===== 背景：渐变 + 星点 ===== */
+    function drawBackground() {
+        var g = ctx.createLinearGradient(0, 0, W, H);
+        g.addColorStop(0, '#060810');
+        g.addColorStop(0.5, '#0a0d1a');
+        g.addColorStop(1, '#05070e');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+
+        // 网格线
+        ctx.strokeStyle = 'rgba(110, 231, 255, .05)';
+        ctx.lineWidth = 1;
+        for (var x = 0; x < W; x += 46) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (var y = 0; y < H; y += 46) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+
+        // 星点（缓慢上浮）
+        for (var i = 0; i < stars.length; i++) {
+            var s = stars[i];
+            s.y -= s.v;
+            if (s.y < -4) { s.y = H + 4; s.x = Math.random() * W; }
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(150, 200, 255, ' + s.a + ')';
+            ctx.fill();
+        }
+    }
+
+    /* ===== 计算某个字符的抖动量 ===== */
+    function jitter(c, i) {
+        var dx = (Math.random() * 2 - 1) * amp;
+        var dy = (Math.random() * 2 - 1) * amp;
+
+        // 鼠标附近增强：距离越近，抖动越大
+        if (mouse.active) {
+            var dist = Math.hypot(c.x - mouse.x, c.y - mouse.y);
+            var range = 150;
+            if (dist < range) {
+                var boost = (1 - dist / range) * amp * 2.2;
+                dx += (Math.random() * 2 - 1) * boost;
+                dy += (Math.random() * 2 - 1) * boost;
+            }
+        }
+
+        // 点击冲击波：从点击点向外炸开，并按帧衰减
+        if (burst.power > 0.01) {
+            var bd = Math.hypot(c.x - burst.x, c.y - burst.y) || 1;
+            var p = burst.power * 3.2;
+            dx += (c.x - burst.x) / bd * p;
+            dy += (c.y - burst.y) / bd * p;
+        }
+
+        return { dx: dx, dy: dy };
+    }
+
+    /* ===== 主绘制 ===== */
+    function draw(now) {
+        // 帧率统计
+        if (lastTime) {
+            var delta = now - lastTime;
+            if (delta > 0) fps = fps * 0.9 + (1000 / delta) * 0.1;
+        }
+        lastTime = now;
+        frames++;
+        fpsTimer += 16;
+        if (fpsTimer > 300) {
+            fpsText.textContent = Math.round(fps);
+            fpsTimer = 0;
+        }
+
+        drawBackground();
+
+        if (!paused) {
+            // 冲击波衰减
+            if (burst.power > 0) burst.power *= 0.9;
+            if (burst.power < 0.01) burst.power = 0;
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '700 ' + fontSize + 'px "Microsoft YaHei", sans-serif';
+
+            var grd = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, H);
+            grd.addColorStop(0, theme.main[0]);
+            grd.addColorStop(0.5, theme.main[1]);
+            grd.addColorStop(1, theme.main[2]);
+
+            // 本帧统一计算一次偏移：四层绘制共用，避免同一帧内错位糊成一团
+            var jit = [];
+            for (var t = 0; t < chars.length; t++) jit.push(jitter(chars[t], t));
+
+            // 1. 外发光底影
+            ctx.save();
+            ctx.shadowColor = theme.glow;
+            ctx.shadowBlur = 26;
+            ctx.globalAlpha = 0.28;
+            ctx.fillStyle = grd;
+            for (var i = 0; i < chars.length; i++) {
+                ctx.fillText(chars[i].ch, chars[i].x + jit[i].dx * 0.5, chars[i].y + jit[i].dy * 0.5);
+            }
+            ctx.restore();
+
+            // 2. 红青双色错位（故障色差）
+            var split = Math.max(1.5, amp * 0.3);
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = 0.45;
+            ctx.fillStyle = '#ff2d6f';
+            for (var m = 0; m < chars.length; m++) {
+                ctx.fillText(chars[m].ch, chars[m].x + jit[m].dx - split, chars[m].y + jit[m].dy);
+            }
+            ctx.fillStyle = '#00e5ff';
+            for (var n = 0; n < chars.length; n++) {
+                ctx.fillText(chars[n].ch, chars[n].x + jit[n].dx + split, chars[n].y + jit[n].dy);
+            }
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
+
+            // 3. 主体文字
+            ctx.fillStyle = grd;
+            for (var k = 0; k < chars.length; k++) {
+                ctx.fillText(chars[k].ch, chars[k].x + jit[k].dx, chars[k].y + jit[k].dy);
+            }
+
+            // 4. 描边增强层次
+            ctx.strokeStyle = 'rgba(255,255,255,.14)';
+            ctx.lineWidth = 1;
+            for (var q = 0; q < chars.length; q++) {
+                ctx.strokeText(chars[q].ch, chars[q].x + jit[q].dx, chars[q].y + jit[q].dy);
+            }
+        } else {
+            // 暂停：静止显示
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '700 ' + fontSize + 'px "Microsoft YaHei", sans-serif';
+            var g2 = ctx.createLinearGradient(W * 0.25, 0, W * 0.75, H);
+            g2.addColorStop(0, theme.main[0]);
+            g2.addColorStop(1, theme.main[1]);
+            ctx.fillStyle = g2;
+            for (var p = 0; p < chars.length; p++) {
+                ctx.fillText(chars[p].ch, chars[p].x, chars[p].y);
+            }
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    /* ===== 交互 ===== */
+    function pos(e) {
+        var r = canvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+    }
+
+    canvas.addEventListener('mousemove', function (e) {
+        var p = pos(e);
+        mouse.x = p.x; mouse.y = p.y; mouse.active = true;
+    });
+    canvas.addEventListener('mouseleave', function () {
+        mouse.active = false;
+        mouse.x = -999; mouse.y = -999;
+    });
+    canvas.addEventListener('click', function (e) {
+        var p = pos(e);
+        burst.x = p.x; burst.y = p.y; burst.power = 1;
+    });
+
+    textInput.addEventListener('input', layout);
+    ampRange.addEventListener('input', function () {
+        amp = Number(this.value);
+        ampVal.textContent = amp;
+        ampText.textContent = amp;
+    });
+    sizeRange.addEventListener('input', function () {
+        fontSize = Number(this.value);
+        sizeVal.textContent = fontSize;
+        layout();
+    });
+    themeSel.addEventListener('change', function () {
+        theme = THEMES[this.value] || THEMES.cyber;
+    });
+    toggleBtn.addEventListener('click', function () {
+        paused = !paused;
+        this.textContent = paused ? '▶ 继续' : '⏸ 暂停';
+    });
+    burstBtn.addEventListener('click', function () {
+        burst.x = W / 2; burst.y = H / 2; burst.power = 1.2;
+    });
+
+    window.addEventListener('resize', resize);
+
+    /* ===== 启动 ===== */
+    resize();
+    requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

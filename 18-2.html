@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18-2 Canvas 电商系统架构图 · 徐梓轩</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    background: #0c0e16; color: #e8ecf6; line-height: 1.7;
+    padding: 26px 20px 46px; min-height: 100vh;
+  }
+  .container { max-width: 1120px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 18px; }
+  header h1 { font-size: 27px; letter-spacing: 2px; }
+  header h1 span { color: #6ee7ff; }
+  header .sub { color: #7d8aa5; font-size: 13.5px; }
+
+  .stage {
+    position: relative; border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,.55);
+    background: #060810;
+  }
+  #archCanvas { display: block; width: 100%; cursor: pointer; }
+
+  .tools {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .btn {
+    background: linear-gradient(135deg, #6ee7ff, #a78bfa); color: #0a0c14;
+    border: none; border-radius: 8px; padding: 8px 16px; font-size: 12.5px;
+    font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(110,231,255,.28); }
+  .btn.ghost {
+    background: transparent; color: #9fb0cc; font-weight: 400;
+    border: 1px solid rgba(255,255,255,.16);
+  }
+  .btn.ghost:hover { color: #fff; border-color: rgba(255,255,255,.34); box-shadow: none; }
+  .hint {
+    font-size: 12px; color: #6b7891; margin-left: auto;
+    font-family: Consolas, monospace;
+  }
+  .hint b { color: #6ee7ff; }
+
+  .grid2 { display: grid; grid-template-columns: 1.05fr 1fr; gap: 18px; margin-top: 18px; }
+  @media (max-width: 880px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .card {
+    background: #12151f; border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  .card h3 { font-size: 14px; color: #a78bfa; margin-bottom: 10px; letter-spacing: .5px; }
+  .card p, .card li { font-size: 12.5px; color: #9aa6bf; line-height: 1.95; }
+  .card ul { padding-left: 18px; }
+  .card code {
+    font-family: Consolas, monospace; font-size: 12px; color: #6ee7ff;
+    background: rgba(110,231,255,.09); padding: 1px 5px; border-radius: 4px;
+  }
+  pre.code {
+    background: #0b0e17; border: 1px solid rgba(255,255,255,.07); border-radius: 10px;
+    padding: 14px 16px; overflow-x: auto; font-family: Consolas, monospace;
+    font-size: 12.5px; line-height: 1.75; color: #cfd8e8;
+  }
+  .kw { color: #ff7ab2; } .str { color: #7ee787; } .num { color: #ffd479; }
+  .cm { color: #5d6b85; } .fn { color: #6ee7ff; }
+
+  footer { text-align: center; color: #55617a; font-size: 12.5px; margin-top: 22px; }
+  footer span { color: #6ee7ff; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1><span>18-2</span> · Canvas 电商系统架构图</h1>
+    <p class="sub">六层架构 · 数据流向动画 · 悬停查看节点说明 · 可一键导出 PNG</p>
+  </header>
+
+  <div class="stage">
+    <canvas id="archCanvas"></canvas>
+  </div>
+
+  <div class="tools">
+    <button class="btn" id="flowBtn">⏸ 暂停流动</button>
+    <button class="btn ghost" id="resetBtn">↺ 取消选中</button>
+    <button class="btn ghost" id="saveBtn">⬇ 下载 PNG</button>
+    <span class="hint">悬停节点 = 查看说明　|　点击节点 = 高亮其链路</span>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>架构分层说明</h3>
+      <ul>
+        <li><b>用户层</b>：Web 浏览器、App、小程序、运营后台，通过 HTTPS 接入</li>
+        <li><b>接入层</b>：CDN 静态加速 → Nginx 负载均衡 → API 网关（鉴权、限流、路由）</li>
+        <li><b>应用层</b>：按业务域拆分的微服务，彼此通过 RPC / HTTP 调用</li>
+        <li><b>中间件层</b>：Redis 缓存、Kafka 消息队列、定时任务、配置中心</li>
+        <li><b>数据层</b>：MySQL 主从集群、Elasticsearch、对象存储、数据仓库</li>
+        <li><b>基础设施</b>：K8s 容器编排、监控、日志、链路追踪</li>
+      </ul>
+      <p style="margin-top:8px">典型下单链路：<code>用户 → 网关 → 订单服务 → Kafka → 库存服务 → MySQL</code>，
+      扣减库存后用消息队列异步通知，避免超卖并削峰。</p>
+    </div>
+    <div class="card">
+      <h3>Canvas 绘制要点</h3>
+<pre class="code"><span class="cm">// 1. 圆角矩形节点</span>
+<span class="kw">function</span> <span class="fn">roundRect</span>(x, y, w, h, r) {
+    ctx.<span class="fn">beginPath</span>();
+    ctx.<span class="fn">moveTo</span>(x + r, y);
+    ctx.<span class="fn">arcTo</span>(x + w, y, x + w, y + h, r);
+    ctx.<span class="fn">arcTo</span>(x + w, y + h, x, y + h, r);
+    ctx.<span class="fn">arcTo</span>(x, y + h, x, y, r);
+    ctx.<span class="fn">arcTo</span>(x, y, x + w, y, r);
+    ctx.<span class="fn">closePath</span>();
+}
+
+<span class="cm">// 2. 贝塞尔曲线连接 + 沿曲线运动的流光点</span>
+<span class="kw">var</span> t = (phase + i * <span class="num">0.13</span>) % <span class="num">1</span>;
+<span class="kw">var</span> p = <span class="fn">bezierPoint</span>(t, p0, c1, c2, p3);
+ctx.<span class="fn">arc</span>(p.x, p.y, <span class="num">2.6</span>, <span class="num">0</span>, <span class="num">6.28</span>);
+
+<span class="cm">// 3. 命中检测：鼠标坐标落在节点矩形内</span>
+<span class="kw">var</span> hit = NODES.<span class="fn">find</span>(n =&gt;
+    mx &gt; n.x &amp;&amp; mx &lt; n.x + n.w &amp;&amp;
+    my &gt; n.y &amp;&amp; my &lt; n.y + n.h);</pre>
+    </div>
+  </div>
+
+  <footer>&copy; 2026 <span>徐梓轩</span> · 18-2 Canvas 系统架构图 · 《高级网页设计》课堂练习</footer>
+</div>
+
+<script>
+(function () {
+    /* ======================================================================
+       1. 虚拟坐标系（1180 × 1040），绘制时整体缩放适配容器宽度
+       ====================================================================== */
+    var VW = 1180, VH = 940;
+
+    var canvas = document.getElementById('archCanvas');
+    var ctx = canvas.getContext('2d');
+    var flowBtn = document.getElementById('flowBtn');
+    var resetBtn = document.getElementById('resetBtn');
+    var saveBtn = document.getElementById('saveBtn');
+
+    var scale = 1, DPR = 1;
+    var phase = 0;             // 流光相位
+    var flowing = true;
+    var hoverId = null;        // 悬停节点
+    var selectId = null;       // 点击选中的节点
+    var mouse = { x: -1, y: -1 };
+
+    /* ======================================================================
+       2. 分层与节点定义
+       ====================================================================== */
+    var BANDS = [
+        { key: 'user',    name: '用户层',   y: 58,  h: 110, color: '#6ee7ff' },
+        { key: 'access',  name: '接入层',   y: 186, h: 104, color: '#a78bfa' },
+        { key: 'app',     name: '应用层',   y: 308, h: 210, color: '#ff7ab2' },
+        { key: 'middle',  name: '中间件层', y: 536, h: 104, color: '#ffd479' },
+        { key: 'data',    name: '数据层',   y: 658, h: 116, color: '#7ee787' },
+        { key: 'infra',   name: '基础设施', y: 792, h: 100, color: '#8fa3c8' }
+    ];
+
+    /* 节点：x / y 为左上角坐标 */
+    var NODES = [
+        /* --- 用户层 --- */
+        { id: 'web',   layer: 'user', label: 'Web 浏览器',    sub: 'PC 商城 / H5',      x: 96,  y: 96,  w: 208, h: 56, desc: '桌面端商城与移动端 H5 页面，通过 HTTPS 访问 CDN 与网关' },
+        { id: 'app',   layer: 'user', label: 'iOS / Android', sub: '原生 App',          x: 336, y: 96,  w: 208, h: 56, desc: '原生客户端，走 API 网关的 v1 接口，带设备指纹与 App 签名' },
+        { id: 'mini',  layer: 'user', label: '微信小程序',     sub: 'WeChat Mini',       x: 576, y: 96,  w: 208, h: 56, desc: '小程序通过 wx.request 调用同一套 BFF / 网关接口' },
+        { id: 'admin', layer: 'user', label: '运营后台',       sub: 'Admin Console',     x: 816, y: 96,  w: 208, h: 56, desc: '商品上下架、订单处理、数据看板，独立鉴权与内网访问' },
+
+        /* --- 接入层 --- */
+        { id: 'cdn',   layer: 'access', label: 'CDN 加速',      sub: '静态资源 / 图片',  x: 150, y: 216, w: 220, h: 56, desc: '图片、JS、CSS 静态资源就近分发，回源到对象存储' },
+        { id: 'nginx', layer: 'access', label: '负载均衡 Nginx', sub: '四层 / 七层',      x: 470, y: 216, w: 240, h: 56, desc: '反向代理与负载均衡，按权重分发到多个网关实例' },
+        { id: 'gateway', layer: 'access', label: 'API 网关',     sub: '鉴权 / 限流 / 路由', x: 790, y: 216, w: 260, h: 56, desc: '统一鉴权、限流熔断、灰度路由、协议转换，是所有请求入口' },
+
+        /* --- 应用层：两行四列 --- */
+        { id: 'goods',   layer: 'app', label: '商品服务', sub: '商品 / 类目 / 属性', x: 108, y: 342, w: 220, h: 62, desc: '商品详情、类目树、SKU 与价格管理，热点数据缓存到 Redis' },
+        { id: 'search',  layer: 'app', label: '搜索服务', sub: 'ES + 分词',          x: 368, y: 342, w: 220, h: 62, desc: '关键词搜索、筛选、排序，索引由商品服务异步同步到 ES' },
+        { id: 'cart',    layer: 'app', label: '购物车服务', sub: 'Redis 存储',       x: 628, y: 342, w: 220, h: 62, desc: '购物车增删改查，数据放 Redis Hash，登录后与本地合并' },
+        { id: 'order',   layer: 'app', label: '订单服务', sub: '下单 / 状态机',      x: 888, y: 342, w: 220, h: 62, desc: '创建订单、订单状态机、超时关单，关键写入走 MySQL 事务' },
+        { id: 'stock',   layer: 'app', label: '库存服务', sub: '预占 / 扣减',        x: 108, y: 434, w: 220, h: 62, desc: '下单预占库存、支付后真实扣减，通过 MQ 异步保证最终一致' },
+        { id: 'pay',     layer: 'app', label: '支付服务', sub: '支付网关',           x: 368, y: 434, w: 220, h: 62, desc: '对接微信 / 支付宝，处理回调、对账与退款，幂等键防重复' },
+        { id: 'user',    layer: 'app', label: '用户中心', sub: '账号 / 权限',        x: 628, y: 434, w: 220, h: 62, desc: '注册登录、JWT 鉴权、收货地址与会员等级' },
+        { id: 'promo',   layer: 'app', label: '营销秒杀', sub: '优惠券 / 秒杀',      x: 888, y: 434, w: 220, h: 62, desc: '活动、优惠券、秒杀，用 Redis + Lua 原子扣减并限流' },
+
+        /* --- 中间件层 --- */
+        { id: 'redis',  layer: 'middle', label: 'Redis 缓存', sub: '集群 / 哨兵',    x: 108, y: 564, w: 220, h: 52, desc: '热点数据、分布式锁、验证码、秒杀库存，QPS 主力' },
+        { id: 'mq',     layer: 'middle', label: 'Kafka 消息队列', sub: '削峰 / 解耦', x: 368, y: 564, w: 220, h: 52, desc: '订单创建、库存扣减、支付回调等异步事件总线' },
+        { id: 'job',    layer: 'middle', label: '定时任务', sub: '调度中心',        x: 628, y: 564, w: 220, h: 52, desc: '超时订单关闭、库存对账、报表生成等定时调度' },
+        { id: 'config', layer: 'middle', label: '配置中心', sub: '动态配置',        x: 888, y: 564, w: 220, h: 52, desc: '灰度开关、限流阈值、数据库连接等动态下发' },
+
+        /* --- 数据层 --- */
+        { id: 'mysql', layer: 'data', label: 'MySQL 集群', sub: '主从 / 分库分表', x: 108, y: 690, w: 220, h: 56, desc: '订单、商品、用户等核心交易数据，主从复制 + 读写分离' },
+        { id: 'es',    layer: 'data', label: 'Elasticsearch', sub: '搜索索引',     x: 368, y: 690, w: 220, h: 56, desc: '商品搜索索引，倒排索引支撑关键词与聚合筛选' },
+        { id: 'oss',   layer: 'data', label: '对象存储 OSS', sub: '图片 / 视频',    x: 628, y: 690, w: 220, h: 56, desc: '商品图片、详情长图、用户头像，配合 CDN 回源' },
+        { id: 'dwh',   layer: 'data', label: '数据仓库', sub: '离线 / 实时报表',     x: 888, y: 690, w: 220, h: 56, desc: 'Flink / Spark 实时与离线计算，生成经营报表与推荐特征' },
+
+        /* --- 基础设施 --- */
+        { id: 'k8s',    layer: 'infra', label: 'K8s 容器编排', sub: '弹性伸缩',    x: 108, y: 822, w: 220, h: 52, desc: '服务编排、滚动发布、HPA 自动扩缩容' },
+        { id: 'monitor', layer: 'infra', label: 'Prometheus 监控', sub: '指标采集', x: 368, y: 822, w: 220, h: 52, desc: 'CPU / QPS / 响应时间等指标采集与告警规则' },
+        { id: 'log',    layer: 'infra', label: 'ELK 日志', sub: '集中检索',         x: 628, y: 822, w: 220, h: 52, desc: '日志收集、检索与异常排查，配合链路 TraceID' },
+        { id: 'trace',  layer: 'infra', label: '链路追踪', sub: 'SkyWalking',       x: 888, y: 822, w: 220, h: 52, desc: '全链路追踪与慢调用分析，定位跨服务性能瓶颈' }
+    ];
+
+    /* 连线：[来源, 目标] */
+    var LINKS = [
+        /* 用户 → 接入 */
+        ['web', 'cdn'], ['web', 'nginx'], ['app', 'nginx'], ['mini', 'nginx'], ['admin', 'gateway'],
+        ['cdn', 'oss'],
+        /* 接入内部 */
+        ['nginx', 'gateway'],
+        /* 网关 → 服务 */
+        ['gateway', 'goods'], ['gateway', 'search'], ['gateway', 'cart'], ['gateway', 'order'],
+        ['gateway', 'stock'], ['gateway', 'pay'], ['gateway', 'user'], ['gateway', 'promo'],
+        /* 服务 → 中间件 */
+        ['goods', 'redis'], ['cart', 'redis'], ['promo', 'redis'],
+        ['order', 'mq'], ['stock', 'mq'], ['pay', 'mq'],
+        ['order', 'job'], ['user', 'config'],
+        /* 服务 → 数据 */
+        ['goods', 'mysql'], ['search', 'es'], ['order', 'mysql'],
+        ['stock', 'mysql'], ['pay', 'mysql'], ['user', 'mysql'],
+        ['promo', 'mysql'],
+        /* 中间件 → 数据 / 基础设施 */
+        ['mq', 'dwh'], ['job', 'mysql'], ['redis', 'mysql'],
+        /* 运维支撑 */
+        ['monitor', 'log'], ['log', 'trace'], ['k8s', 'monitor']
+    ];
+
+    /* 索引表 */
+    var NODE_MAP = {};
+    NODES.forEach(function (n) { NODE_MAP[n.id] = n; });
+    var LAYER_COLOR = {};
+    BANDS.forEach(function (b) { LAYER_COLOR[b.key] = b.color; });
+
+    /* ======================================================================
+       3. 尺寸适配
+       ====================================================================== */
+    function resize() {
+        var rect = canvas.parentNode.getBoundingClientRect();
+        var cssW = rect.width;
+        var cssH = cssW * VH / VW;
+        DPR = window.devicePixelRatio || 1;
+
+        canvas.width = Math.round(cssW * DPR);
+        canvas.height = Math.round(cssH * DPR);
+        canvas.style.height = cssH + 'px';
+
+        scale = cssW / VW;
+        ctx.setTransform(scale * DPR, 0, 0, scale * DPR, 0, 0);
+    }
+
+    /* ======================================================================
+       4. 绘制工具
+       ====================================================================== */
+    function roundRect(x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+    }
+
+    function bezierPoint(t, p0, c1, c2, p3) {
+        var mt = 1 - t;
+        return {
+            x: mt * mt * mt * p0.x + 3 * mt * mt * t * c1.x + 3 * mt * t * t * c2.x + t * t * t * p3.x,
+            y: mt * mt * mt * p0.y + 3 * mt * mt * t * c1.y + 3 * mt * t * t * c2.y + t * t * t * p3.y
+        };
+    }
+
+    /* 计算连线的起止点与控制点 */
+    function linkGeometry(from, to) {
+        // 同一行（同层横向）：从右边缘连到左边缘
+        if (Math.abs((from.y + from.h / 2) - (to.y + to.h / 2)) < 20) {
+            var leftFirst = from.x < to.x;
+            var hp0 = leftFirst
+                ? { x: from.x + from.w, y: from.y + from.h / 2 }
+                : { x: from.x, y: from.y + from.h / 2 };
+            var hp3 = leftFirst
+                ? { x: to.x, y: to.y + to.h / 2 }
+                : { x: to.x + to.w, y: to.y + to.h / 2 };
+            var dx0 = (hp3.x - hp0.x) * 0.45;
+            return {
+                p0: hp0,
+                c1: { x: hp0.x + dx0, y: hp0.y },
+                c2: { x: hp3.x - dx0, y: hp3.y },
+                p3: hp3
+            };
+        }
+
+        var p0 = { x: from.x + from.w / 2, y: from.y + from.h };
+        var p3 = { x: to.x + to.w / 2, y: to.y };
+        // 若目标在上方，改为从顶部出发
+        if (p3.y < p0.y) {
+            p0 = { x: from.x + from.w / 2, y: from.y };
+            p3 = { x: to.x + to.w / 2, y: to.y + to.h };
+        }
+        var dy = p3.y - p0.y;
+        var c1 = { x: p0.x, y: p0.y + dy * 0.42 };
+        var c2 = { x: p3.x, y: p3.y - dy * 0.42 };
+
+        // 网关 → 应用层第二行：在"第二行上方空隙"处横向走线，避免长斜线压住第一行文字
+        if (from.id === 'gateway' && to.y > 420) {
+            c1 = { x: p0.x, y: 418 };
+            c2 = { x: p3.x, y: 418 };
+        }
+        return { p0: p0, c1: c1, c2: c2, p3: p3 };
+    }
+
+    /* 某节点是否与选中节点相关 */
+    function isRelated(link, id) {
+        return link[0] === id || link[1] === id;
+    }
+
+    /* ======================================================================
+       5. 场景绘制
+       ====================================================================== */
+    function drawBackground() {
+        var g = ctx.createLinearGradient(0, 0, VW, VH);
+        g.addColorStop(0, '#080a12');
+        g.addColorStop(0.5, '#0a0e1a');
+        g.addColorStop(1, '#06080f');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, VW, VH);
+
+        // 网格
+        ctx.strokeStyle = 'rgba(110,231,255,.045)';
+        ctx.lineWidth = 1;
+        for (var x = 0; x <= VW; x += 40) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, VH); ctx.stroke();
+        }
+        for (var y = 0; y <= VH; y += 40) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(VW, y); ctx.stroke();
+        }
+    }
+
+    function drawTitle() {
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        ctx.font = '700 24px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = '#e8ecf6';
+        ctx.fillText('电商系统 · 全站技术架构', 40, 30);
+
+        ctx.font = '13px Consolas, monospace';
+        ctx.fillStyle = '#5d6b85';
+        ctx.fillText('E-COMMERCE PLATFORM ARCHITECTURE  ·  SIX LAYERS', 350, 31);
+
+        // 右上角状态点
+        ctx.beginPath();
+        ctx.arc(VW - 130, 30, 4, 0, Math.PI * 2);
+        ctx.fillStyle = flowing ? '#7ee787' : '#ffd479';
+        ctx.fill();
+        ctx.font = '12px Consolas, monospace';
+        ctx.fillStyle = '#7d8aa5';
+        ctx.fillText(flowing ? 'LIVE FLOW' : 'PAUSED', VW - 118, 31);
+    }
+
+    function drawBands() {
+        BANDS.forEach(function (b) {
+            // 层级底板
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            roundRect(40, b.y, VW - 80, b.h, 14);
+            ctx.fillStyle = 'rgba(255,255,255,.022)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,.05)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
+
+            // 左侧色条 + 层级名
+            ctx.fillStyle = b.color;
+            ctx.globalAlpha = 0.85;
+            roundRect(52, b.y + 14, 3, b.h - 28, 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            ctx.save();
+            ctx.translate(72, b.y + b.h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '600 13px "Microsoft YaHei", sans-serif';
+            ctx.fillStyle = b.color;
+            ctx.fillText(b.name, 0, 0);
+            ctx.restore();
+        });
+    }
+
+    function drawLinks() {
+        var focusId = hoverId || selectId;
+
+        LINKS.forEach(function (link, i) {
+            var from = NODE_MAP[link[0]], to = NODE_MAP[link[1]];
+            if (!from || !to) return;
+
+            var geo = linkGeometry(from, to);
+            var related = focusId ? isRelated(link, focusId) : false;
+            var dim = focusId && !related;
+
+            // 曲线
+            ctx.beginPath();
+            ctx.moveTo(geo.p0.x, geo.p0.y);
+            ctx.bezierCurveTo(geo.c1.x, geo.c1.y, geo.c2.x, geo.c2.y, geo.p3.x, geo.p3.y);
+            ctx.lineWidth = related ? 2 : 1.2;
+            ctx.strokeStyle = related
+                ? 'rgba(110,231,255,.85)'
+                : (dim ? 'rgba(255,255,255,.05)' : 'rgba(150,170,210,.22)');
+            ctx.stroke();
+
+            // 箭头
+            var end = geo.p3;
+            var prev = bezierPoint(0.985, geo.p0, geo.c1, geo.c2, geo.p3);
+            var ang = Math.atan2(end.y - prev.y, end.x - prev.x);
+            ctx.beginPath();
+            ctx.moveTo(end.x, end.y);
+            ctx.lineTo(end.x - 7 * Math.cos(ang - 0.36), end.y - 7 * Math.sin(ang - 0.36));
+            ctx.lineTo(end.x - 7 * Math.cos(ang + 0.36), end.y - 7 * Math.sin(ang + 0.36));
+            ctx.closePath();
+            ctx.fillStyle = related ? 'rgba(110,231,255,.9)'
+                          : (dim ? 'rgba(255,255,255,.06)' : 'rgba(150,170,210,.35)');
+            ctx.fill();
+
+            // 流光点
+            if (flowing && !dim) {
+                var t = (phase + i * 0.11) % 1;
+                var p = bezierPoint(t, geo.p0, geo.c1, geo.c2, geo.p3);
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, related ? 3.2 : 2.2, 0, Math.PI * 2);
+                ctx.fillStyle = related ? '#6ee7ff' : 'rgba(160,200,255,.85)';
+                ctx.shadowColor = '#6ee7ff';
+                ctx.shadowBlur = related ? 12 : 6;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        });
+    }
+
+    function drawNodes() {
+        var focusId = hoverId || selectId;
+
+        NODES.forEach(function (n) {
+            var color = LAYER_COLOR[n.layer];
+            var isFocus = (n.id === hoverId);
+            var isSelect = (n.id === selectId);
+            var related = focusId
+                ? LINKS.some(function (l) { return (l[0] === focusId && l[1] === n.id) || (l[1] === focusId && l[0] === n.id); })
+                : false;
+            var dim = focusId && !related && n.id !== focusId;
+
+            // 卡片底
+            roundRect(n.x, n.y, n.w, n.h, 10);
+            ctx.save();
+            if (isFocus || isSelect) {
+                ctx.shadowColor = color;
+                ctx.shadowBlur = 22;
+            }
+            ctx.fillStyle = isFocus || isSelect
+                ? 'rgba(110,231,255,.14)'
+                : 'rgba(255,255,255,' + (dim ? 0.018 : 0.04) + ')';
+            ctx.fill();
+            ctx.restore();
+
+            // 边框
+            roundRect(n.x, n.y, n.w, n.h, 10);
+            ctx.lineWidth = (isFocus || isSelect) ? 1.8 : 1;
+            ctx.strokeStyle = (isFocus || isSelect)
+                ? color
+                : 'rgba(255,255,255,' + (dim ? 0.07 : 0.14) + ')';
+            ctx.stroke();
+
+            // 左侧色标
+            ctx.beginPath();
+            ctx.moveTo(n.x + 1, n.y + 14);
+            ctx.lineTo(n.x + 1, n.y + n.h - 14);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = color;
+            ctx.globalAlpha = dim ? 0.25 : 0.9;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            // 文字
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '600 15px "Microsoft YaHei", sans-serif';
+            ctx.fillStyle = dim ? 'rgba(232,236,246,.35)' : '#e8ecf6';
+            var cy = n.h > 56 ? n.y + n.h / 2 - 9 : n.y + n.h / 2 - 7;
+            ctx.fillText(n.label, n.x + n.w / 2, cy);
+
+            ctx.font = '11.5px Consolas, "Microsoft YaHei", monospace';
+            ctx.fillStyle = dim ? 'rgba(150,170,210,.25)' : 'rgba(150,170,210,.72)';
+            ctx.fillText(n.sub, n.x + n.w / 2, cy + 19);
+        });
+    }
+
+    function drawLegend() {
+        var items = [
+            { c: '#6ee7ff', t: '用户 / 接入' },
+            { c: '#ff7ab2', t: '业务服务' },
+            { c: '#ffd479', t: '中间件' },
+            { c: '#7ee787', t: '数据存储' },
+            { c: '#8fa3c8', t: '运维支撑' }
+        ];
+        var startX = 40, y = VH - 34;
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '12px "Microsoft YaHei", sans-serif';
+
+        items.forEach(function (it) {
+            ctx.beginPath();
+            ctx.arc(startX + 4, y, 4.5, 0, Math.PI * 2);
+            ctx.fillStyle = it.c;
+            ctx.fill();
+
+            ctx.fillStyle = '#8fa3c8';
+            ctx.fillText(it.t, startX + 15, y + 1);
+            startX += ctx.measureText(it.t).width + 42;
+        });
+
+        ctx.textAlign = 'right';
+        ctx.font = '11.5px Consolas, monospace';
+        ctx.fillStyle = '#4e5a72';
+        ctx.fillText('Canvas 2D · 1180 × 1040 虚拟坐标', VW - 40, y + 1);
+    }
+
+    /* 悬停提示框 */
+    function drawTooltip() {
+        if (!hoverId) return;
+        var n = NODE_MAP[hoverId];
+        if (!n) return;
+
+        ctx.font = '13px "Microsoft YaHei", sans-serif';
+        var lines = wrapText(n.desc, 300);
+        var lh = 20;
+        var pad = 12;
+        var titleH = 22;
+
+        var boxW = 320;
+        var boxH = pad * 2 + titleH + lines.length * lh;
+
+        var x = n.x + n.w / 2 - boxW / 2;
+        var y = n.y - boxH - 10;
+        if (y < 46) y = n.y + n.h + 10;
+        if (x < 30) x = 30;
+        if (x + boxW > VW - 30) x = VW - 30 - boxW;
+
+        // 阴影层
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,.6)';
+        ctx.shadowBlur = 20;
+        roundRect(x, y, boxW, boxH, 10);
+        ctx.fillStyle = 'rgba(10,14,24,.96)';
+        ctx.fill();
+        ctx.restore();
+
+        roundRect(x, y, boxW, boxH, 10);
+        ctx.strokeStyle = 'rgba(110,231,255,.45)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.font = '600 13.5px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = '#6ee7ff';
+        ctx.fillText(n.label + ' · ' + n.sub, x + pad, y + pad);
+
+        ctx.font = '12.5px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = '#b8c2d8';
+        lines.forEach(function (line, i) {
+            ctx.fillText(line, x + pad, y + pad + titleH + i * lh);
+        });
+    }
+
+    function wrapText(text, maxW) {
+        var res = [], line = '';
+        for (var i = 0; i < text.length; i++) {
+            var test = line + text[i];
+            if (ctx.measureText(test).width > maxW - 24) {
+                res.push(line);
+                line = text[i];
+            } else {
+                line = test;
+            }
+        }
+        if (line) res.push(line);
+        return res;
+    }
+
+    /* ======================================================================
+       6. 主循环
+       ====================================================================== */
+    function frame() {
+        drawBackground();
+        drawTitle();
+        drawBands();
+        drawLinks();
+        drawNodes();
+        drawLegend();
+        drawTooltip();
+
+        if (flowing) phase = (phase + 0.0045) % 1;
+        requestAnimationFrame(frame);
+    }
+
+    /* ======================================================================
+       7. 交互
+       ====================================================================== */
+    function toVirtual(clientX, clientY) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: (clientX - rect.left) / (rect.width / VW),
+            y: (clientY - rect.top) / (rect.height / VH)
+        };
+    }
+
+    function hitTest(x, y) {
+        for (var i = NODES.length - 1; i >= 0; i--) {
+            var n = NODES[i];
+            if (x > n.x && x < n.x + n.w && y > n.y && y < n.y + n.h) return n.id;
+        }
+        return null;
+    }
+
+    canvas.addEventListener('mousemove', function (e) {
+        var p = toVirtual(e.clientX, e.clientY);
+        mouse.x = p.x; mouse.y = p.y;
+        var id = hitTest(p.x, p.y);
+        if (id !== hoverId) {
+            hoverId = id;
+            canvas.style.cursor = id ? 'pointer' : 'default';
+        }
+    });
+
+    canvas.addEventListener('mouseleave', function () {
+        hoverId = null;
+        canvas.style.cursor = 'default';
+    });
+
+    canvas.addEventListener('click', function (e) {
+        var p = toVirtual(e.clientX, e.clientY);
+        var id = hitTest(p.x, p.y);
+        selectId = (id === selectId) ? null : id;
+    });
+
+    flowBtn.addEventListener('click', function () {
+        flowing = !flowing;
+        flowBtn.textContent = flowing ? '⏸ 暂停流动' : '▶ 继续流动';
+    });
+
+    resetBtn.addEventListener('click', function () { selectId = null; });
+
+    saveBtn.addEventListener('click', function () {
+        // 导出当前画布为 PNG
+        var a = document.createElement('a');
+        a.download = '电商系统架构图.png';
+        a.href = canvas.toDataURL('image/png');
+        a.click();
+    });
+
+    window.addEventListener('resize', resize);
+
+    /* ======================================================================
+       8. 启动
+       ====================================================================== */
+    resize();
+    requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
